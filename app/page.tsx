@@ -1,17 +1,26 @@
+"use client";
+
+import { useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
+
 export default function Home() {
+  useEffect(() => {
+    async function checkUser() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = "/login";
+      } else {
+        window.location.href = "/registrar";
+      }
+    }
+    checkUser();
+  }, []);
+
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-stone-50 p-6">
-      <div className="max-w-md text-center">
-        <h1 className="text-4xl font-bold text-slate-800 mb-4">
-          Oi, Aline.
-        </h1>
-        <p className="text-lg text-slate-600 leading-relaxed">
-          Esse é o começo do Mapa.
-        </p>
-        <p className="text-sm text-emerald-700 mt-8 italic">
-          Antes de qualquer coisa, respira.
-        </p>
-      </div>
+    <main className="min-h-screen flex items-center justify-center bg-mapa-bg">
+      <p className="text-mapa-muted italic">Carregando...</p>
     </main>
   );
 }

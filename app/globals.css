@@ -1,26 +1,85 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-quicksand);
+
+  /* Mapa — paleta principal */
+  --color-mapa-bg: #FFF9F5;
+  --color-mapa-card: #FFFFFF;
+  --color-mapa-text: #4A3F3A;
+  --color-mapa-muted: #A89B94;
+  --color-mapa-border: #F0E4DC;
+
+  /* Rosa */
+  --color-mapa-pink: #E8A0BF;
+  --color-mapa-pink-deep: #C47A9B;
+  --color-mapa-pink-light: #FFF0F6;
+
+  /* Lavanda */
+  --color-mapa-lavender: #B8A9D4;
+  --color-mapa-lavender-light: #F3EEFF;
+
+  /* Menta */
+  --color-mapa-mint: #7BC8A4;
+  --color-mapa-mint-light: #EDFCF4;
+
+  /* Pêssego */
+  --color-mapa-peach: #F5C7A9;
+  --color-mapa-peach-light: #FFF5EC;
+
+  /* Coral (alertas/gravar) */
+  --color-mapa-coral: #E88B8B;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --background: #FFF9F5;
+  --foreground: #4A3F3A;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Range input custom para escala de humor */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: #F0E4DC;
+  border-radius: 4px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #E8A0BF;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(232, 160, 191, 0.3);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #E8A0BF;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 6px rgba(232, 160, 191, 0.3);
+}
+
+/* Animação pulsante para gravação */
+@keyframes pulse-rec {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.08); opacity: 0.85; }
+}
+
+.animate-pulse-rec {
+  animation: pulse-rec 1.2s ease-in-out infinite;
 }
