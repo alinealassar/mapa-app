@@ -4,41 +4,71 @@ import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 const MOODS = [
-  { key: "pessima", emoji: "😣", label: "Péssima", scale: 2 },
-  { key: "mal", emoji: "😒", label: "Mal", scale: 4 },
+  { key: "pessima", emoji: "😣", label: "Péssima", scale: 1 },
+  { key: "mal", emoji: "😒", label: "Mal", scale: 3 },
   { key: "neutra", emoji: "😐", label: "Neutra", scale: 5 },
-  { key: "bem", emoji: "😊", label: "Bem", scale: 7 },
-  { key: "otima", emoji: "🥰", label: "Ótima", scale: 9 },
+  { key: "bem", emoji: "😊", label: "Bem", scale: 8 },
+  { key: "otima", emoji: "🥰", label: "Ótima", scale: 10 },
 ];
 const TAGS = [
-  { emoji: "😴", label: "com sono" },
+  // Calma e afeto
   { emoji: "😌", label: "tranquila" },
-  { emoji: "😰", label: "ansiosa" },
-  { emoji: "😠", label: "irritada" },
-  { emoji: "😫", label: "estressada" },
+  { emoji: "🪶", label: "leve" },
   { emoji: "💖", label: "grata" },
-  { emoji: "🎯", label: "focada" },
-  { emoji: "🥺", label: "carente" },
   { emoji: "😍", label: "amada" },
+  { emoji: "💘", label: "apaixonada" },
   { emoji: "🤗", label: "acolhida" },
+  { emoji: "🌱", label: "esperançosa" },
+  // Energia e motivação
   { emoji: "💪", label: "motivada" },
-  { emoji: "😔", label: "desanimada" },
+  { emoji: "✨", label: "inspirada" },
+  { emoji: "🎯", label: "focada" },
   { emoji: "🤩", label: "confiante" },
+  // Corpo e cansaço
+  { emoji: "😴", label: "com sono" },
+  { emoji: "😩", label: "cansada" },
   { emoji: "🤒", label: "indisposta" },
+  // Tensão e sobrecarga
+  { emoji: "😰", label: "ansiosa" },
+  { emoji: "😫", label: "estressada" },
+  { emoji: "🤯", label: "sobrecarregada" },
+  { emoji: "😠", label: "irritada" },
+  { emoji: "😤", label: "frustrada" },
+  // Baixa
+  { emoji: "😔", label: "desanimada" },
+  { emoji: "😓", label: "fracassada" },
+  { emoji: "🥺", label: "carente" },
+  { emoji: "😶‍🌫️", label: "perdida" },
+  { emoji: "🌑", label: "solitária" },
 ];
 const ACTIVITIES = [
-  { emoji: "🏃‍♀️", label: "Me exercitei" },
-  { emoji: "📚", label: "Estudei" },
-  { emoji: "👫", label: "Vi amigos" },
-  { emoji: "🎨", label: "Fiz um hobby" },
-  { emoji: "💻", label: "Trabalhei" },
-  { emoji: "🧘‍♀️", label: "Meditei" },
-  { emoji: "🎵", label: "Ouvi música" },
+  // Casa e rotina
   { emoji: "🍳", label: "Cozinhei" },
+  { emoji: "🧹", label: "Faxinei" },
+  { emoji: "🛍️", label: "Fui ao mercado" },
+  // Produtividade
+  { emoji: "💻", label: "Trabalhei" },
+  { emoji: "📚", label: "Estudei" },
+  // Corpo e movimento
+  { emoji: "🏋️‍♀️", label: "Treinei" },
+  { emoji: "🚶‍♀️", label: "Saí pra caminhar" },
   { emoji: "🌳", label: "Fui ao ar livre" },
-  { emoji: "📖", label: "Li algo" },
+  // Autocuidado e descanso
+  { emoji: "💆‍♀️", label: "Cuidei de mim" },
+  { emoji: "🧘‍♀️", label: "Meditei" },
   { emoji: "😴", label: "Descansei" },
+  // Pessoas e afeto
+  { emoji: "👫", label: "Vi amigos" },
   { emoji: "👪", label: "Vi a família" },
+  { emoji: "🫂", label: "Cuidei de alguém querido" },
+  { emoji: "🐾", label: "Cuidei do pet" },
+  // Lazer e prazer
+  { emoji: "🎨", label: "Fiz um hobby" },
+  { emoji: "💡", label: "Aprendi algo novo" },
+  { emoji: "📖", label: "Li algo" },
+  { emoji: "🍿", label: "Assisti algo" },
+  { emoji: "🎵", label: "Ouvi música" },
+  { emoji: "🌸", label: "Curti minha companhia" },
 ];
 const FALLBACK: Record<string, string> = {
   otima: "Que lindo ver você assim! Continue celebrando esses momentos. 🌸",
@@ -86,7 +116,15 @@ export default function MoodRegister() {
           .select("name")
           .eq("id", user.id)
           .single();
-        if (data?.name) setUserName(data.name);
+        if (data?.name) {
+          setUserName(data.name);
+        } else if (user.email) {
+          // Fallback: parte do email antes do @, capitalizada
+          const fromEmail = user.email.split("@")[0];
+          setUserName(
+            fromEmail.charAt(0).toUpperCase() + fromEmail.slice(1)
+          );
+        }
       }
     })();
   }, []);
@@ -126,6 +164,12 @@ export default function MoodRegister() {
   // Audio
   async function startRecording() {
     try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        alert(
+          "Seu navegador não suporta gravação de áudio. Tente usar Chrome, Edge ou Firefox atualizado."
+        );
+        return;
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mr = new MediaRecorder(stream);
       mediaRecorderRef.current = mr;
@@ -146,8 +190,30 @@ export default function MoodRegister() {
         () => setRecSeconds((p) => p + 1),
         1000
       );
-    } catch {
-      alert("Não foi possível acessar o microfone.");
+    } catch (e: unknown) {
+      console.error("Erro ao acessar microfone:", e);
+      const err = e as { name?: string; message?: string };
+      if (err.name === "NotAllowedError") {
+        alert(
+          "Você não deu permissão pro app usar o microfone.\n\nClique no cadeado 🔒 ao lado do endereço (http://localhost:3000) e libere o microfone. Depois recarregue a página com F5."
+        );
+      } else if (err.name === "NotFoundError") {
+        alert(
+          "Não encontrei nenhum microfone no seu computador.\n\nVerifique se ele está conectado e ligado nas configurações do Windows (Configurações → Sistema → Som)."
+        );
+      } else if (err.name === "NotReadableError") {
+        alert(
+          "Outro app está usando seu microfone agora (Zoom, Teams, Meet, WhatsApp, Discord, etc.).\n\nFeche esses apps e tente de novo."
+        );
+      } else if (err.name === "SecurityError") {
+        alert(
+          "Por segurança, o microfone só funciona em endereços localhost ou https://. Verifique se você está em http://localhost:3000."
+        );
+      } else {
+        alert(
+          `Não consegui ligar o microfone.\n\nErro: ${err.name || "desconhecido"}\nDetalhe: ${err.message || "(sem detalhe)"}\n\nTire um print dessa mensagem e me mande.`
+        );
+      }
     }
   }
 
@@ -241,7 +307,7 @@ export default function MoodRegister() {
           user_id: user.id,
           mood_emoji: selectedMood,
           mood_scale: moodScale,
-          energy_level: energyLevel,
+          energy_level: energyLevel > 0 ? energyLevel : null,
           tags: selectedTags,
           activities: selectedActivities,
           note: note || null,
@@ -257,18 +323,9 @@ export default function MoodRegister() {
       setSaving(false);
       setAiLoading(true);
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-mood-feedback`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${session?.access_token}`,
-            },
-            body: JSON.stringify({
+        const { data: aiData, error: aiError } =
+          await supabase.functions.invoke("generate-mood-feedback", {
+            body: {
               entry: {
                 id: entry?.id,
                 user_id: user.id,
@@ -279,21 +336,32 @@ export default function MoodRegister() {
                 activities: selectedActivities,
                 note: note || null,
               },
-            }),
-          }
-        );
-        if (res.ok) {
-          const d = await res.json();
-          setAiFeedback(d.feedback);
-        } else setAiFeedback(FALLBACK[selectedMood] || FALLBACK.neutra);
-      } catch {
+            },
+          });
+        if (aiError) {
+          console.error("Erro ao chamar IA:", aiError);
+          setAiFeedback(FALLBACK[selectedMood] || FALLBACK.neutra);
+        } else if (aiData?.feedback) {
+          setAiFeedback(aiData.feedback);
+        } else {
+          console.warn("IA respondeu sem feedback:", aiData);
+          setAiFeedback(FALLBACK[selectedMood] || FALLBACK.neutra);
+        }
+      } catch (e) {
+        console.error("Erro ao chamar IA:", e);
         setAiFeedback(FALLBACK[selectedMood] || FALLBACK.neutra);
       } finally {
         setAiLoading(false);
       }
     } catch (e) {
       console.error(e);
-      alert("Erro ao salvar.");
+      const msg =
+        e instanceof Error
+          ? e.message
+          : typeof e === "object" && e !== null && "message" in e
+            ? String((e as { message: unknown }).message)
+            : "Erro desconhecido";
+      alert(`Erro ao salvar.\n\nDetalhe: ${msg}`);
       setSaving(false);
     }
   }
@@ -319,13 +387,13 @@ export default function MoodRegister() {
     <div>
       {/* HEADER */}
       <div className="px-6 pt-6">
-        <h1 className="text-center font-[family-name:var(--font-playfair)] text-[22px] font-medium mb-4">
+        <h1 className="text-center font-[family-name:var(--font-quicksand)] text-[22px] font-medium mb-3">
           Diário da{" "}
           <span className="text-mapa-pink-deep">{userName || "..."}</span> 🌸
         </h1>
-        <div className="flex justify-between items-baseline pb-3">
-          <span className="font-[family-name:var(--font-playfair)] italic text-base text-mapa-pink-deep">
-            Querido diário...
+        <div className="flex items-baseline justify-center gap-2 pb-3">
+          <span className="font-[family-name:var(--font-playfair)] italic text-xs text-mapa-muted">
+            Querido diário,
           </span>
           <span className="font-[family-name:var(--font-playfair)] italic text-xs text-mapa-muted">
             {today}

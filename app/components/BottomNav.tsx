@@ -6,6 +6,7 @@ import Link from "next/link";
 const TABS = [
   { href: "/registrar", label: "Registrar", emoji: "✏️" },
   { href: "/historico", label: "Histórico", emoji: "📖" },
+  { href: "/eu", label: "Eu", emoji: "👤" },
 ];
 
 export default function BottomNav() {

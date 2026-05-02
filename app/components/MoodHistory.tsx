@@ -51,7 +51,13 @@ export default function MoodHistory() {
       .select("name")
       .eq("id", user.id)
       .single();
-    if (profile?.name) setUserName(profile.name);
+    if (profile?.name) {
+      setUserName(profile.name);
+    } else if (user.email) {
+      // Fallback: parte do email antes do @, capitalizada
+      const fromEmail = user.email.split("@")[0];
+      setUserName(fromEmail.charAt(0).toUpperCase() + fromEmail.slice(1));
+    }
 
     let query = supabase
       .from("mood_entries")
@@ -148,7 +154,7 @@ export default function MoodHistory() {
   return (
     <div>
       <div className="px-6 pt-6 text-center">
-        <h1 className="font-[family-name:var(--font-playfair)] text-[22px] font-medium">
+        <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-medium">
           Meus registros 📖
         </h1>
         <p className="text-[13px] text-mapa-pink-deep mt-1 font-[family-name:var(--font-playfair)] italic">

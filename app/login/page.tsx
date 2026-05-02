@@ -44,7 +44,9 @@ export default function Login() {
         setMessage(error.message);
         setMessageType("error");
       } else {
-        setMessage("Conta criada! Verifique seu e-mail para confirmar.");
+        setMessage(
+          "Conta criada! 🌸 Te enviamos um e-mail pra confirmar — confere sua caixa de entrada (e o spam) antes de entrar."
+        );
         setMessageType("success");
       }
     } else {
@@ -53,7 +55,15 @@ export default function Login() {
         password,
       });
       if (error) {
-        setMessage("E-mail ou senha incorretos.");
+        if (error.message.includes("Email not confirmed")) {
+          setMessage(
+            "Você ainda precisa confirmar seu e-mail. Olha sua caixa de entrada (e o spam) — tem um link pra clicar. 💌"
+          );
+        } else if (error.message.includes("Invalid login credentials")) {
+          setMessage("E-mail ou senha incorretos.");
+        } else {
+          setMessage("Não consegui entrar agora. Tenta de novo daqui a pouco.");
+        }
         setMessageType("error");
       } else {
         window.location.href = "/";
@@ -66,7 +76,7 @@ export default function Login() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-mapa-bg p-6">
       <div className="w-full max-w-sm">
-        <h1 className="text-3xl font-bold text-mapa-text text-center mb-2 font-[family-name:var(--font-playfair)]">
+        <h1 className="text-3xl font-bold text-mapa-text text-center mb-2 font-[family-name:var(--font-quicksand)]">
           Mapa
         </h1>
         <p className="text-sm text-mapa-pink-deep text-center mb-8 italic font-[family-name:var(--font-playfair)]">
