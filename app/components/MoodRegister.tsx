@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { Pencil, Mic } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 const MOODS = [
@@ -8,7 +9,7 @@ const MOODS = [
   { key: "mal", emoji: "😒", label: "Mal", scale: 3 },
   { key: "neutra", emoji: "😐", label: "Neutra", scale: 5 },
   { key: "bem", emoji: "😊", label: "Bem", scale: 8 },
-  { key: "otima", emoji: "🥰", label: "Ótima", scale: 10 },
+  { key: "otima", emoji: "🤩", label: "Ótima", scale: 10 },
 ];
 const TAGS = [
   // Calma e afeto
@@ -51,7 +52,7 @@ const ACTIVITIES = [
   { emoji: "📚", label: "Estudei" },
   // Corpo e movimento
   { emoji: "🏋️‍♀️", label: "Treinei" },
-  { emoji: "🚶‍♀️", label: "Saí pra caminhar" },
+  { emoji: "🚶‍♀️", label: "Saí para caminhar" },
   { emoji: "🌳", label: "Fui ao ar livre" },
   // Autocuidado e descanso
   { emoji: "💆‍♀️", label: "Cuidei de mim" },
@@ -70,10 +71,134 @@ const ACTIVITIES = [
   { emoji: "🎵", label: "Ouvi música" },
   { emoji: "🌸", label: "Curti minha companhia" },
 ];
+
+// Sprint 3.1: opções de qualidade do sono. Os valores ('good', 'ok', 'bad')
+// batem com o CHECK constraint da coluna sleep_quality em mood_entries.
+const SLEEP_QUALITIES: { value: "good" | "ok" | "bad"; emoji: string; label: string }[] = [
+  { value: "good", emoji: "😴", label: "acordei bem" },
+  { value: "ok", emoji: "🥱", label: "mais ou menos" },
+  { value: "bad", emoji: "😵‍💫", label: "acordei mal" },
+];
+
+// Tags pesadas — usadas para detectar se o último registro foi um momento difícil
+const HEAVY_TAGS_LOWER = [
+  "fracassada",
+  "desanimada",
+  "sobrecarregada",
+  "carente",
+  "perdida",
+  "solitária",
+  "ansiosa",
+  "estressada",
+  "irritada",
+  "frustrada",
+  "cansada",
+];
+
+interface LastEntry {
+  mood_scale: number;
+  tags: string[] | null;
+  created_at: string;
+}
+
+// Calcula um placeholder de texto sensível ao contexto
+function getAdaptivePrompt(
+  lastEntry: LastEntry | null,
+  goal: string | null,
+  now: Date
+): string {
+  // Pequeno seed para variar entre opções (rotaciona ao longo do mês)
+  const seed = now.getDate();
+  const pick = (arr: string[]) => arr[seed % arr.length];
+
+  // 1. Faz mais de 3 dias sem registrar?
+  if (lastEntry) {
+    const lastDate = new Date(lastEntry.created_at);
+    const daysSince =
+      (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
+    if (daysSince > 3) {
+      return pick([
+        "Senti sua falta. Como você tem estado?",
+        "Faz uns dias. Me conta o que tem passado por aí.",
+        "Que bom te ver de volta. Como anda?",
+      ]);
+    }
+
+    // 2. Último registro foi pesado? (humor ≤4 + tag pesada)
+    const tagsLower = (lastEntry.tags || []).map((t) => t.toLowerCase());
+    const lastWasHeavy =
+      lastEntry.mood_scale <= 4 &&
+      tagsLower.some((t) => HEAVY_TAGS_LOWER.includes(t));
+    if (lastWasHeavy) {
+      return pick([
+        "Como você está depois daquele momento difícil?",
+        "Tô aqui. Como você tá agora?",
+        "Aquele dia foi pesado. E hoje, como anda?",
+      ]);
+    }
+
+    // 3. Último registro foi muito bom (humor ≥8)?
+    if (lastEntry.mood_scale >= 8) {
+      return pick([
+        "Como segue a sensação boa do seu último registro?",
+        "Aquela leveza continua aí ou mudou?",
+        "Conta como foi desde aquele momento bom.",
+      ]);
+    }
+  }
+
+  // 4. Mensagem por objetivo (goal)
+  if (goal === "culpa") {
+    return pick([
+      "Aqui você não precisa dar conta de nada. Como você está?",
+      "Estar aqui já é o suficiente. Me conta como anda.",
+      "Tudo bem não estar bem. O que sente agora?",
+    ]);
+  }
+  if (goal === "ansiedade") {
+    return pick([
+      "Respira fundo. O que está pesando agora?",
+      "Sem pressa. Me conta o que tá na sua cabeça.",
+      "Vai com calma. Como tá esse momento?",
+    ]);
+  }
+  if (goal === "solidao") {
+    return pick([
+      "Esse espaço é só seu. Estou aqui te ouvindo.",
+      "Você não tá sozinha aqui. Me conta.",
+      "Conta o que estiver aí dentro, sem pressa.",
+    ]);
+  }
+  if (goal === "autocuidado") {
+    return pick([
+      "Como você se cuidou hoje, mesmo no pequeno?",
+      "Que pequeno gesto você teve com você hoje?",
+      "Como tá sendo o seu dia até aqui?",
+    ]);
+  }
+  if (goal === "energia") {
+    return pick([
+      "Como tá sua energia agora?",
+      "O que tá te enchendo ou te esvaziando hoje?",
+      "Me conta como você tá sentindo o seu corpo agora.",
+    ]);
+  }
+
+  // 5. Fallback por hora do dia (sem goal definido)
+  const hour = now.getHours();
+  if (hour < 5)
+    return "O que está te acordando essa noite?";
+  if (hour < 12)
+    return pick(["Como começa seu dia hoje?", "Como você acordou?"]);
+  if (hour < 18)
+    return pick(["O que aconteceu até aqui no dia?", "Como tá indo o dia?"]);
+  return pick(["Como foi o seu dia?", "O que ficou desse dia para você?"]);
+}
+
 const FALLBACK: Record<string, string> = {
   otima: "Que lindo ver você assim! Continue celebrando esses momentos. 🌸",
   bem: "Dia bonito por aí! Esses cuidados fazem toda diferença. 💖",
-  neutra: "Dias tranquilos têm seu valor. Que tal um tempinho pra você? ☕",
+  neutra: "Dias tranquilos têm seu valor. Que tal um tempinho para você? ☕",
   mal: "Obrigada por compartilhar. Você é corajosa. 💜",
   pessima: "Está tudo bem não estar bem. Respire fundo, estou aqui. 🤍",
 };
@@ -83,6 +208,13 @@ export default function MoodRegister() {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [moodScale, setMoodScale] = useState(5);
   const [energyLevel, setEnergyLevel] = useState(0);
+  // Sprint 3.1: campos de sono (opcionais)
+  const [sleepQuality, setSleepQuality] = useState<"good" | "ok" | "bad" | null>(
+    null
+  );
+  const [sleepHours, setSleepHours] = useState<number | null>(null);
+  // Sprint 3.2: tempo de tela manual (opcional, copy anti-culpa)
+  const [screenTimeHours, setScreenTimeHours] = useState<number | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedActivities, setSelectedActivities] = useState<string[]>([]);
   const [note, setNote] = useState("");
@@ -91,6 +223,9 @@ export default function MoodRegister() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [aiFeedback, setAiFeedback] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [placeholderText, setPlaceholderText] = useState(
+    "Conte o que quiser, esse espaço é só seu..."
+  );
   const [audioState, setAudioState] = useState<"idle" | "recording" | "done">(
     "idle"
   );
@@ -110,22 +245,35 @@ export default function MoodRegister() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("name")
-          .eq("id", user.id)
-          .single();
-        if (data?.name) {
-          setUserName(data.name);
-        } else if (user.email) {
-          // Fallback: parte do email antes do @, capitalizada
-          const fromEmail = user.email.split("@")[0];
-          setUserName(
-            fromEmail.charAt(0).toUpperCase() + fromEmail.slice(1)
-          );
-        }
+      if (!user) return;
+
+      // Buscar profile (name + goal)
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("name, goal")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.name) {
+        setUserName(profile.name);
+      } else if (user.email) {
+        // Fallback: parte do email antes do @, capitalizada
+        const fromEmail = user.email.split("@")[0];
+        setUserName(fromEmail.charAt(0).toUpperCase() + fromEmail.slice(1));
       }
+
+      // Buscar último registro (para placeholder adaptativo)
+      const { data: lastEntries } = await supabase
+        .from("mood_entries")
+        .select("mood_scale, tags, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      const lastEntry = (lastEntries?.[0] as LastEntry | undefined) || null;
+      setPlaceholderText(
+        getAdaptivePrompt(lastEntry, profile?.goal || null, new Date())
+      );
     })();
   }, []);
 
@@ -278,7 +426,15 @@ export default function MoodRegister() {
 
   async function handleSave() {
     if (!selectedMood) {
-      alert("Selecione como você está se sentindo!");
+      // Mensagem específica: o único campo obrigatório é o emoji de Humor (1ª seção).
+      // Tags, energia, atividades, sono, nota e áudio são todos opcionais.
+      alert(
+        "Para registrar, escolha primeiro como está seu humor (toque em um dos emojis no topo: 😣 😒 😐 😊 🤩)."
+      );
+      // Rola a tela até a seção de Humor pra Marina ver onde clicar
+      document
+        .getElementById("section-humor")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     setSaving(true);
@@ -312,6 +468,11 @@ export default function MoodRegister() {
           activities: selectedActivities,
           note: note || null,
           audio_url: uploadedAudioUrl,
+          // Sprint 3.1: campos de sono (NULL se não preenchidos)
+          sleep_quality: sleepQuality,
+          sleep_hours: sleepHours,
+          // Sprint 3.2: tempo de tela manual (NULL se não preenchido)
+          screen_time_hours: screenTimeHours,
         })
         .select("id")
         .single();
@@ -340,6 +501,16 @@ export default function MoodRegister() {
           });
         if (aiError) {
           console.error("Erro ao chamar IA:", aiError);
+          // Tentar extrair detalhes do body da response (a função v4 retorna info detalhada)
+          try {
+            const errCtx = (aiError as { context?: Response }).context;
+            if (errCtx && typeof errCtx.clone === "function") {
+              const errBody = await errCtx.clone().json();
+              console.error("Detalhes do erro da IA:", errBody);
+            }
+          } catch (parseErr) {
+            console.error("Não consegui ler detalhes do erro:", parseErr);
+          }
           setAiFeedback(FALLBACK[selectedMood] || FALLBACK.neutra);
         } else if (aiData?.feedback) {
           setAiFeedback(aiData.feedback);
@@ -370,6 +541,9 @@ export default function MoodRegister() {
     setSelectedMood(null);
     setMoodScale(5);
     setEnergyLevel(0);
+    setSleepQuality(null);
+    setSleepHours(null);
+    setScreenTimeHours(null);
     setSelectedTags([]);
     setSelectedActivities([]);
     setNote("");
@@ -381,6 +555,10 @@ export default function MoodRegister() {
     setAiFeedback(null);
     setAiLoading(false);
     setNoteTab("text");
+    // Volta a tela pro topo (Sprint 4 polimento)
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   }
 
   return (
@@ -389,7 +567,7 @@ export default function MoodRegister() {
       <div className="px-6 pt-6">
         <h1 className="text-center font-[family-name:var(--font-quicksand)] text-[22px] font-medium mb-3">
           Diário da{" "}
-          <span className="text-mapa-pink-deep">{userName || "..."}</span> 🌸
+          <span className="text-mapa-pink-deep">{userName || "..."}</span>
         </h1>
         <div className="flex items-baseline justify-center gap-2 pb-3">
           <span className="font-[family-name:var(--font-playfair)] italic text-xs text-mapa-muted">
@@ -402,7 +580,8 @@ export default function MoodRegister() {
       </div>
 
       <div className="px-5 pb-7">
-        {/* HUMOR */}
+        {/* HUMOR — obrigatório, único campo que bloqueia o save se vazio */}
+        <div id="section-humor">
         <Section
           label="Humor"
           hint="toque no emoji que mais combina com você agora"
@@ -423,23 +602,22 @@ export default function MoodRegister() {
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-2.5 bg-mapa-card rounded-[18px] py-2.5 px-4 border border-mapa-border/50">
-            <span className="text-[10px] text-mapa-muted">1</span>
-            <input
-              type="range"
-              min="1"
-              max="10"
-              step="1"
-              value={moodScale}
-              onChange={(e) => handleScaleChange(e.target.value)}
-              className="flex-1"
-            />
-            <span className="text-xl font-semibold text-mapa-pink-deep min-w-[22px] text-center">
-              {moodScale}
-            </span>
-            <span className="text-[10px] text-mapa-muted">10</span>
-          </div>
+          {/* Slider padronizado (RangeBar) — Humor */}
+          <RangeBar
+            label="escala"
+            value={moodScale}
+            min={1}
+            max={10}
+            step={1}
+            ticks={["1", "5", "10"]}
+            onChange={(v) => handleScaleChange(String(v))}
+            bg="#FFF0F6"
+            border="rgba(196, 122, 155, 0.25)"
+            textColor="#C47A9B"
+            accent="#C47A9B"
+          />
         </Section>
+        </div>
 
         {/* ENERGIA */}
         <Section
@@ -466,10 +644,77 @@ export default function MoodRegister() {
           </div>
         </Section>
 
+        {/* SONO (Sprint 3.1) — V1 do mockup (Section padrão) com a barrinha inline compacta */}
+        <Section
+          label="Como foi seu sono?"
+          hint="se quiser registrar como você dormiu"
+          optional
+        >
+          {/* 3 botões de qualidade — estilo V1: fundo branco + border padrão */}
+          <div className="grid grid-cols-3 gap-2 mb-2.5">
+            {SLEEP_QUALITIES.map((q) => {
+              const selected = sleepQuality === q.value;
+              return (
+                <button
+                  key={q.value}
+                  type="button"
+                  onClick={() =>
+                    setSleepQuality(selected ? null : q.value)
+                  }
+                  className={`py-2.5 px-1 rounded-2xl border-[1.5px] cursor-pointer text-center transition-all duration-200 font-[family-name:var(--font-quicksand)] ${
+                    selected
+                      ? "bg-mapa-lavender-light border-mapa-lavender text-[#5A4A8C] shadow-[0_2px_8px_rgba(184,169,212,0.25)]"
+                      : "bg-mapa-card border-mapa-border text-mapa-text hover:border-mapa-lavender"
+                  }`}
+                >
+                  <span className="text-2xl block mb-0.5 leading-none">
+                    {q.emoji}
+                  </span>
+                  <span className="text-[11px] font-medium">{q.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Slider padronizado (RangeBar) — Horas dormidas */}
+          <RangeBar
+            label="horas dormidas"
+            value={sleepHours ?? 7}
+            hasValue={sleepHours !== null}
+            displayText={sleepHours !== null ? String(sleepHours) : undefined}
+            unit="h"
+            min={4}
+            max={12}
+            step={0.5}
+            ticks={["4h", "8h", "12h"]}
+            onChange={(v) => setSleepHours(v)}
+            bg="#F3EEFF"
+            border="rgba(184, 169, 212, 0.5)"
+            textColor="#5A4A8C"
+            accent="#5A4A8C"
+          />
+
+          {/* "Prefiro não responder" — só aparece se algum campo está preenchido */}
+          {(sleepQuality !== null || sleepHours !== null) && (
+            <div className="text-center mt-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setSleepQuality(null);
+                  setSleepHours(null);
+                }}
+                className="text-[11px] text-mapa-muted italic font-[family-name:var(--font-playfair)] underline underline-offset-[3px] cursor-pointer hover:text-mapa-pink-deep transition-colors"
+              >
+                prefiro não responder
+              </button>
+            </div>
+          )}
+        </Section>
+
         {/* TAGS */}
         <Section
           label="Como você está se sentindo?"
-          hint="escolha tudo que faz sentido pra você neste momento"
+          hint="escolha tudo que faz sentido para você neste momento"
         >
           <div className="flex flex-wrap gap-2">
             {TAGS.map((t) => (
@@ -511,6 +756,47 @@ export default function MoodRegister() {
           </div>
         </Section>
 
+        {/* TEMPO DE TELA (Sprint 3.2) — opcional, anti-culpa */}
+        <Section
+          label="Tempo de tela hoje"
+          hint="se quiser registrar — sem julgamento, é só seu mapa"
+          optional
+        >
+          {/* Slider padronizado (RangeBar) — Tempo de tela */}
+          <RangeBar
+            emoji="📱"
+            label="horas no celular"
+            value={screenTimeHours ?? 3}
+            hasValue={screenTimeHours !== null}
+            displayText={
+              screenTimeHours !== null ? String(screenTimeHours) : undefined
+            }
+            unit="h"
+            min={0}
+            max={12}
+            step={0.5}
+            ticks={["0h", "6h", "12h"]}
+            onChange={(v) => setScreenTimeHours(v)}
+            bg="#F5F2F8"
+            border="rgba(168, 155, 188, 0.4)"
+            textColor="#6B6280"
+            accent="#6B6280"
+          />
+
+          {/* "Prefiro não responder" — só aparece se preencheu */}
+          {screenTimeHours !== null && (
+            <div className="text-center mt-2.5">
+              <button
+                type="button"
+                onClick={() => setScreenTimeHours(null)}
+                className="text-[11px] text-mapa-muted italic font-[family-name:var(--font-playfair)] underline underline-offset-[3px] cursor-pointer hover:text-mapa-pink-deep transition-colors"
+              >
+                prefiro não responder
+              </button>
+            </div>
+          )}
+        </Section>
+
         {/* NOTA PESSOAL */}
         <Section
           label="Nota pessoal"
@@ -522,13 +808,15 @@ export default function MoodRegister() {
                 onClick={() => setNoteTab("text")}
                 className={`flex-1 py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer border-none font-[family-name:var(--font-quicksand)] ${noteTab === "text" ? "text-mapa-pink-deep bg-mapa-pink-light" : "text-mapa-muted bg-transparent"}`}
               >
-                ✏️ Escrever
+                <Pencil size={14} strokeWidth={1.75} />
+                Escrever
               </button>
               <button
                 onClick={() => setNoteTab("audio")}
                 className={`flex-1 py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer border-none font-[family-name:var(--font-quicksand)] ${noteTab === "audio" ? "text-mapa-pink-deep bg-mapa-pink-light" : "text-mapa-muted bg-transparent"}`}
               >
-                🎤 Gravar áudio
+                <Mic size={14} strokeWidth={1.75} />
+                Gravar áudio
               </button>
             </div>
             {noteTab === "text" && (
@@ -536,7 +824,7 @@ export default function MoodRegister() {
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  placeholder="Conte o que quiser, esse espaço é só seu..."
+                  placeholder={placeholderText}
                   className="w-full border-none text-[13px] resize-none h-16 bg-transparent text-mapa-text outline-none leading-relaxed placeholder:text-mapa-muted/50 font-[family-name:var(--font-quicksand)]"
                 />
               </div>
@@ -668,19 +956,118 @@ export default function MoodRegister() {
   );
 }
 
+// Padrão visual das barras de slider — usado em Humor (escala), Sono (horas
+// dormidas) e Tempo de tela. Layout: label+valor em cima, slider full-width
+// no meio, 3 ticks embaixo. Cada barra tem uma paleta própria, mas a
+// estrutura é idêntica.
+function RangeBar({
+  emoji,
+  label,
+  labelSize = 10,
+  value,
+  hasValue = true,
+  displayText,
+  unit = "",
+  min,
+  max,
+  step,
+  ticks,
+  onChange,
+  bg,
+  border,
+  textColor,
+  accent,
+}: {
+  emoji?: string;
+  label: string;
+  labelSize?: number; // tamanho da fonte do label em px (default 12)
+  value: number;
+  hasValue?: boolean; // false = mostra "—" no lugar do número
+  displayText?: string; // override do número (ex.: "8.5"). Default: String(value)
+  unit?: string;
+  min: number;
+  max: number;
+  step: number;
+  ticks: [string, string, string];
+  onChange: (v: number) => void;
+  bg: string;
+  border: string;
+  textColor: string;
+  accent: string;
+}) {
+  return (
+    <div
+      className="rounded-2xl px-3.5 py-3 border"
+      style={{ background: bg, borderColor: border }}
+    >
+      <div className="flex items-baseline justify-between mb-1.5">
+        <span
+          className="font-medium"
+          style={{ color: textColor, fontSize: `${labelSize}px` }}
+        >
+          {emoji && <span className="mr-1">{emoji}</span>}
+          {label}
+        </span>
+        {hasValue ? (
+          <span
+            className="text-[18px] font-semibold leading-none"
+            style={{ color: textColor }}
+          >
+            {displayText ?? value}
+            {unit && (
+              <span className="text-[10px] font-normal opacity-70">
+                {unit}
+              </span>
+            )}
+          </span>
+        ) : (
+          <span
+            className="text-[14px] leading-none opacity-60"
+            style={{ color: textColor }}
+          >
+            —
+          </span>
+        )}
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        className="w-full cursor-pointer"
+        style={{ accentColor: accent }}
+      />
+      <div className="flex justify-between mt-0.5">
+        <span className="text-[9px] text-mapa-muted">{ticks[0]}</span>
+        <span className="text-[9px] text-mapa-muted">{ticks[1]}</span>
+        <span className="text-[9px] text-mapa-muted">{ticks[2]}</span>
+      </div>
+    </div>
+  );
+}
+
 function Section({
   label,
   hint,
+  optional = false,
   children,
 }: {
   label: string;
   hint: string;
+  optional?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div className="mb-5">
       <p className="text-sm font-semibold text-mapa-pink-deep mb-0.5">
         {label}
+        {optional && (
+          <span className="font-[family-name:var(--font-playfair)] italic font-normal text-[11px] text-mapa-muted ml-1.5">
+            — opcional
+          </span>
+        )}
       </p>
       <p className="text-[11px] text-mapa-muted italic mb-2.5 leading-snug">
         {hint}

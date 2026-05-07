@@ -25,7 +25,6 @@ export default function EuPage() {
         window.location.href = "/login";
         return;
       }
-      setAuthenticated(true);
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -34,9 +33,13 @@ export default function EuPage() {
         setEmail(user.email || "");
         const { data } = await supabase
           .from("profiles")
-          .select("name")
+          .select("name, onboarding_done")
           .eq("id", user.id)
           .single();
+        if (!data?.onboarding_done) {
+          window.location.href = "/onboarding";
+          return;
+        }
         if (data?.name) {
           setName(data.name);
         } else if (user.email) {
@@ -45,6 +48,7 @@ export default function EuPage() {
           setName(fromEmail.charAt(0).toUpperCase() + fromEmail.slice(1));
         }
       }
+      setAuthenticated(true);
     }
     check();
   }, []);
@@ -183,7 +187,7 @@ export default function EuPage() {
               <span className="text-mapa-muted text-base">›</span>
             </button>
             <button
-              onClick={emBreve}
+              onClick={() => (window.location.href = "/sobre")}
               className="w-full flex items-center gap-3 px-4 py-3.5 bg-transparent cursor-pointer text-left text-[13px] font-medium text-mapa-text font-[family-name:var(--font-quicksand)] hover:bg-mapa-pink-light/40 transition"
             >
               <span className="text-lg">💖</span>

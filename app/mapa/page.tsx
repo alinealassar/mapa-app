@@ -1,0 +1,1084 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import BottomNav from "@/app/components/BottomNav";
+
+const MOOD_LABELS: Record<string, { label: string; emoji: string; scale: number }> = {
+  pessima: { label: "Péssima", emoji: "😣", scale: 1 },
+  mal: { label: "Mal", emoji: "😒", scale: 3 },
+  neutra: { label: "Neutra", emoji: "😐", scale: 5 },
+  bem: { label: "Bem", emoji: "😊", scale: 8 },
+  otima: { label: "Ótima", emoji: "🤩", scale: 10 },
+};
+
+const WEEKDAY_LABELS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+
+interface MoodEntry {
+  id: string;
+  mood_emoji: string;
+  mood_scale: number;
+  energy_level: number | null;
+  tags: string[];
+  activities: string[];
+  created_at: string;
+}
+
+interface WeeklySummaryPatterns {
+  title?: string;
+  lightest_day?: string;
+  heaviest_day?: string;
+  top_feelings?: string[];
+  pattern?: string;
+  closing?: string;
+  entries_count?: number;
+}
+
+interface WeeklySummary {
+  week_start: string;
+  summary_text: string;
+  patterns: WeeklySummaryPatterns | null;
+  created_at: string;
+}
+
+interface WeeklySummaryMeta {
+  source: "ai" | "cache" | "too_few_entries" | "ai_unsaved";
+  count?: number;
+  week_start: string;
+  week_end: string;
+}
+
+type Period = "7d" | "30d" | "all";
+
+export default function MapaPage() {
+  const [authenticated, setAuthenticated] = useState(false);
+  const [userName, setUserName] = useState("");
+  const [entries, setEntries] = useState<MoodEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<Period>("7d");
+  const [aiInsights, setAiInsights] = useState<string[] | null>(null);
+  const [aiInsightsLoading, setAiInsightsLoading] = useState(false);
+  const [weeklySummary, setWeeklySummary] = useState<WeeklySummary | null>(null);
+  const [weeklySummaryMeta, setWeeklySummaryMeta] = useState<WeeklySummaryMeta | null>(null);
+  const [weeklySummaryLoading, setWeeklySummaryLoading] = useState(false);
+  const [monthCount, setMonthCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    async function check() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = "/login";
+        return;
+      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        window.location.href = "/login";
+        return;
+      }
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("name, onboarding_done")
+        .eq("id", user.id)
+        .single();
+      if (!profile?.onboarding_done) {
+        window.location.href = "/onboarding";
+        return;
+      }
+      if (profile?.name) {
+        setUserName(profile.name);
+      } else if (user.email) {
+        const fromEmail = user.email.split("@")[0];
+        setUserName(fromEmail.charAt(0).toUpperCase() + fromEmail.slice(1));
+      }
+      setAuthenticated(true);
+    }
+    check();
+  }, []);
+
+  useEffect(() => {
+    if (!authenticated) return;
+    loadEntries();
+    loadAiInsights();
+  }, [authenticated, period]);
+
+  // Resumo semanal: carrega só uma vez ao autenticar (não depende do período)
+  useEffect(() => {
+    if (!authenticated) return;
+    loadWeeklySummary();
+    loadMonthCount();
+  }, [authenticated]);
+
+  // Streak invertido (Sprint 2.4): contagem celebratória de momentos do mês corrente.
+  // Sem mecânica de "dias seguidos" — só celebra a presença, sem cobrar quem faltou.
+  async function loadMonthCount() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const { count } = await supabase
+      .from("mood_entries")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", monthStart.toISOString())
+      .lt("created_at", monthEnd.toISOString());
+    setMonthCount(count ?? 0);
+  }
+
+  async function loadWeeklySummary() {
+    setWeeklySummaryLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "generate-weekly-summary",
+        { body: {} }
+      );
+      if (error) {
+        console.error("Erro ao buscar resumo semanal:", error);
+        setWeeklySummary(null);
+        setWeeklySummaryMeta(null);
+      } else if (data?.summary) {
+        setWeeklySummary(data.summary as WeeklySummary);
+        setWeeklySummaryMeta({
+          source: data.source as WeeklySummaryMeta["source"],
+          count: data.count,
+          week_start: data.week_start,
+          week_end: data.week_end,
+        });
+      } else {
+        setWeeklySummary(null);
+        setWeeklySummaryMeta(
+          data
+            ? {
+                source: (data.source ||
+                  "too_few_entries") as WeeklySummaryMeta["source"],
+                count: data.count,
+                week_start: data.week_start,
+                week_end: data.week_end,
+              }
+            : null
+        );
+      }
+    } catch (e) {
+      console.error("Erro ao chamar generate-weekly-summary:", e);
+      setWeeklySummary(null);
+      setWeeklySummaryMeta(null);
+    } finally {
+      setWeeklySummaryLoading(false);
+    }
+  }
+
+  async function loadEntries() {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    let query = supabase
+      .from("mood_entries")
+      .select("id, mood_emoji, mood_scale, energy_level, tags, activities, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (period === "7d") {
+      const d = new Date();
+      d.setDate(d.getDate() - 7);
+      query = query.gte("created_at", d.toISOString());
+    } else if (period === "30d") {
+      const d = new Date();
+      d.setDate(d.getDate() - 30);
+      query = query.gte("created_at", d.toISOString());
+    }
+
+    const { data } = await query;
+    if (data) setEntries(data as MoodEntry[]);
+    setLoading(false);
+  }
+
+  async function loadAiInsights() {
+    setAiInsightsLoading(true);
+    setAiInsights(null);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "generate-mapa-insights",
+        { body: { period } }
+      );
+      if (error) {
+        console.error("Erro ao buscar insights da IA:", error);
+        setAiInsights(null);
+      } else if (data?.insights && Array.isArray(data.insights)) {
+        setAiInsights(data.insights);
+      } else {
+        setAiInsights(null);
+      }
+    } catch (e) {
+      console.error("Erro ao chamar generate-mapa-insights:", e);
+      setAiInsights(null);
+    } finally {
+      setAiInsightsLoading(false);
+    }
+  }
+
+  if (!authenticated) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-mapa-bg">
+        <p className="text-mapa-muted italic">Carregando...</p>
+      </main>
+    );
+  }
+
+  const stats = computeStats(entries);
+  const dailyMood = computeDailyMood(entries);
+  const topTags = computeTopItems(entries.flatMap((e) => e.tags || []));
+  const topActivities = computeTopItems(entries.flatMap((e) => e.activities || []));
+  const insights = computeInsights(entries);
+
+  return (
+    <>
+      <main className="min-h-screen bg-mapa-bg pb-24">
+        <div className="px-6 pt-6 text-center">
+          <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-medium">
+            Seu Mapa 📊
+          </h1>
+          <p className="text-[13px] text-mapa-pink-deep mt-1 font-[family-name:var(--font-playfair)] italic">
+            os caminhos da {userName || "..."}
+          </p>
+          {/* Streak invertido (Sprint 2.4) — pill celebratória, não cobrança */}
+          <MonthStreakPill count={monthCount} />
+        </div>
+
+        {/* CARD: RESUMO SEMANAL (Sprint 2.3) — semana ANTERIOR (segunda a domingo) */}
+        <div className="px-5 pt-5">
+          <WeeklySummaryCard
+            summary={weeklySummary}
+            meta={weeklySummaryMeta}
+            loading={weeklySummaryLoading}
+          />
+        </div>
+
+        {/* SELETOR DE PERÍODO */}
+        <div className="flex gap-2 px-5 pt-4 pb-3 justify-center">
+          {(["7d", "30d", "all"] as Period[]).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`py-[7px] px-[18px] rounded-[20px] border-[1.5px] text-xs font-medium cursor-pointer font-[family-name:var(--font-quicksand)] ${
+                period === p
+                  ? "bg-mapa-pink text-white border-mapa-pink"
+                  : "bg-mapa-card text-mapa-muted border-mapa-border"
+              }`}
+            >
+              {p === "7d" ? "7 dias" : p === "30d" ? "30 dias" : "Tudo"}
+            </button>
+          ))}
+        </div>
+
+        {loading && (
+          <p className="text-center text-mapa-muted italic py-10">
+            carregando seu mapa...
+          </p>
+        )}
+
+        {!loading && entries.length === 0 && (
+          <div className="text-center py-16 px-6">
+            <span className="text-[40px] block mb-3">🌱</span>
+            <p className="text-sm text-mapa-muted">Ainda não tem registros nesse período</p>
+            <p className="text-xs text-mapa-muted italic mt-1">
+              Quando você registrar alguns momentos, eu vou desenhar seu mapa aqui.
+            </p>
+          </div>
+        )}
+
+        {!loading && entries.length > 0 && (
+          <div className="px-5 space-y-4">
+            {/* CARD: NÚMEROS */}
+            <div className="bg-mapa-card rounded-[20px] border border-mapa-border p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[13px] font-semibold text-mapa-pink-deep font-[family-name:var(--font-quicksand)]">
+                  Resumo
+                </p>
+                <InfoButton
+                  title="Resumo"
+                  content="Três números rápidos do período: quantos momentos você registrou, qual seu humor médio (escala 1-10) e qual sua energia média (escala 1-6). O app pega cada registro seu, soma e calcula a média."
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <Stat value={stats.total} label="momentos" color="pink-deep" />
+                <Stat value={stats.avgMood} label="humor médio" color="lavender" suffix="/10" />
+                <Stat
+                  value={stats.avgEnergy ? stats.avgEnergy.toFixed(1) : "—"}
+                  label="energia média"
+                  color="mint"
+                  suffix={stats.avgEnergy ? "/6" : ""}
+                />
+              </div>
+            </div>
+
+            {/* CARD: HUMOR POR DIA (gráfico de barras) */}
+            {dailyMood.length > 0 && (
+              <div className="bg-mapa-card rounded-[20px] border border-mapa-border p-4">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-[13px] font-semibold text-mapa-pink-deep font-[family-name:var(--font-quicksand)]">
+                    Humor ao longo dos dias
+                  </p>
+                  <InfoButton
+                    title="Humor ao longo dos dias"
+                    content="Cada barra é a média de humor de um dia. Se você registrou várias vezes no mesmo dia, o Mapa calcula a média de todas. Barras cinzas = dias sem registro. A escala vai de 1 (Péssima) a 10 (Ótima), com os emojis na lateral para te orientar."
+                  />
+                </div>
+                <p className="text-[11px] text-mapa-muted italic mb-3">
+                  cada barra é a média do dia (1 a 10)
+                </p>
+                <DailyMoodChart data={dailyMood} />
+              </div>
+            )}
+
+            {/* CARD: TOP SENTIMENTOS */}
+            {topTags.length > 0 && (
+              <div className="bg-mapa-card rounded-[20px] border border-mapa-border p-4">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-[13px] font-semibold text-mapa-pink-deep font-[family-name:var(--font-quicksand)]">
+                    Sentimentos mais presentes
+                  </p>
+                  <InfoButton
+                    title="Sentimentos mais presentes"
+                    content="Lista dos 5 sentimentos que você mais marcou no período. O número 'X×' à direita mostra quantas vezes cada um apareceu. A barra é proporcional: o mais frequente fica com a barra cheia, e os outros desenham em proporção. Te ajuda a ver de relance qual sentimento tem ocupado mais espaço na sua semana."
+                  />
+                </div>
+                <p className="text-[11px] text-mapa-muted italic mb-3">
+                  o que mais apareceu nos seus registros
+                </p>
+                <div className="space-y-2">
+                  {topTags.map(({ name, count }) => {
+                    const max = topTags[0].count;
+                    return (
+                      <BarRow key={name} label={name} count={count} max={max} color="pink" />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* CARD: TOP ATIVIDADES */}
+            {topActivities.length > 0 && (
+              <div className="bg-mapa-card rounded-[20px] border border-mapa-border p-4">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-[13px] font-semibold text-mapa-pink-deep font-[family-name:var(--font-quicksand)]">
+                    O que você mais fez
+                  </p>
+                  <InfoButton
+                    title="O que você mais fez"
+                    content="Mesma lógica dos sentimentos, mas pras atividades que você marcou. Ajuda a ver onde seu tempo e energia estão indo no período."
+                  />
+                </div>
+                <p className="text-[11px] text-mapa-muted italic mb-3">
+                  atividades mais frequentes
+                </p>
+                <div className="space-y-2">
+                  {topActivities.map(({ name, count }) => {
+                    const max = topActivities[0].count;
+                    return (
+                      <BarRow
+                        key={name}
+                        label={name}
+                        count={count}
+                        max={max}
+                        color="lavender"
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* CARD: INSIGHTS EM TEXTO (IA com fallback estatístico) */}
+            <div className="bg-mapa-mint-light rounded-[20px] border border-mapa-mint p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-[#5BA67D]">
+                  🌿 O que percebi
+                </p>
+                <InfoButton
+                  title="O que percebi"
+                  content="Aqui a Mapa IA analisa todos os seus registros do período e identifica padrões reais — citando dias, sentimentos e atividades específicas. São observações gentis, sem julgamento. Você decide o que fazer com elas. Se a IA não conseguir, mostro padrões básicos baseados em estatística simples."
+                  color="mint"
+                />
+              </div>
+              {aiInsightsLoading && (
+                <p className="text-[12px] italic text-[#5BA67D] leading-relaxed font-[family-name:var(--font-quicksand)]">
+                  Olhando seus registros para encontrar padrões...
+                </p>
+              )}
+              {!aiInsightsLoading && aiInsights && aiInsights.length > 0 && (
+                <div className="space-y-2">
+                  {aiInsights.map((text, i) => (
+                    <p
+                      key={i}
+                      className="text-[13px] leading-relaxed text-mapa-text font-[family-name:var(--font-quicksand)]"
+                    >
+                      {text}
+                    </p>
+                  ))}
+                </div>
+              )}
+              {!aiInsightsLoading && !aiInsights && insights.length > 0 && (
+                <div className="space-y-2">
+                  {insights.map((text, i) => (
+                    <p
+                      key={i}
+                      className="text-[13px] leading-relaxed text-mapa-text font-[family-name:var(--font-quicksand)]"
+                    >
+                      {text}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </main>
+      <BottomNav />
+    </>
+  );
+}
+
+// ============ COMPONENTES ============
+
+function formatWeekRangeBR(weekStartIso?: string, weekEndIso?: string): string {
+  // weekStartIso vem como "2026-04-27"; weekEndIso opcional ("2026-05-03").
+  // Se weekEnd não vier, calcula como weekStart + 6 dias.
+  if (!weekStartIso) return "";
+  const [sy, sm, sd] = weekStartIso.split("-").map(Number);
+  const start = new Date(Date.UTC(sy, sm - 1, sd));
+  let end: Date;
+  if (weekEndIso) {
+    const [ey, em, ed] = weekEndIso.split("-").map(Number);
+    end = new Date(Date.UTC(ey, em - 1, ed));
+  } else {
+    end = new Date(start);
+    end.setUTCDate(start.getUTCDate() + 6);
+  }
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(start.getUTCDate())}/${pad(start.getUTCMonth() + 1)} a ${pad(end.getUTCDate())}/${pad(end.getUTCMonth() + 1)}`;
+}
+
+// ============ STREAK INVERTIDO (Sprint 2.4) ============
+// Contagem celebratória de momentos do mês — sem mecânica de "X dias seguidos"
+// nem "perdeu hoje". Pílula em Quicksand semibold pra contrastar visualmente
+// com o subtítulo "os caminhos da Aline" (Playfair italic) — papel de
+// "estampinha celebratória", não de frase poética.
+
+const MONTH_NAMES_PT = [
+  "janeiro",
+  "fevereiro",
+  "março",
+  "abril",
+  "maio",
+  "junho",
+  "julho",
+  "agosto",
+  "setembro",
+  "outubro",
+  "novembro",
+  "dezembro",
+];
+
+function getMonthStreakCopy(count: number): {
+  emoji: string;
+  text: string;
+  isEmpty: boolean;
+} {
+  const month = MONTH_NAMES_PT[new Date().getMonth()];
+  if (count <= 0) {
+    const monthCap = month.charAt(0).toUpperCase() + month.slice(1);
+    return {
+      emoji: "🌱",
+      text: `${monthCap} começou. Esse espaço fica aqui para você`,
+      isEmpty: true,
+    };
+  }
+  if (count === 1) {
+    return { emoji: "🌱", text: `1 momento seu em ${month}`, isEmpty: false };
+  }
+  if (count <= 9) {
+    return { emoji: "🌿", text: `${count} momentos seus em ${month}`, isEmpty: false };
+  }
+  return { emoji: "🌸", text: `${count} momentos seus em ${month}`, isEmpty: false };
+}
+
+function MonthStreakPill({ count }: { count: number | null }) {
+  if (count === null) return null; // ainda carregando — não mostra nada (header não fica pulando)
+  const { emoji, text, isEmpty } = getMonthStreakCopy(count);
+
+  // Estado vazio: linha discreta sem fundo, mais quietinha
+  if (isEmpty) {
+    return (
+      <p className="text-[12px] text-mapa-muted mt-3 font-[family-name:var(--font-quicksand)]">
+        <span className="mr-1">{emoji}</span>
+        {text}
+      </p>
+    );
+  }
+
+  // Estado celebratório: pílula com fundo gradient sutil, Quicksand semibold
+  return (
+    <div className="mt-3 flex justify-center">
+      <span
+        className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-[5px] text-[12.5px] font-semibold font-[family-name:var(--font-quicksand)]"
+        style={{
+          background:
+            "linear-gradient(135deg, #FFF0F6 0%, #FCE4ED 100%)",
+          color: "#8E3A6B",
+          border: "1px solid rgba(196, 122, 155, 0.18)",
+          boxShadow: "0 2px 6px rgba(196, 122, 155, 0.12)",
+        }}
+      >
+        <span className="text-[14px] leading-none">{emoji}</span>
+        {text}
+      </span>
+    </div>
+  );
+}
+
+// V1 (Editorial) com cores e sombras da V3 (Dramático).
+// Estrutura: aspas decorativas grandes, título dominante 30px Playfair italic,
+// respiro generoso. Cores: gradiente saturado pêssego→rosa→lavanda, sombra
+// forte que faz o card flutuar, borda branca de 2px.
+const SUMMARY_GRADIENT =
+  "linear-gradient(155deg, #FFE0CC 0%, #FFD0DA 50%, #E8DDF5 100%)";
+const SUMMARY_SHADOW = "0 14px 36px rgba(180, 100, 130, 0.25)";
+const SUMMARY_TOP_STRIP =
+  "linear-gradient(90deg, #E8A0BF 0%, #B8A9D4 50%, #7BC8A4 100%)";
+const SUMMARY_TITLE_COLOR = "#8E3A6B";
+
+function WeeklySummaryCard({
+  summary,
+  meta,
+  loading,
+}: {
+  summary: WeeklySummary | null;
+  meta: WeeklySummaryMeta | null;
+  loading: boolean;
+}) {
+  // Estado: carregando
+  if (loading) {
+    return (
+      <div
+        className="rounded-[26px] relative overflow-hidden"
+        style={{
+          background: SUMMARY_GRADIENT,
+          border: "2px solid white",
+          boxShadow: SUMMARY_SHADOW,
+        }}
+      >
+        <div
+          className="h-[8px] w-full"
+          style={{ background: SUMMARY_TOP_STRIP }}
+        />
+        <p className="text-[12px] text-mapa-muted italic font-[family-name:var(--font-playfair)] text-center py-8 px-5">
+          Tecendo seu resumo da semana...
+        </p>
+      </div>
+    );
+  }
+
+  // Estado: poucos registros na semana passada → placeholder gentil
+  if (!summary && meta?.source === "too_few_entries") {
+    return (
+      <div
+        className="rounded-[26px] relative overflow-hidden"
+        style={{
+          background: SUMMARY_GRADIENT,
+          border: "2px solid white",
+          boxShadow: SUMMARY_SHADOW,
+        }}
+      >
+        <div
+          className="h-[8px] w-full"
+          style={{ background: SUMMARY_TOP_STRIP }}
+        />
+        <div className="px-5 py-5">
+          <p
+            className="text-[11px] font-semibold uppercase tracking-wider mb-2 font-[family-name:var(--font-quicksand)]"
+            style={{ color: SUMMARY_TITLE_COLOR }}
+          >
+            🌸 Sua semana
+          </p>
+          <p className="text-[13.5px] text-mapa-text leading-[1.6] font-[family-name:var(--font-quicksand)]">
+            Sua semana passada teve {meta.count ?? 0}{" "}
+            {meta.count === 1 ? "registro" : "registros"}. A partir de 3
+            momentos numa semana, eu desenho seu resumo aqui — com os dias
+            mais leves, os mais pesados e os padrões que percebi.
+          </p>
+          <p className="text-[12px] italic mt-3 font-[family-name:var(--font-playfair)]"
+             style={{ color: "#8B5C77" }}>
+            continue registrando, no seu tempo
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Estado: erro silencioso ou sem dados → não renderiza nada
+  if (!summary) return null;
+
+  const p = summary.patterns || {};
+  const weekRange = formatWeekRangeBR(summary.week_start, meta?.week_end);
+
+  return (
+    <div
+      className="rounded-[26px] relative overflow-hidden"
+      style={{
+        background: SUMMARY_GRADIENT,
+        border: "2px solid white",
+        boxShadow: SUMMARY_SHADOW,
+      }}
+    >
+      {/* Linha colorida grossa no topo */}
+      <div
+        className="h-[8px] w-full"
+        style={{ background: SUMMARY_TOP_STRIP }}
+      />
+
+      <div className="px-5 pt-5 pb-5">
+        {/* Tag da semana com sublinhado */}
+        {weekRange && (
+          <span
+            className="inline-block text-[11px] italic font-[family-name:var(--font-playfair)] mb-1 pb-[2px]"
+            style={{
+              color: SUMMARY_TITLE_COLOR,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              borderBottom: "1px solid rgba(142, 58, 107, 0.3)",
+            }}
+          >
+            Semana de {weekRange}
+          </span>
+        )}
+
+        {/* Aspas decorativas grandes */}
+        <div
+          className="font-[family-name:var(--font-playfair)] italic select-none"
+          style={{
+            fontSize: "56px",
+            lineHeight: "0.6",
+            color: SUMMARY_TITLE_COLOR,
+            opacity: 0.4,
+            marginTop: "14px",
+            marginBottom: "-4px",
+          }}
+          aria-hidden
+        >
+          &ldquo;
+        </div>
+
+        {/* Título dominante em Playfair italic */}
+        {p.title && (
+          <h3
+            className="font-[family-name:var(--font-playfair)] italic mb-[18px]"
+            style={{
+              fontSize: "30px",
+              fontWeight: 600,
+              color: SUMMARY_TITLE_COLOR,
+              lineHeight: "1.15",
+              letterSpacing: "-0.01em",
+              textShadow: "0 1px 0 rgba(255, 255, 255, 0.5)",
+            }}
+          >
+            {p.title}
+          </h3>
+        )}
+
+        {/* Resumo em texto corrido */}
+        {summary.summary_text && (
+          <p className="text-[14px] leading-[1.65] text-mapa-text font-[family-name:var(--font-quicksand)] mb-[18px]">
+            {summary.summary_text}
+          </p>
+        )}
+
+        {/* Linhas de dia mais leve / mais pesado em pílulas brancas com sombra */}
+        {p.lightest_day && (
+          <div
+            className="flex items-start gap-2.5 px-3.5 py-3 rounded-[14px] mb-2"
+            style={{
+              background: "white",
+              boxShadow: "0 3px 10px rgba(180, 100, 130, 0.1)",
+            }}
+          >
+            <span className="text-[20px] leading-none shrink-0 mt-[1px]">🌞</span>
+            <span className="text-[13px] leading-[1.5] text-mapa-text font-[family-name:var(--font-quicksand)]">
+              {p.lightest_day}
+            </span>
+          </div>
+        )}
+        {p.heaviest_day && (
+          <div
+            className="flex items-start gap-2.5 px-3.5 py-3 rounded-[14px] mb-4"
+            style={{
+              background: "white",
+              boxShadow: "0 3px 10px rgba(180, 100, 130, 0.1)",
+            }}
+          >
+            <span className="text-[20px] leading-none shrink-0 mt-[1px]">🌧️</span>
+            <span className="text-[13px] leading-[1.5] text-mapa-text font-[family-name:var(--font-quicksand)]">
+              {p.heaviest_day}
+            </span>
+          </div>
+        )}
+
+        {/* Chips de top sentimentos com sombra suave */}
+        {p.top_feelings && p.top_feelings.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-1.5 mb-4">
+            {p.top_feelings.map((f) => (
+              <span
+                key={f}
+                className="rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold font-[family-name:var(--font-quicksand)]"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #FFFFFF 0%, #FFEEF5 100%)",
+                  color: SUMMARY_TITLE_COLOR,
+                  boxShadow: "0 2px 6px rgba(196, 122, 155, 0.15)",
+                }}
+              >
+                {f}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Padrão observado em box branco com border-left lavanda */}
+        {p.pattern && (
+          <div
+            className="px-3.5 py-3 rounded-[12px] mb-4"
+            style={{
+              background: "white",
+              borderLeft: "4px solid var(--color-mapa-lavender)",
+              boxShadow: "0 3px 10px rgba(184, 169, 212, 0.18)",
+            }}
+          >
+            <p className="text-[13px] leading-[1.55] text-mapa-text font-[family-name:var(--font-quicksand)]">
+              {p.pattern}
+            </p>
+          </div>
+        )}
+
+        {/* Fechamento poético centralizado em "ilha" branca */}
+        {p.closing && (
+          <p
+            className="text-center font-[family-name:var(--font-playfair)] italic"
+            style={{
+              fontSize: "15px",
+              fontWeight: 500,
+              color: SUMMARY_TITLE_COLOR,
+              lineHeight: "1.5",
+              padding: "14px 6px",
+              background: "rgba(255, 255, 255, 0.55)",
+              borderRadius: "14px",
+              textShadow: "0 1px 0 rgba(255, 255, 255, 0.4)",
+            }}
+          >
+            {p.closing}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function InfoButton({
+  title,
+  content,
+  color = "pink",
+}: {
+  title: string;
+  content: string;
+  color?: "pink" | "mint";
+}) {
+  const [open, setOpen] = useState(false);
+  const iconColor =
+    color === "mint"
+      ? "text-[#5BA67D]/60 hover:text-[#5BA67D]"
+      : "text-mapa-muted/60 hover:text-mapa-pink-deep";
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className={`shrink-0 ${iconColor} text-[15px] cursor-pointer leading-none rounded-full w-5 h-5 flex items-center justify-center transition`}
+        aria-label="Mais informações"
+        title="Como ler"
+      >
+        ⓘ
+      </button>
+      {open && (
+        <div
+          onClick={() => setOpen(false)}
+          className="fixed inset-0 bg-black/30 z-50 flex items-end sm:items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-mapa-card rounded-[22px] border border-mapa-border p-5 max-w-sm w-full shadow-2xl"
+          >
+            <p className="font-semibold text-mapa-pink-deep text-[15px] mb-2 font-[family-name:var(--font-quicksand)]">
+              {title}
+            </p>
+            <p className="text-[13px] text-mapa-text leading-relaxed font-[family-name:var(--font-quicksand)]">
+              {content}
+            </p>
+            <button
+              onClick={() => setOpen(false)}
+              className="mt-4 w-full py-2.5 rounded-xl bg-mapa-pink-light text-mapa-pink-deep font-semibold text-sm cursor-pointer hover:bg-mapa-pink-light/80 transition font-[family-name:var(--font-quicksand)]"
+            >
+              Entendi 🌸
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function Stat({
+  value,
+  label,
+  color,
+  suffix = "",
+}: {
+  value: number | string;
+  label: string;
+  color: "pink-deep" | "lavender" | "mint";
+  suffix?: string;
+}) {
+  const colorClass =
+    color === "pink-deep"
+      ? "text-mapa-pink-deep"
+      : color === "lavender"
+        ? "text-mapa-lavender"
+        : "text-mapa-mint";
+  return (
+    <div className="text-center">
+      <p className={`text-[22px] font-semibold ${colorClass}`}>
+        {value}
+        <span className="text-[12px] font-normal opacity-70">{suffix}</span>
+      </p>
+      <p className="text-[10px] text-mapa-muted uppercase tracking-wide mt-0.5">
+        {label}
+      </p>
+    </div>
+  );
+}
+
+const MOOD_LEGEND = [
+  { emoji: "🤩", label: "Ótima" },
+  { emoji: "😊", label: "Bem" },
+  { emoji: "😐", label: "Neutra" },
+  { emoji: "😒", label: "Mal" },
+  { emoji: "😣", label: "Péssima" },
+];
+
+function DailyMoodChart({ data }: { data: { date: Date; avg: number; count: number }[] }) {
+  const max = 10;
+  return (
+    <div className="flex gap-2 h-44">
+      {/* Legenda lateral esquerda — alinhada com a área das barras */}
+      <div className="flex flex-col justify-between pb-7 shrink-0">
+        {MOOD_LEGEND.map((item) => (
+          <div
+            key={item.label}
+            className="flex items-center gap-1 leading-none"
+          >
+            <span className="text-[13px] leading-none">{item.emoji}</span>
+            <span className="text-[10px] text-mapa-muted font-[family-name:var(--font-quicksand)]">
+              {item.label}
+            </span>
+          </div>
+        ))}
+      </div>
+      {/* Barras */}
+      <div className="flex-1 flex gap-1.5">
+        {data.map((d, i) => {
+          const height = d.count > 0 ? (d.avg / max) * 100 : 0;
+          const dayLabel = WEEKDAY_LABELS[d.date.getDay()];
+          const dayNum = d.date.getDate();
+          return (
+            <div key={i} className="flex-1 flex flex-col">
+              <div className="flex-1 flex items-end">
+                <div
+                  className="w-full rounded-t-md"
+                  style={{
+                    height: `${Math.max(height, 6)}%`,
+                    background:
+                      d.count > 0
+                        ? "linear-gradient(to top, #E8A0BF, #B8A9D4)"
+                        : "#F0E4DC",
+                  }}
+                  title={
+                    d.count > 0
+                      ? `${d.avg.toFixed(1)}/10 (${d.count} reg.)`
+                      : "sem registro"
+                  }
+                />
+              </div>
+              <p className="text-center text-[9px] text-mapa-muted leading-none mt-1.5">
+                {dayLabel}
+              </p>
+              <p className="text-center text-[10px] text-mapa-text font-medium leading-none mt-0.5">
+                {dayNum}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function BarRow({
+  label,
+  count,
+  max,
+  color,
+}: {
+  label: string;
+  count: number;
+  max: number;
+  color: "pink" | "lavender";
+}) {
+  const pct = (count / max) * 100;
+  const barColor =
+    color === "pink"
+      ? "bg-gradient-to-r from-mapa-pink-light to-mapa-pink"
+      : "bg-gradient-to-r from-mapa-lavender-light to-mapa-lavender";
+  return (
+    <div>
+      <div className="flex justify-between items-baseline mb-1">
+        <span className="text-[12px] text-mapa-text font-medium font-[family-name:var(--font-quicksand)]">
+          {label}
+        </span>
+        <span className="text-[11px] text-mapa-muted">{count}×</span>
+      </div>
+      <div className="h-1.5 bg-mapa-border/60 rounded-full overflow-hidden">
+        <div className={`h-full ${barColor} rounded-full`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+// ============ COMPUTAÇÕES ============
+
+function computeStats(entries: MoodEntry[]) {
+  const total = entries.length;
+  if (total === 0) return { total: 0, avgMood: 0, avgEnergy: 0 };
+  const sumMood = entries.reduce((s, e) => s + (e.mood_scale || 5), 0);
+  const energyEntries = entries.filter((e) => e.energy_level && e.energy_level > 0);
+  const sumEnergy = energyEntries.reduce((s, e) => s + (e.energy_level || 0), 0);
+  return {
+    total,
+    avgMood: Math.round((sumMood / total) * 10) / 10,
+    avgEnergy: energyEntries.length > 0 ? sumEnergy / energyEntries.length : 0,
+  };
+}
+
+function computeDailyMood(entries: MoodEntry[]): { date: Date; avg: number; count: number }[] {
+  // Últimos 7 dias (incluindo hoje)
+  const days: { date: Date; avg: number; count: number }[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    days.push({ date: d, avg: 0, count: 0 });
+  }
+  entries.forEach((e) => {
+    const entryDate = new Date(e.created_at);
+    entryDate.setHours(0, 0, 0, 0);
+    const day = days.find((x) => x.date.getTime() === entryDate.getTime());
+    if (day) {
+      day.avg = (day.avg * day.count + (e.mood_scale || 5)) / (day.count + 1);
+      day.count += 1;
+    }
+  });
+  return days;
+}
+
+function computeTopItems(items: string[]): { name: string; count: number }[] {
+  const counts: Record<string, number> = {};
+  items.forEach((item) => {
+    counts[item] = (counts[item] || 0) + 1;
+  });
+  return Object.entries(counts)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+}
+
+function computeInsights(entries: MoodEntry[]): string[] {
+  if (entries.length < 3) {
+    return [
+      "Conforme você for fazendo mais registros, eu vou identificando padrões aqui para você.",
+    ];
+  }
+
+  const insights: string[] = [];
+
+  // Insight 1: dia da semana mais leve / mais pesado
+  const byWeekday: number[][] = Array.from({ length: 7 }, () => []);
+  entries.forEach((e) => {
+    const wd = new Date(e.created_at).getDay();
+    byWeekday[wd].push(e.mood_scale || 5);
+  });
+  const weekdayAvgs = byWeekday.map((arr, i) => ({
+    weekday: i,
+    avg: arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : null,
+    count: arr.length,
+  }));
+  const valid = weekdayAvgs.filter((w) => w.avg !== null && w.count >= 2);
+  if (valid.length >= 3) {
+    const best = valid.reduce((max, w) => (w.avg! > max.avg! ? w : max));
+    const worst = valid.reduce((min, w) => (w.avg! < min.avg! ? w : min));
+    const dayNames = ["domingos", "segundas", "terças", "quartas", "quintas", "sextas", "sábados"];
+    if (best.weekday !== worst.weekday && best.avg! - worst.avg! >= 1.5) {
+      insights.push(
+        `Suas ${dayNames[best.weekday]} têm sido mais leves; já as ${dayNames[worst.weekday]}, mais pesadas.`
+      );
+    }
+  }
+
+  // Insight 2: período do dia preferido para registrar
+  const byPeriod = { manhã: 0, tarde: 0, noite: 0 };
+  entries.forEach((e) => {
+    const hour = new Date(e.created_at).getHours();
+    if (hour < 12) byPeriod.manhã += 1;
+    else if (hour < 18) byPeriod.tarde += 1;
+    else byPeriod.noite += 1;
+  });
+  const topPeriod = (Object.entries(byPeriod) as [string, number][]).sort(
+    (a, b) => b[1] - a[1]
+  )[0];
+  if (topPeriod[1] >= entries.length * 0.5 && entries.length >= 4) {
+    insights.push(
+      `Você costuma fazer mais registros ${topPeriod[0] === "manhã" ? "de manhã" : topPeriod[0] === "tarde" ? "à tarde" : "à noite"}.`
+    );
+  }
+
+  // Insight 3: tag/atividade que aparece muito junto com humor alto
+  const positiveEntries = entries.filter((e) => (e.mood_scale || 5) >= 7);
+  if (positiveEntries.length >= 3) {
+    const positiveTags: Record<string, number> = {};
+    positiveEntries.forEach((e) =>
+      (e.activities || []).forEach((a) => {
+        positiveTags[a] = (positiveTags[a] || 0) + 1;
+      })
+    );
+    const topPositiveActivity = Object.entries(positiveTags).sort((a, b) => b[1] - a[1])[0];
+    if (topPositiveActivity && topPositiveActivity[1] >= 2) {
+      insights.push(
+        `Nos dias em que você marca "${topPositiveActivity[0]}", seu humor tende a ser mais alto.`
+      );
+    }
+  }
+
+  if (insights.length === 0) {
+    insights.push(
+      "Continue fazendo seus registros — quanto mais momentos, mais clareza eu te trago aqui."
+    );
+  }
+
+  return insights;
+}

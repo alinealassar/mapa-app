@@ -11,6 +11,22 @@ export default function Home() {
       } = await supabase.auth.getSession();
       if (!session) {
         window.location.href = "/login";
+        return;
+      }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        window.location.href = "/login";
+        return;
+      }
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("onboarding_done")
+        .eq("id", user.id)
+        .single();
+      if (!profile?.onboarding_done) {
+        window.location.href = "/onboarding";
       } else {
         window.location.href = "/registrar";
       }

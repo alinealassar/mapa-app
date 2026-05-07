@@ -15,9 +15,23 @@ export default function HistoricoPage() {
       } = await supabase.auth.getSession();
       if (!session) {
         window.location.href = "/login";
-      } else {
-        setAuthenticated(true);
+        return;
       }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_done")
+          .eq("id", user.id)
+          .single();
+        if (!profile?.onboarding_done) {
+          window.location.href = "/onboarding";
+          return;
+        }
+      }
+      setAuthenticated(true);
     }
     check();
   }, []);

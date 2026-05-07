@@ -11,7 +11,17 @@ const MOOD_MAP: Record<
   mal: { emoji: "😒", label: "Mal", color: "text-[#D4A574]" },
   neutra: { emoji: "😐", label: "Neutra", color: "text-mapa-muted" },
   bem: { emoji: "😊", label: "Bem", color: "text-mapa-mint" },
-  otima: { emoji: "🥰", label: "Ótima", color: "text-mapa-pink" },
+  otima: { emoji: "🤩", label: "Ótima", color: "text-mapa-pink" },
+};
+
+// Sprint 3.1+: como exibir cada qualidade de sono no histórico
+const SLEEP_QUALITY_DISPLAY: Record<
+  string,
+  { emoji: string; label: string }
+> = {
+  good: { emoji: "😴", label: "acordou bem" },
+  ok: { emoji: "🥱", label: "mais ou menos" },
+  bad: { emoji: "😵‍💫", label: "acordou mal" },
 };
 
 interface MoodEntry {
@@ -25,6 +35,55 @@ interface MoodEntry {
   audio_url: string | null;
   ai_feedback: string | null;
   created_at: string;
+  // Sprint 3.1: campos de sono (opcionais)
+  sleep_quality: "good" | "ok" | "bad" | null;
+  sleep_hours: number | null;
+  // Sprint 3.2: tempo de tela (opcional)
+  screen_time_hours: number | null;
+}
+
+// Helpers de formatação do sono
+function formatSleepCompact(
+  quality: "good" | "ok" | "bad" | null,
+  hours: number | null
+): string | null {
+  if (!quality && hours === null) return null;
+  const parts: string[] = [];
+  if (quality && SLEEP_QUALITY_DISPLAY[quality]) {
+    parts.push(SLEEP_QUALITY_DISPLAY[quality].emoji);
+  } else {
+    parts.push("🌙");
+  }
+  if (hours !== null) parts.push(`${hours}h`);
+  return parts.join(" ");
+}
+
+function formatSleepFull(
+  quality: "good" | "ok" | "bad" | null,
+  hours: number | null
+): string | null {
+  if (!quality && hours === null) return null;
+  const parts: string[] = [];
+  if (quality && SLEEP_QUALITY_DISPLAY[quality]) {
+    parts.push(
+      `${SLEEP_QUALITY_DISPLAY[quality].emoji} ${SLEEP_QUALITY_DISPLAY[quality].label}`
+    );
+  }
+  if (hours !== null) {
+    parts.push(`${hours}h dormidas`);
+  }
+  return parts.join(" · ");
+}
+
+// Sprint 3.2: helper de tempo de tela (formato compacto e completo)
+function formatScreenTimeCompact(hours: number | null): string | null {
+  if (hours === null) return null;
+  return `📱 ${hours}h`;
+}
+
+function formatScreenTimeFull(hours: number | null): string | null {
+  if (hours === null) return null;
+  return `📱 ${hours}h no celular`;
 }
 
 export default function MoodHistory() {
@@ -36,10 +95,7 @@ export default function MoodHistory() {
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  useEffect(() => {
-    loadData();
-  }, [filter]);
-
+  // loadData declarada ANTES do useEffect pra agradar a regra react-hooks/immutability
   async function loadData() {
     setLoading(true);
     const {
@@ -78,6 +134,11 @@ export default function MoodHistory() {
     if (data) setEntries(data);
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter]);
 
   function groupByDay(entries: MoodEntry[]) {
     const groups: Record<string, MoodEntry[]> = {};
@@ -290,28 +351,109 @@ export default function MoodHistory() {
                       </span>
                     </div>
                   </div>
-                  {!isExp && (entry.tags || []).length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {entry.tags.slice(0, 4).map((t) => (
-                        <span
-                          key={t}
-                          className="text-[10px] py-0.5 px-2 rounded-[10px] bg-mapa-pink-light text-mapa-pink-deep"
-                        >
-                          {t}
-                        </span>
-                      ))}
-                      {entry.tags.length > 4 && (
-                        <span className="text-[10px] py-0.5 px-2 rounded-[10px] bg-mapa-border text-mapa-muted">
-                          +{entry.tags.length - 4}
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  {!isExp &&
+                    ((entry.tags || []).length > 0 ||
+                      formatSleepCompact(
+                        entry.sleep_quality,
+                        entry.sleep_hours
+                      ) ||
+                      formatScreenTimeCompact(entry.screen_time_hours)) && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {(entry.tags || []).slice(0, 4).map((t) => (
+                          <span
+                            key={t}
+                            className="text-[10px] py-0.5 px-2 rounded-[10px] bg-mapa-pink-light text-mapa-pink-deep"
+                          >
+                            {t}
+                          </span>
+                        ))}
+                        {(entry.tags || []).length > 4 && (
+                          <span className="text-[10px] py-0.5 px-2 rounded-[10px] bg-mapa-border text-mapa-muted">
+                            +{entry.tags.length - 4}
+                          </span>
+                        )}
+                        {/* Pílula de sono — Sprint 3.1 */}
+                        {formatSleepCompact(
+                          entry.sleep_quality,
+                          entry.sleep_hours
+                        ) && (
+                          <span
+                            className="text-[10px] py-0.5 px-2 rounded-[10px] bg-mapa-lavender-light"
+                            style={{ color: "#5A4A8C" }}
+                          >
+                            {formatSleepCompact(
+                              entry.sleep_quality,
+                              entry.sleep_hours
+                            )}
+                          </span>
+                        )}
+                        {/* Pílula de tempo de tela — Sprint 3.2 */}
+                        {formatScreenTimeCompact(entry.screen_time_hours) && (
+                          <span
+                            className="text-[10px] py-0.5 px-2 rounded-[10px]"
+                            style={{
+                              background: "#F5F2F8",
+                              color: "#6B6280",
+                            }}
+                          >
+                            {formatScreenTimeCompact(entry.screen_time_hours)}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   {isExp && (
                     <div
                       className="mt-3.5 pt-3 border-t border-mapa-border/50"
                       onClick={(e) => e.stopPropagation()}
                     >
+                      {/* Sono — Sprint 3.1 (cronológico: vem antes dos sentimentos) */}
+                      {formatSleepFull(
+                        entry.sleep_quality,
+                        entry.sleep_hours
+                      ) && (
+                        <div className="mb-3">
+                          <p
+                            className="text-[11px] font-semibold uppercase tracking-wide mb-1.5"
+                            style={{ color: "#5A4A8C" }}
+                          >
+                            Sono
+                          </p>
+                          <span
+                            className="inline-block text-[12px] py-1.5 px-3.5 rounded-[14px] font-medium"
+                            style={{
+                              background: "#F3EEFF",
+                              color: "#5A4A8C",
+                              border: "1px solid rgba(184, 169, 212, 0.5)",
+                            }}
+                          >
+                            {formatSleepFull(
+                              entry.sleep_quality,
+                              entry.sleep_hours
+                            )}
+                          </span>
+                        </div>
+                      )}
+                      {/* Tempo de tela — Sprint 3.2 */}
+                      {formatScreenTimeFull(entry.screen_time_hours) && (
+                        <div className="mb-3">
+                          <p
+                            className="text-[11px] font-semibold uppercase tracking-wide mb-1.5"
+                            style={{ color: "#6B6280" }}
+                          >
+                            Tempo de tela
+                          </p>
+                          <span
+                            className="inline-block text-[12px] py-1.5 px-3.5 rounded-[14px] font-medium"
+                            style={{
+                              background: "#F5F2F8",
+                              color: "#6B6280",
+                              border: "1px solid rgba(168, 155, 188, 0.4)",
+                            }}
+                          >
+                            {formatScreenTimeFull(entry.screen_time_hours)}
+                          </span>
+                        </div>
+                      )}
                       {(entry.tags || []).length > 0 && (
                         <div className="mb-3">
                           <p className="text-[11px] font-semibold text-mapa-pink-deep uppercase tracking-wide mb-1.5">
