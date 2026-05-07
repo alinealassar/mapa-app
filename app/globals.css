@@ -8,8 +8,8 @@
   /* Mapa — paleta principal */
   --color-mapa-bg: #FFF9F5;
   --color-mapa-card: #FFFFFF;
-  --color-mapa-text: #4A3F3A;
-  --color-mapa-muted: #A89B94;
+  --color-mapa-text: #3A312D;
+  --color-mapa-muted: #7E6F69;
   --color-mapa-border: #F0E4DC;
 
   /* Rosa */
@@ -35,7 +35,7 @@
 
 :root {
   --background: #FFF9F5;
-  --foreground: #4A3F3A;
+  --foreground: #3A312D;
 }
 
 body {

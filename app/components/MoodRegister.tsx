@@ -963,7 +963,7 @@ export default function MoodRegister() {
 function RangeBar({
   emoji,
   label,
-  labelSize = 10,
+  labelSize = 13,
   value,
   hasValue = true,
   displayText,
@@ -1010,19 +1010,19 @@ function RangeBar({
         </span>
         {hasValue ? (
           <span
-            className="text-[18px] font-semibold leading-none"
+            className="text-[22px] font-semibold leading-none"
             style={{ color: textColor }}
           >
             {displayText ?? value}
             {unit && (
-              <span className="text-[10px] font-normal opacity-70">
+              <span className="text-[13px] font-normal opacity-75">
                 {unit}
               </span>
             )}
           </span>
         ) : (
           <span
-            className="text-[14px] leading-none opacity-60"
+            className="text-[18px] leading-none opacity-60"
             style={{ color: textColor }}
           >
             —
@@ -1040,9 +1040,9 @@ function RangeBar({
         style={{ accentColor: accent }}
       />
       <div className="flex justify-between mt-0.5">
-        <span className="text-[9px] text-mapa-muted">{ticks[0]}</span>
-        <span className="text-[9px] text-mapa-muted">{ticks[1]}</span>
-        <span className="text-[9px] text-mapa-muted">{ticks[2]}</span>
+        <span className="text-[11px] text-mapa-muted">{ticks[0]}</span>
+        <span className="text-[11px] text-mapa-muted">{ticks[1]}</span>
+        <span className="text-[11px] text-mapa-muted">{ticks[2]}</span>
       </div>
     </div>
   );
