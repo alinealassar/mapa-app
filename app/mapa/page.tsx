@@ -227,7 +227,7 @@ export default function MapaPage() {
 
           {/* Linha de mini-stats logo abaixo do titulo (segue o filtro de periodo) */}
           {!loading && entries.length > 0 && (
-            <p className="text-center text-[12px] text-mapa-muted mt-2 font-[family-name:var(--font-quicksand)]">
+            <p className="text-center text-[14px] text-mapa-muted mt-2 font-[family-name:var(--font-quicksand)]">
               <span className="font-semibold text-mapa-pink-deep">{stats.total}</span>{" "}
               {stats.total === 1 ? "momento" : "momentos"}
               {" · humor médio "}
