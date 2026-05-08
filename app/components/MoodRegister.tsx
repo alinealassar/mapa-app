@@ -44,14 +44,14 @@ const TAGS = [
   { emoji: "🌑", label: "solitária" },
 ];
 const ACTIVITIES = [
-  // Trabalho e estudo
-  { emoji: "💻", label: "Trabalhei" },
-  { emoji: "📚", label: "Estudei" },
-  { emoji: "💡", label: "Aprendi algo novo" },
   // Corpo e movimento
   { emoji: "🏋️‍♀️", label: "Treinei" },
   { emoji: "🚶‍♀️", label: "Saí para caminhar" },
   { emoji: "🌳", label: "Fui ao ar livre" },
+  // Trabalho e estudo
+  { emoji: "💻", label: "Trabalhei" },
+  { emoji: "📚", label: "Estudei" },
+  { emoji: "💡", label: "Aprendi algo novo" },
   // Espírito e descanso (cuidados internos)
   { emoji: "💆‍♀️", label: "Cuidei de mim" },
   { emoji: "🧘‍♀️", label: "Meditei" },
