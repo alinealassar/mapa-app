@@ -66,6 +66,15 @@ interface MoodEntry {
   screen_time_hours: number | null;
 }
 
+// === MEMÓRIA SEMÂNTICA ===
+// deno-lint-ignore no-explicit-any
+const aiSession = new (Supabase as any).ai.Session("gte-small");
+
+async function generateEmbedding(text: string): Promise<number[]> {
+  const embedding = await aiSession.run(text, { mean_pool: true, normalize: true });
+  return embedding as number[];
+}
+
 const MOOD_LABELS: Record<string, string> = { pessima: "péssima", mal: "mal", neutra: "neutra", bem: "bem", otima: "ótima" };
 const SLEEP_QUALITY_LABELS: Record<string, string> = { good: "acordou bem", ok: "acordou mais ou menos", bad: "acordou mal" };
 const GOAL_LABELS: Record<string, string> = {
@@ -92,7 +101,7 @@ function computeLastWeek(now: Date): { weekStart: Date; weekEnd: Date } {
 
 function formatDateBR(d: Date): string { return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }); }
 
-function buildPrompts(entries: MoodEntry[], userName: string, goal: string | null, weekStart: Date, weekEnd: Date): { systemPrompt: string; userPrompt: string } {
+function buildPrompts(entries: MoodEntry[], userName: string, goal: string | null, weekStart: Date, weekEnd: Date, relevantMemories: string[]): { systemPrompt: string; userPrompt: string } {
   const entriesWithSleep = entries.filter((e) => e.sleep_quality !== null || e.sleep_hours !== null);
   const hasSleepData = entriesWithSleep.length >= 2;
   const entriesWithScreen = entries.filter((e) => e.screen_time_hours !== null);
@@ -105,7 +114,7 @@ function buildPrompts(entries: MoodEntry[], userName: string, goal: string | nul
     ? `- Você tem dados de tempo de tela. Anti-culpa absoluto: NUNCA julgue ('você passou demais'). Se houver correlação factual, mencione no 'pattern' citando números. Se não, ignore.`
     : `- Não há dados de tempo de tela suficientes; não mencione celular.`;
 
-  const systemPrompt = `${LIS_PERSONA}
+  let systemPrompt = `${LIS_PERSONA}
 
 TAREFA AGORA: gerar resumo da semana de ${userName} em formato JSON estruturado.
 
@@ -113,16 +122,23 @@ REGRAS:
 - Cite SEMPRE números e termos exatos dos dados
 - O objetivo dela: ${goal && GOAL_LABELS[goal] ? GOAL_LABELS[goal] : "se conhecer melhor"}
 ${sleepInstruction}
-${screenInstruction}
+${screenInstruction}`;
 
-FORMATO OBRIGATÓRIO: responda APENAS com JSON válido (sem texto antes ou depois, sem markdown, sem cercas de código). Estrutura:
+  if (relevantMemories.length > 0) {
+    systemPrompt += `\n
+VOCÊ TEM MEMÓRIA. Abaixo há 'MEMÓRIAS RELEVANTES' do passado de ${userName}.
+- Use esse histórico para enriquecer o campo 'summary' ou 'pattern'.
+- Observe se os padrões desta semana são uma melhora, uma repetição ou uma mudança em relação ao que ela já viveu antes.`;
+  }
+
+  systemPrompt += `\n\nFORMATO OBRIGATÓRIO: responda APENAS com JSON válido (sem texto antes ou depois, sem markdown, sem cercas de código). Estrutura:
 {
   "title": "título curto e poético da semana, máximo 6 palavras",
-  "summary": "3 a 4 frases que conectam a semana inteira, com tom afetuoso. Cite números e padrões reais.",
+  "summary": "3 a 4 frases que conectam a semana inteira, com tom afetuoso. Cite números e compare com o passado se houver memória relevante.",
   "lightest_day": "frase curta sobre o dia mais leve",
   "heaviest_day": "frase curta sobre o dia mais pesado",
   "top_feelings": ["sentimento1", "sentimento2", "sentimento3"],
-  "pattern": "1 padrão concreto observado, citando dados específicos. Se houver correlação sono-humor ou tela-humor relevante, mencione aqui sem julgar.",
+  "pattern": "1 padrão concreto observado, citando dados. Conecte com histórico se relevante.",
   "closing": "1 frase curta de fechamento acolhedor, máximo 15 palavras"
 }`;
 
@@ -145,6 +161,14 @@ FORMATO OBRIGATÓRIO: responda APENAS com JSON válido (sem texto antes ou depoi
     if (e.note) userPrompt += `, nota: "${maskSensitiveData(e.note).slice(0, 200)}"`;
     userPrompt += `\n`;
   });
+
+  if (relevantMemories.length > 0) {
+    userPrompt += `\nMEMÓRIAS RELEVANTES do passado de ${userName}:\n`;
+    relevantMemories.forEach((m, i) => {
+      userPrompt += `  ${i + 1}. ${m}\n`;
+    });
+  }
+
   userPrompt += `\nGere o resumo no formato JSON especificado.`;
   return { systemPrompt, userPrompt };
 }
@@ -192,7 +216,35 @@ Deno.serve(async (req: Request) => {
     const { data: profile } = await supabase.from("profiles").select("name, goal").eq("id", user.id).single();
     const userName = profile?.name || "você";
     const goal = profile?.goal || null;
-    const { systemPrompt, userPrompt } = buildPrompts(entries as MoodEntry[], userName, goal, weekStart, weekEnd);
+
+    // === BUSCAR MEMÓRIAS RELEVANTES ===
+    let relevantMemories: string[] = [];
+    try {
+      const allTags = entries.flatMap((e) => e.tags || []);
+      const tagCounts = allTags.reduce((acc, tag) => { acc[tag] = (acc[tag] || 0) + 1; return acc; }, {} as Record<string, number>);
+      const topTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map((t) => t[0]);
+      
+      const queryText = topTags.length > 0 
+        ? `humor com sentimentos: ${topTags.join(", ")}` 
+        : `humor geral e atividades de ${userName}`;
+        
+      const queryEmbedding = await generateEmbedding(queryText);
+      const { data: memories, error: memErr } = await supabase.rpc("match_memories", {
+        query_embedding: queryEmbedding,
+        match_threshold: 0.65,
+        match_count: 5,
+        p_user_id: user.id,
+      });
+      if (memErr) {
+        console.error("Erro match_memories:", memErr.message);
+      } else if (memories && memories.length > 0) {
+        relevantMemories = (memories as Array<{ content: string }>).map((m) => m.content);
+      }
+    } catch (e) {
+      console.error("Falha ao buscar memórias:", e instanceof Error ? e.message : e);
+    }
+
+    const { systemPrompt, userPrompt } = buildPrompts(entries as MoodEntry[], userName, goal, weekStart, weekEnd, relevantMemories);
     const attempts: Array<{ model: string; status: number; body: string }> = [];
     for (const model of MODELS_TO_TRY) {
       const result = await callClaude(model, systemPrompt, userPrompt, ANTHROPIC_API_KEY);

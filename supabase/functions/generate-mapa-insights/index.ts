@@ -67,6 +67,15 @@ interface MoodEntry {
   screen_time_hours: number | null;
 }
 
+// === MEMÓRIA SEMÂNTICA ===
+// deno-lint-ignore no-explicit-any
+const aiSession = new (Supabase as any).ai.Session("gte-small");
+
+async function generateEmbedding(text: string): Promise<number[]> {
+  const embedding = await aiSession.run(text, { mean_pool: true, normalize: true });
+  return embedding as number[];
+}
+
 const MOOD_LABELS: Record<string, string> = { pessima: "péssima", mal: "mal", neutra: "neutra", bem: "bem", otima: "ótima" };
 const SLEEP_QUALITY_LABELS: Record<string, string> = { good: "acordou bem", ok: "acordou mais ou menos", bad: "acordou mal" };
 const GOAL_LABELS: Record<string, string> = {
@@ -78,7 +87,7 @@ const GOAL_LABELS: Record<string, string> = {
 };
 const WEEKDAY_NAMES = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
 
-function buildPrompts(entries: MoodEntry[], userName: string, goal: string | null, period: string): { systemPrompt: string; userPrompt: string } {
+function buildPrompts(entries: MoodEntry[], userName: string, goal: string | null, period: string, relevantMemories: string[]): { systemPrompt: string; userPrompt: string } {
   const periodLabel = period === "7d" ? "últimos 7 dias" : period === "30d" ? "últimos 30 dias" : "todos os registros";
   const entriesWithSleep = entries.filter((e) => e.sleep_quality !== null || e.sleep_hours !== null);
   const hasSleepData = entriesWithSleep.length >= 2;
@@ -92,7 +101,7 @@ function buildPrompts(entries: MoodEntry[], userName: string, goal: string | nul
     ? `- Alguns registros têm tempo de tela. REGRA CRÍTICA anti-culpa: NUNCA julgue ('você passou demais'). Apenas observe correlações factuais com humor/energia/sentimentos, citando números. Se não houver correlação clara, NÃO mencione celular.`
     : `- Os registros não têm tempo de tela suficiente; não comente sobre celular.`;
 
-  const systemPrompt = `${LIS_PERSONA}
+  let systemPrompt = `${LIS_PERSONA}
 
 TAREFA AGORA: analisar os registros de ${userName} e identificar padrões REAIS nos dados.
 
@@ -108,9 +117,17 @@ REGRAS DE ANÁLISE:
 - Procure padrões temporais (dia da semana, hora), correlações entre tags/atividades, evolução do humor
 ${sleepRule}
 ${screenRule}
-- O objetivo dela é: ${goal && GOAL_LABELS[goal] ? GOAL_LABELS[goal] : "se conhecer melhor"}. Quando relevante, conecte os padrões a esse objetivo.
+- O objetivo dela é: ${goal && GOAL_LABELS[goal] ? GOAL_LABELS[goal] : "se conhecer melhor"}. Quando relevante, conecte os padrões a esse objetivo.`;
 
-FORMATO DE RESPOSTA: Apenas a lista, cada linha começando com '- '. Nada antes, nada depois. Sem títulos, sem introdução, sem despedida.`;
+  if (relevantMemories.length > 0) {
+    systemPrompt += `\n
+VOCÊ TEM MEMÓRIA. Abaixo, no prompt do usuário, há 'MEMÓRIAS RELEVANTES' do passado de ${userName}.
+- Use esse histórico para dar profundidade à análise (ex: "Como você já mencionou antes...", "Diferente do mês passado...").
+- Veja se os padrões de agora são uma repetição ou uma mudança em relação ao passado.
+- NÃO cite as memórias como se fossem dessa semana; elas são CONTEXTO.`;
+  }
+
+  systemPrompt += `\n\nFORMATO DE RESPOSTA: Apenas a lista, cada linha começando com '- '. Nada antes, nada depois. Sem títulos, sem introdução, sem despedida.`;
 
   let userPrompt = `Aqui estão os ${entries.length} registros de ${userName} dos ${periodLabel}, do mais recente ao mais antigo:\n\n`;
   entries.forEach((e, i) => {
@@ -133,6 +150,13 @@ FORMATO DE RESPOSTA: Apenas a lista, cada linha começando com '- '. Nada antes,
     if (e.note) userPrompt += `, nota: "${maskSensitiveData(e.note).slice(0, 200)}"`;
     userPrompt += `\n`;
   });
+  if (relevantMemories.length > 0) {
+    userPrompt += `\nMEMÓRIAS RELEVANTES do passado de ${userName} (use para notar evolução ou repetição):\n`;
+    relevantMemories.forEach((m, i) => {
+      userPrompt += `  ${i + 1}. ${m}\n`;
+    });
+  }
+
   userPrompt += `\nAnalise esses registros e identifique 2 a 4 padrões observáveis. Siga as regras do system prompt rigorosamente.`;
   return { systemPrompt, userPrompt };
 }
@@ -173,7 +197,36 @@ Deno.serve(async (req: Request) => {
     const { data: profile } = await supabase.from("profiles").select("name, goal").eq("id", user.id).single();
     const userName = profile?.name || "você";
     const goal = profile?.goal || null;
-    const { systemPrompt, userPrompt } = buildPrompts(entries as MoodEntry[], userName, goal, period);
+
+    // === BUSCAR MEMÓRIAS RELEVANTES ===
+    let relevantMemories: string[] = [];
+    try {
+      // Cria uma query semântica baseada nas tags mais comuns do período para achar memórias relacionadas
+      const allTags = entries.flatMap((e) => e.tags || []);
+      const tagCounts = allTags.reduce((acc, tag) => { acc[tag] = (acc[tag] || 0) + 1; return acc; }, {} as Record<string, number>);
+      const topTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map((t) => t[0]);
+      
+      const queryText = topTags.length > 0 
+        ? `humor com sentimentos: ${topTags.join(", ")}` 
+        : `humor geral e atividades de ${userName}`;
+        
+      const queryEmbedding = await generateEmbedding(queryText);
+      const { data: memories, error: memErr } = await supabase.rpc("match_memories", {
+        query_embedding: queryEmbedding,
+        match_threshold: 0.65,
+        match_count: 5,
+        p_user_id: user.id,
+      });
+      if (memErr) {
+        console.error("Erro match_memories:", memErr.message);
+      } else if (memories && memories.length > 0) {
+        relevantMemories = (memories as Array<{ content: string }>).map((m) => m.content);
+      }
+    } catch (e) {
+      console.error("Falha ao buscar memórias:", e instanceof Error ? e.message : e);
+    }
+
+    const { systemPrompt, userPrompt } = buildPrompts(entries as MoodEntry[], userName, goal, period, relevantMemories);
     const attempts: Array<{ model: string; status: number; body: string }> = [];
     for (const model of MODELS_TO_TRY) {
       const result = await callClaude(model, systemPrompt, userPrompt, ANTHROPIC_API_KEY);
