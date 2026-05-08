@@ -194,9 +194,9 @@ export default function MoodHistory() {
   const grouped = groupByDay(entries);
   const stats = getStats();
   const filters = [
-    { key: "all", label: "Tudo" },
     { key: "semana", label: "7 dias" },
     { key: "mes", label: "30 dias" },
+    { key: "all", label: "Tudo" },
   ];
 
   return (
