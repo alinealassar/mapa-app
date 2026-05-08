@@ -44,10 +44,6 @@ const TAGS = [
   { emoji: "🌑", label: "solitária" },
 ];
 const ACTIVITIES = [
-  // Casa e rotina
-  { emoji: "🍳", label: "Cozinhei" },
-  { emoji: "🧹", label: "Faxinei" },
-  { emoji: "🛍️", label: "Fui ao mercado" },
   // Trabalho e estudo
   { emoji: "💻", label: "Trabalhei" },
   { emoji: "📚", label: "Estudei" },
@@ -71,6 +67,10 @@ const ACTIVITIES = [
   { emoji: "📖", label: "Li algo" },
   { emoji: "🍿", label: "Assisti algo" },
   { emoji: "🎵", label: "Ouvi música" },
+  // Casa e rotina (tarefas obrigatórias do dia — vai pro fim)
+  { emoji: "🍳", label: "Cozinhei" },
+  { emoji: "🧹", label: "Faxinei" },
+  { emoji: "🛍️", label: "Fui ao mercado" },
 ];
 
 // Sprint 3.1: opções de qualidade do sono. Os valores ('good', 'ok', 'bad')
