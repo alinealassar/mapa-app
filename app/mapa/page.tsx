@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Compass } from "lucide-react";
+import { Compass, Info } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import BottomNav from "@/app/components/BottomNav";
 
@@ -227,7 +227,17 @@ export default function MapaPage() {
 
   return (
     <>
-      <main className="min-h-screen bg-mapa-bg pb-24">
+      <main className="min-h-screen bg-mapa-bg pb-24 relative">
+        {/* Botão ⓘ canto superior esquerdo — leva pra /sobre (Como ler) */}
+        <button
+          type="button"
+          onClick={() => (window.location.href = "/sobre")}
+          aria-label="Como ler seu mapa"
+          className="absolute top-5 left-5 p-1.5 rounded-full text-mapa-muted hover:text-mapa-pink-deep hover:bg-mapa-pink-light transition-colors cursor-pointer bg-transparent border-none"
+        >
+          <Info size={20} strokeWidth={1.75} />
+        </button>
+
         <div className="px-6 pt-6 text-center">
           <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-medium inline-flex items-center gap-2 justify-center">
             Meu mapa
@@ -338,13 +348,18 @@ export default function MapaPage() {
                 <p className="text-[11px] text-mapa-muted italic mb-3">
                   o que mais apareceu nos seus registros
                 </p>
-                <div className="space-y-2">
-                  {topTags.map(({ name, count }) => {
-                    const max = topTags[0].count;
-                    return (
-                      <BarRow key={name} label={name} count={count} max={max} color="pink" />
-                    );
-                  })}
+                <div className="flex flex-wrap gap-1.5">
+                  {topTags.map(({ name, count }) => (
+                    <span
+                      key={name}
+                      className="inline-flex items-center gap-1.5 bg-mapa-pink-light text-mapa-pink-deep rounded-full px-3 py-1 text-[11.5px] font-medium font-[family-name:var(--font-quicksand)]"
+                    >
+                      {name}
+                      <span className="text-[10px] text-mapa-muted font-normal">
+                        {count}×
+                      </span>
+                    </span>
+                  ))}
                 </div>
               </div>
             )}
@@ -364,19 +379,18 @@ export default function MapaPage() {
                 <p className="text-[11px] text-mapa-muted italic mb-3">
                   atividades mais frequentes
                 </p>
-                <div className="space-y-2">
-                  {topActivities.map(({ name, count }) => {
-                    const max = topActivities[0].count;
-                    return (
-                      <BarRow
-                        key={name}
-                        label={name}
-                        count={count}
-                        max={max}
-                        color="lavender"
-                      />
-                    );
-                  })}
+                <div className="flex flex-wrap gap-1.5">
+                  {topActivities.map(({ name, count }) => (
+                    <span
+                      key={name}
+                      className="inline-flex items-center gap-1.5 bg-mapa-lavender-light text-[#6B5B95] rounded-full px-3 py-1 text-[11.5px] font-medium font-[family-name:var(--font-quicksand)]"
+                    >
+                      {name}
+                      <span className="text-[10px] text-mapa-muted font-normal">
+                        {count}×
+                      </span>
+                    </span>
+                  ))}
                 </div>
               </div>
             )}
@@ -916,37 +930,6 @@ function DailyMoodChart({ data }: { data: { date: Date; avg: number; count: numb
             </div>
           );
         })}
-      </div>
-    </div>
-  );
-}
-
-function BarRow({
-  label,
-  count,
-  max,
-  color,
-}: {
-  label: string;
-  count: number;
-  max: number;
-  color: "pink" | "lavender";
-}) {
-  const pct = (count / max) * 100;
-  const barColor =
-    color === "pink"
-      ? "bg-gradient-to-r from-mapa-pink-light to-mapa-pink"
-      : "bg-gradient-to-r from-mapa-lavender-light to-mapa-lavender";
-  return (
-    <div>
-      <div className="flex justify-between items-baseline mb-1">
-        <span className="text-[12px] text-mapa-text font-medium font-[family-name:var(--font-quicksand)]">
-          {label}
-        </span>
-        <span className="text-[11px] text-mapa-muted">{count}×</span>
-      </div>
-      <div className="h-1.5 bg-mapa-border/60 rounded-full overflow-hidden">
-        <div className={`h-full ${barColor} rounded-full`} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
