@@ -214,27 +214,6 @@ export default function MapaPage() {
             Meu mapa
             <Map size={22} strokeWidth={1.75} className="text-mapa-pink-deep" />
           </h1>
-
-          {/* Linha de mini-stats logo abaixo do titulo (segue o filtro de periodo) */}
-          {!loading && entries.length > 0 && (
-            <p className="text-center text-[14px] text-mapa-muted mt-2 font-[family-name:var(--font-quicksand)]">
-              <span className="font-semibold text-mapa-pink-deep">{stats.total}</span>{" "}
-              {stats.total === 1 ? "momento" : "momentos"}
-              {" · humor médio "}
-              <span className="font-semibold text-mapa-pink-deep">
-                {stats.avgMood}/10
-              </span>
-              {stats.avgEnergy > 0 && (
-                <>
-                  {" · energia "}
-                  <span className="font-semibold text-mapa-pink-deep">
-                    {stats.avgEnergy.toFixed(1)}/6
-                  </span>
-                </>
-              )}
-            </p>
-          )}
-
         </div>
 
         {/* CARD: RESUMO SEMANAL (Sprint 2.3) — semana ANTERIOR (segunda a domingo) */}
@@ -281,6 +260,24 @@ export default function MapaPage() {
 
         {!loading && entries.length > 0 && (
           <div className="px-5 space-y-4">
+            {/* Linha de mini-stats (segue o filtro de periodo) */}
+            <p className="text-center text-[14px] text-mapa-muted -mt-1 font-[family-name:var(--font-quicksand)]">
+              <span className="font-semibold text-mapa-pink-deep">{stats.total}</span>{" "}
+              {stats.total === 1 ? "momento" : "momentos"}
+              {" · humor médio "}
+              <span className="font-semibold text-mapa-pink-deep">
+                {stats.avgMood}/10
+              </span>
+              {stats.avgEnergy > 0 && (
+                <>
+                  {" · energia "}
+                  <span className="font-semibold text-mapa-pink-deep">
+                    {stats.avgEnergy.toFixed(1)}/6
+                  </span>
+                </>
+              )}
+            </p>
+
             {/* CARD: HUMOR POR DIA (gráfico de barras) */}
             {dailyMood.length > 0 && (
               <div className="bg-mapa-card rounded-[20px] border border-mapa-border p-4">
