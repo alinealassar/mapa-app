@@ -74,7 +74,7 @@ export default function SobrePage() {
           <Section
             emoji="📊"
             title="Como ler seus caminhos"
-            content="A aba Caminhos tem 5 cards: Resumo (números rápidos), Humor por dia (gráfico de barras), Sentimentos mais presentes (top 5), Atividades mais frequentes (top 5) e O que percebi (padrões automáticos). Em cada um você encontra o ícone ⓘ — toque para ver a explicação detalhada daquele card específico."
+            content="A aba Mapa tem 5 cards: Resumo (números rápidos), Humor por dia (gráfico de barras), Sentimentos mais presentes (top 5), Atividades mais frequentes (top 5) e O que percebi (padrões automáticos). Em cada um você encontra o ícone ⓘ — toque para ver a explicação detalhada daquele card específico."
           />
 
           <Section

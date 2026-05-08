@@ -6,7 +6,7 @@ import { PenLine, Map, BookOpen, Heart, type LucideIcon } from "lucide-react";
 
 const TABS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/registrar", label: "Registrar", icon: PenLine },
-  { href: "/mapa", label: "Caminhos", icon: Map },
+  { href: "/mapa", label: "Mapa", icon: Map },
   { href: "/historico", label: "Histórico", icon: BookOpen },
   { href: "/eu", label: "Eu", icon: Heart },
 ];
