@@ -48,15 +48,17 @@ const ACTIVITIES = [
   { emoji: "🍳", label: "Cozinhei" },
   { emoji: "🧹", label: "Faxinei" },
   { emoji: "🛍️", label: "Fui ao mercado" },
-  // Produtividade
+  // Trabalho e estudo
   { emoji: "💻", label: "Trabalhei" },
   { emoji: "📚", label: "Estudei" },
+  { emoji: "💡", label: "Aprendi algo novo" },
   // Corpo e movimento
   { emoji: "🏋️‍♀️", label: "Treinei" },
   { emoji: "🚶‍♀️", label: "Saí para caminhar" },
   { emoji: "🌳", label: "Fui ao ar livre" },
-  // Autocuidado e descanso
+  // Espírito e descanso (cuidados internos)
   { emoji: "💆‍♀️", label: "Cuidei de mim" },
+  { emoji: "🧘‍♀️", label: "Meditei" },
   { emoji: "🕯️", label: "Pratiquei minha fé" },
   { emoji: "😴", label: "Descansei" },
   // Pessoas e afeto
@@ -66,11 +68,9 @@ const ACTIVITIES = [
   { emoji: "🐾", label: "Cuidei do pet" },
   // Lazer e prazer
   { emoji: "🎨", label: "Fiz um hobby" },
-  { emoji: "💡", label: "Aprendi algo novo" },
   { emoji: "📖", label: "Li algo" },
   { emoji: "🍿", label: "Assisti algo" },
   { emoji: "🎵", label: "Ouvi música" },
-  { emoji: "🌸", label: "Curti minha companhia" },
 ];
 
 // Sprint 3.1: opções de qualidade do sono. Os valores ('good', 'ok', 'bad')
