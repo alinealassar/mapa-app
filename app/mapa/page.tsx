@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Compass, Info } from "lucide-react";
+import { Compass } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import BottomNav from "@/app/components/BottomNav";
 
@@ -208,17 +208,7 @@ export default function MapaPage() {
 
   return (
     <>
-      <main className="min-h-screen bg-mapa-bg pb-24 relative">
-        {/* Botão ⓘ canto superior esquerdo — leva pra /sobre (Como ler) */}
-        <button
-          type="button"
-          onClick={() => (window.location.href = "/sobre")}
-          aria-label="Como ler seu mapa"
-          className="absolute top-5 left-5 p-1.5 rounded-full text-mapa-muted hover:text-mapa-pink-deep hover:bg-mapa-pink-light transition-colors cursor-pointer bg-transparent border-none"
-        >
-          <Info size={20} strokeWidth={1.75} />
-        </button>
-
+      <main className="min-h-screen bg-mapa-bg pb-24">
         <div className="px-6 pt-6 text-center">
           <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-medium inline-flex items-center gap-2 justify-center">
             Meu mapa
