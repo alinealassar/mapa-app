@@ -352,10 +352,18 @@ export default function MapaPage() {
                   {topTags.map(({ name, count }) => (
                     <span
                       key={name}
-                      className="inline-flex items-center gap-1.5 bg-mapa-pink-light text-mapa-pink-deep rounded-full px-3 py-1 text-[11.5px] font-medium font-[family-name:var(--font-quicksand)]"
+                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11.5px] font-medium font-[family-name:var(--font-quicksand)]"
+                      style={{
+                        background: "rgba(196, 122, 155, 0.15)",
+                        border: "1px solid rgba(196, 122, 155, 0.3)",
+                        color: "#C47A9B",
+                      }}
                     >
                       {name}
-                      <span className="text-[10px] text-mapa-muted font-normal">
+                      <span
+                        className="text-[10px] font-normal"
+                        style={{ color: "rgba(196, 122, 155, 0.65)" }}
+                      >
                         {count}×
                       </span>
                     </span>
@@ -364,11 +372,14 @@ export default function MapaPage() {
               </div>
             )}
 
-            {/* CARD: TOP ATIVIDADES */}
+            {/* CARD: TOP ATIVIDADES — paleta lavanda (titulo + chips do mesmo tom) */}
             {topActivities.length > 0 && (
               <div className="bg-mapa-card rounded-[20px] border border-mapa-border p-4">
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-[13px] font-semibold text-mapa-pink-deep font-[family-name:var(--font-quicksand)]">
+                  <p
+                    className="text-[13px] font-semibold font-[family-name:var(--font-quicksand)]"
+                    style={{ color: "#6B5B95" }}
+                  >
                     O que você mais fez
                   </p>
                   <InfoButton
@@ -383,10 +394,18 @@ export default function MapaPage() {
                   {topActivities.map(({ name, count }) => (
                     <span
                       key={name}
-                      className="inline-flex items-center gap-1.5 bg-mapa-lavender-light text-[#6B5B95] rounded-full px-3 py-1 text-[11.5px] font-medium font-[family-name:var(--font-quicksand)]"
+                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11.5px] font-medium font-[family-name:var(--font-quicksand)]"
+                      style={{
+                        background: "rgba(107, 91, 149, 0.15)",
+                        border: "1px solid rgba(107, 91, 149, 0.3)",
+                        color: "#6B5B95",
+                      }}
                     >
                       {name}
-                      <span className="text-[10px] text-mapa-muted font-normal">
+                      <span
+                        className="text-[10px] font-normal"
+                        style={{ color: "rgba(107, 91, 149, 0.65)" }}
+                      >
                         {count}×
                       </span>
                     </span>
