@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Compass } from "lucide-react";
+import { Map } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import BottomNav from "@/app/components/BottomNav";
 
@@ -212,7 +212,7 @@ export default function MapaPage() {
         <div className="px-6 pt-6 text-center">
           <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-medium inline-flex items-center gap-2 justify-center">
             Meu mapa
-            <Compass size={22} strokeWidth={1.75} className="text-mapa-pink-deep" />
+            <Map size={22} strokeWidth={1.75} className="text-mapa-pink-deep" />
           </h1>
 
           {/* Linha de mini-stats logo abaixo do titulo (segue o filtro de periodo) */}
