@@ -562,10 +562,10 @@ function WeeklySummaryCard({
       />
 
       <div className="px-5 pt-5 pb-5">
-        {/* Tag da semana com sublinhado */}
+        {/* Tag da semana com sublinhado (estilo mockup: Quicksand bold uppercase, sem italic) */}
         {weekRange && (
           <span
-            className="inline-block text-[11px] italic font-[family-name:var(--font-playfair)] mb-1 pb-[2px]"
+            className="inline-block text-[11px] font-bold mb-1 pb-[2px] font-[family-name:var(--font-quicksand)]"
             style={{
               color: SUMMARY_TITLE_COLOR,
               letterSpacing: "0.08em",
