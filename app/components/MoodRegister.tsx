@@ -57,7 +57,7 @@ const ACTIVITIES = [
   { emoji: "🌳", label: "Fui ao ar livre" },
   // Autocuidado e descanso
   { emoji: "💆‍♀️", label: "Cuidei de mim" },
-  { emoji: "🧘‍♀️", label: "Meditei" },
+  { emoji: "🕯️", label: "Pratiquei minha fé" },
   { emoji: "😴", label: "Descansei" },
   // Pessoas e afeto
   { emoji: "👫", label: "Vi amigos" },
