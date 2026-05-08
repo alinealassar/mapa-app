@@ -260,24 +260,27 @@ export default function MapaPage() {
 
         {!loading && entries.length > 0 && (
           <div className="px-5 space-y-4">
-            {/* Card de mini-stats (uniforme com os outros cards da pagina) */}
+            {/* Card Resumo (3 stats coloridos: momentos / humor medio / energia media) */}
             <div className="bg-mapa-card rounded-[20px] border border-mapa-border p-4">
-              <p className="text-center text-[14px] text-mapa-muted font-[family-name:var(--font-quicksand)]">
-                <span className="font-semibold text-mapa-pink-deep">{stats.total}</span>{" "}
-                {stats.total === 1 ? "momento" : "momentos"}
-                {" · humor médio "}
-                <span className="font-semibold text-mapa-pink-deep">
-                  {stats.avgMood}/10
-                </span>
-                {stats.avgEnergy > 0 && (
-                  <>
-                    {" · energia "}
-                    <span className="font-semibold text-mapa-pink-deep">
-                      {stats.avgEnergy.toFixed(1)}/6
-                    </span>
-                  </>
-                )}
-              </p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[13px] font-semibold text-mapa-pink-deep font-[family-name:var(--font-quicksand)]">
+                  Resumo
+                </p>
+                <InfoButton
+                  title="Resumo"
+                  content="Três números rápidos do período: quantos momentos você registrou, qual seu humor médio (escala 1-10) e qual sua energia média (escala 1-6). O app pega cada registro seu, soma e calcula a média."
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <Stat value={stats.total} label="momentos" color="pink-deep" />
+                <Stat value={stats.avgMood} label="humor médio" color="lavender" suffix="/10" />
+                <Stat
+                  value={stats.avgEnergy ? stats.avgEnergy.toFixed(1) : "—"}
+                  label="energia média"
+                  color="mint"
+                  suffix={stats.avgEnergy ? "/6" : ""}
+                />
+              </div>
             </div>
 
             {/* CARD: HUMOR POR DIA (gráfico de barras) */}
@@ -744,6 +747,36 @@ function InfoButton({
         </div>
       )}
     </>
+  );
+}
+
+function Stat({
+  value,
+  label,
+  color,
+  suffix = "",
+}: {
+  value: number | string;
+  label: string;
+  color: "pink-deep" | "lavender" | "mint";
+  suffix?: string;
+}) {
+  const colorClass =
+    color === "pink-deep"
+      ? "text-mapa-pink-deep"
+      : color === "lavender"
+        ? "text-mapa-lavender"
+        : "text-mapa-mint";
+  return (
+    <div className="text-center">
+      <p className={`text-[22px] font-semibold ${colorClass}`}>
+        {value}
+        <span className="text-[12px] font-normal opacity-70">{suffix}</span>
+      </p>
+      <p className="text-[10px] text-mapa-muted uppercase tracking-wide mt-0.5">
+        {label}
+      </p>
+    </div>
   );
 }
 
