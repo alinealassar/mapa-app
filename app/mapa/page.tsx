@@ -61,7 +61,6 @@ export default function MapaPage() {
   const [weeklySummary, setWeeklySummary] = useState<WeeklySummary | null>(null);
   const [weeklySummaryMeta, setWeeklySummaryMeta] = useState<WeeklySummaryMeta | null>(null);
   const [weeklySummaryLoading, setWeeklySummaryLoading] = useState(false);
-  const [monthCount, setMonthCount] = useState<number | null>(null);
 
   useEffect(() => {
     async function check() {
@@ -99,25 +98,7 @@ export default function MapaPage() {
   useEffect(() => {
     if (!authenticated) return;
     loadWeeklySummary();
-    loadMonthCount();
   }, [authenticated]);
-
-  // Streak invertido (Sprint 2.4): contagem celebratória de momentos do mês corrente.
-  // Sem mecânica de "dias seguidos" — só celebra a presença, sem cobrar quem faltou.
-  async function loadMonthCount() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const { count } = await supabase
-      .from("mood_entries")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .gte("created_at", monthStart.toISOString())
-      .lt("created_at", monthEnd.toISOString());
-    setMonthCount(count ?? 0);
-  }
 
   async function loadWeeklySummary() {
     setWeeklySummaryLoading(true);
@@ -264,8 +245,6 @@ export default function MapaPage() {
             </p>
           )}
 
-          {/* Streak invertido (Sprint 2.4) — pill celebratória, não cobrança */}
-          <MonthStreakPill count={monthCount} />
         </div>
 
         {/* CARD: RESUMO SEMANAL (Sprint 2.3) — semana ANTERIOR (segunda a domingo) */}
@@ -480,84 +459,6 @@ function formatWeekRangeBR(weekStartIso?: string, weekEndIso?: string): string {
   }
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${pad(start.getUTCDate())}/${pad(start.getUTCMonth() + 1)} a ${pad(end.getUTCDate())}/${pad(end.getUTCMonth() + 1)}`;
-}
-
-// ============ STREAK INVERTIDO (Sprint 2.4) ============
-// Contagem celebratória de momentos do mês — sem mecânica de "X dias seguidos"
-// nem "perdeu hoje". Pílula em Quicksand semibold pra contrastar visualmente
-// com o subtítulo "os caminhos da Aline" (Playfair italic) — papel de
-// "estampinha celebratória", não de frase poética.
-
-const MONTH_NAMES_PT = [
-  "janeiro",
-  "fevereiro",
-  "março",
-  "abril",
-  "maio",
-  "junho",
-  "julho",
-  "agosto",
-  "setembro",
-  "outubro",
-  "novembro",
-  "dezembro",
-];
-
-function getMonthStreakCopy(count: number): {
-  emoji: string;
-  text: string;
-  isEmpty: boolean;
-} {
-  const month = MONTH_NAMES_PT[new Date().getMonth()];
-  if (count <= 0) {
-    const monthCap = month.charAt(0).toUpperCase() + month.slice(1);
-    return {
-      emoji: "🌱",
-      text: `${monthCap} começou. Esse espaço fica aqui para você`,
-      isEmpty: true,
-    };
-  }
-  if (count === 1) {
-    return { emoji: "🌱", text: `1 momento seu em ${month}`, isEmpty: false };
-  }
-  if (count <= 9) {
-    return { emoji: "🌿", text: `${count} momentos seus em ${month}`, isEmpty: false };
-  }
-  return { emoji: "🌸", text: `${count} momentos seus em ${month}`, isEmpty: false };
-}
-
-function MonthStreakPill({ count }: { count: number | null }) {
-  if (count === null) return null; // ainda carregando — não mostra nada (header não fica pulando)
-  const { emoji, text, isEmpty } = getMonthStreakCopy(count);
-
-  // Estado vazio: linha discreta sem fundo, mais quietinha
-  if (isEmpty) {
-    return (
-      <p className="text-[12px] text-mapa-muted mt-3 font-[family-name:var(--font-quicksand)]">
-        <span className="mr-1">{emoji}</span>
-        {text}
-      </p>
-    );
-  }
-
-  // Estado celebratório: pílula com fundo gradient sutil, Quicksand semibold
-  return (
-    <div className="mt-3 flex justify-center">
-      <span
-        className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-[5px] text-[12.5px] font-semibold font-[family-name:var(--font-quicksand)]"
-        style={{
-          background:
-            "linear-gradient(135deg, #FFF0F6 0%, #FCE4ED 100%)",
-          color: "#8E3A6B",
-          border: "1px solid rgba(196, 122, 155, 0.18)",
-          boxShadow: "0 2px 6px rgba(196, 122, 155, 0.12)",
-        }}
-      >
-        <span className="text-[14px] leading-none">{emoji}</span>
-        {text}
-      </span>
-    </div>
-  );
 }
 
 // V1 (Editorial) com cores e sombras da V3 (Dramático).
