@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Compass } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import BottomNav from "@/app/components/BottomNav";
 
@@ -52,7 +53,6 @@ type Period = "7d" | "30d" | "all";
 
 export default function MapaPage() {
   const [authenticated, setAuthenticated] = useState(false);
-  const [userName, setUserName] = useState("");
   const [entries, setEntries] = useState<MoodEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<Period>("7d");
@@ -83,12 +83,6 @@ export default function MapaPage() {
       if (!profile?.onboarding_done) {
         window.location.href = "/onboarding";
         return;
-      }
-      if (profile?.name) {
-        setUserName(profile.name);
-      } else if (user.email) {
-        const fromEmail = user.email.split("@")[0];
-        setUserName(fromEmail.charAt(0).toUpperCase() + fromEmail.slice(1));
       }
       setAuthenticated(true);
     }
@@ -235,12 +229,10 @@ export default function MapaPage() {
     <>
       <main className="min-h-screen bg-mapa-bg pb-24">
         <div className="px-6 pt-6 text-center">
-          <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-medium">
-            Seus caminhos 📊
+          <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-medium inline-flex items-center gap-2 justify-center">
+            Meus caminhos
+            <Compass size={22} strokeWidth={1.75} className="text-mapa-pink-deep" />
           </h1>
-          <p className="text-[13px] text-mapa-pink-deep mt-1 font-[family-name:var(--font-playfair)] italic">
-            os caminhos da {userName || "..."}
-          </p>
           {/* Streak invertido (Sprint 2.4) — pill celebratória, não cobrança */}
           <MonthStreakPill count={monthCount} />
         </div>

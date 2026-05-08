@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { BookOpen } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 const MOOD_MAP: Record<
@@ -89,7 +90,6 @@ function formatScreenTimeFull(hours: number | null): string | null {
 export default function MoodHistory() {
   const [entries, setEntries] = useState<MoodEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userName, setUserName] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
@@ -102,19 +102,6 @@ export default function MoodHistory() {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return;
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("name")
-      .eq("id", user.id)
-      .single();
-    if (profile?.name) {
-      setUserName(profile.name);
-    } else if (user.email) {
-      // Fallback: parte do email antes do @, capitalizada
-      const fromEmail = user.email.split("@")[0];
-      setUserName(fromEmail.charAt(0).toUpperCase() + fromEmail.slice(1));
-    }
-
     let query = supabase
       .from("mood_entries")
       .select("*")
@@ -215,12 +202,10 @@ export default function MoodHistory() {
   return (
     <div>
       <div className="px-6 pt-6 text-center">
-        <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-medium">
-          Meus registros 📖
+        <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-medium inline-flex items-center gap-2 justify-center">
+          Meu histórico
+          <BookOpen size={22} strokeWidth={1.75} className="text-mapa-pink-deep" />
         </h1>
-        <p className="text-[13px] text-mapa-pink-deep mt-1 font-[family-name:var(--font-playfair)] italic">
-          Os caminhos da {userName || "..."}
-        </p>
       </div>
 
       {/* FILTROS */}
