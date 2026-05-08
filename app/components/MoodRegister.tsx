@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Pencil, Mic } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { containsCrisisKeywords, maskSensitiveData } from "@/lib/safety";
 
 const MOODS = [
   { key: "pessima", emoji: "😣", label: "Péssima", scale: 1 },
@@ -219,6 +220,7 @@ export default function MoodRegister() {
   const [selectedActivities, setSelectedActivities] = useState<string[]>([]);
   const [note, setNote] = useState("");
   const [noteTab, setNoteTab] = useState<"text" | "audio">("text");
+  const [showCrisisModal, setShowCrisisModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [aiFeedback, setAiFeedback] = useState<string | null>(null);
@@ -437,6 +439,13 @@ export default function MoodRegister() {
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
+    if (containsCrisisKeywords(note)) {
+      setShowCrisisModal(true);
+      return;
+    }
+
+    const maskedNote = maskSensitiveData(note);
+
     setSaving(true);
     setAiFeedback(null);
     try {
@@ -466,7 +475,7 @@ export default function MoodRegister() {
           energy_level: energyLevel > 0 ? energyLevel : null,
           tags: selectedTags,
           activities: selectedActivities,
-          note: note || null,
+          note: maskedNote || null,
           audio_url: uploadedAudioUrl,
           // Sprint 3.1: campos de sono (NULL se não preenchidos)
           sleep_quality: sleepQuality,
@@ -495,7 +504,7 @@ export default function MoodRegister() {
                 energy_level: energyLevel,
                 tags: selectedTags,
                 activities: selectedActivities,
-                note: note || null,
+                note: maskedNote || null,
               },
             },
           });
@@ -927,7 +936,7 @@ export default function MoodRegister() {
         {aiLoading && (
           <div className="mt-4 p-5 rounded-[20px] bg-mapa-pink-light border border-mapa-border text-center">
             <p className="text-xs text-mapa-pink-deep italic">
-              A Mapa está pensando em você... 🌿
+              A Lis está pensando em você... 🌿
             </p>
           </div>
         )}
@@ -937,7 +946,7 @@ export default function MoodRegister() {
             <div className="flex items-center gap-2 mb-2">
               <div className="w-2 h-2 rounded-full bg-mapa-mint" />
               <span className="text-[11px] font-semibold text-[#5BA67D] uppercase tracking-wider">
-                Mapa IA para você
+                Lis para você
               </span>
             </div>
             <p className="text-[13px] leading-relaxed text-mapa-text">
@@ -952,6 +961,42 @@ export default function MoodRegister() {
           </div>
         )}
       </div>
+
+      {/* MODAL DE CRISE */}
+      {showCrisisModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-sm rounded-[24px] p-6 shadow-2xl relative animate-in fade-in zoom-in duration-300">
+            <h2 className="text-xl font-bold font-[family-name:var(--font-playfair)] text-mapa-pink-deep mb-3 text-center">
+              Você não está sozinha
+            </h2>
+            <p className="text-[13px] leading-relaxed font-[family-name:var(--font-quicksand)] text-mapa-text mb-5 text-center">
+              Percebi que você escreveu palavras muito difíceis. Nesses momentos de crise e de dor profunda, o Mapa (que é uma IA) não substitui o calor de um ser humano preparado para te ouvir.
+            </p>
+            <div className="bg-[#FFF0F6] rounded-xl p-4 mb-5 border border-[#FCE4ED]">
+              <p className="text-sm font-semibold font-[family-name:var(--font-quicksand)] text-center text-[#8E3A6B] mb-1">
+                Ligue gratuitamente para 188
+              </p>
+              <p className="text-xs text-center text-[#8E3A6B]/80 font-[family-name:var(--font-quicksand)]">
+                O CVV atende 24 horas por dia, com pessoas reais prontas para te acolher, sob total sigilo.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCrisisModal(false)}
+                className="flex-1 py-3 rounded-[16px] text-[13px] font-semibold text-mapa-muted bg-transparent border-[1.5px] border-mapa-border hover:bg-mapa-card font-[family-name:var(--font-quicksand)] cursor-pointer"
+              >
+                Voltar
+              </button>
+              <a
+                href="tel:188"
+                className="flex-1 py-3 rounded-[16px] text-[13px] font-semibold text-white bg-mapa-pink-deep hover:bg-mapa-pink text-center font-[family-name:var(--font-quicksand)] flex items-center justify-center no-underline"
+              >
+                Ligar 188
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

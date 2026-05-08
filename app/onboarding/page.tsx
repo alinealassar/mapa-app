@@ -216,7 +216,7 @@ function HowStep() {
     {
       emoji: "🌿",
       title: "Receba acolhimento",
-      text: "A Mapa IA te responde com carinho e contexto, baseada no que você compartilhou.",
+      text: "A Lis (IA do Mapa) te responde com carinho e contexto, baseada no que você compartilhou.",
     },
     {
       emoji: "📖",

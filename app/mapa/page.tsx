@@ -236,7 +236,7 @@ export default function MapaPage() {
       <main className="min-h-screen bg-mapa-bg pb-24">
         <div className="px-6 pt-6 text-center">
           <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-medium">
-            Seu Mapa 📊
+            Seus caminhos 📊
           </h1>
           <p className="text-[13px] text-mapa-pink-deep mt-1 font-[family-name:var(--font-playfair)] italic">
             os caminhos da {userName || "..."}
@@ -273,7 +273,7 @@ export default function MapaPage() {
 
         {loading && (
           <p className="text-center text-mapa-muted italic py-10">
-            carregando seu mapa...
+            carregando seus caminhos...
           </p>
         )}
 
@@ -282,7 +282,7 @@ export default function MapaPage() {
             <span className="text-[40px] block mb-3">🌱</span>
             <p className="text-sm text-mapa-muted">Ainda não tem registros nesse período</p>
             <p className="text-xs text-mapa-muted italic mt-1">
-              Quando você registrar alguns momentos, eu vou desenhar seu mapa aqui.
+              Quando você registrar alguns momentos, eu vou desenhar seus caminhos aqui.
             </p>
           </div>
         )}
@@ -397,7 +397,7 @@ export default function MapaPage() {
                 </p>
                 <InfoButton
                   title="O que percebi"
-                  content="Aqui a Mapa IA analisa todos os seus registros do período e identifica padrões reais — citando dias, sentimentos e atividades específicas. São observações gentis, sem julgamento. Você decide o que fazer com elas. Se a IA não conseguir, mostro padrões básicos baseados em estatística simples."
+                  content="Aqui a Lis (a IA do Mapa) analisa todos os seus registros do período e identifica padrões reais — citando dias, sentimentos e atividades específicas. São observações gentis, sem julgamento. Você decide o que fazer com elas. Se a IA não conseguir, mostro padrões básicos baseados em estatística simples."
                   color="mint"
                 />
               </div>

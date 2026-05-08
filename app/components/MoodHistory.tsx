@@ -515,7 +515,7 @@ export default function MoodHistory() {
                       {entry.ai_feedback && (
                         <div className="bg-mapa-mint-light rounded-[14px] p-3 px-3.5">
                           <p className="text-[10px] font-semibold text-[#5BA67D] uppercase tracking-wide mb-1">
-                            🌿 Mapa IA disse:
+                            🌿 Lis disse:
                           </p>
                           <p className="text-xs leading-relaxed text-mapa-text">
                             {entry.ai_feedback}

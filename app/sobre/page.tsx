@@ -67,20 +67,20 @@ export default function SobrePage() {
 
           <Section
             emoji="🌿"
-            title="Como a Mapa IA pensa"
-            content="A IA conhece seu nome, seu objetivo (escolhido no onboarding), seus últimos 5 registros, e o humor + sentimentos + atividades do momento atual. Com isso ela responde de forma personalizada — nunca genérica. As respostas são curtas (no máximo 3 frases) e sempre acompanhadas de uma sugestão pequena, gentil e factível em 5 minutos. Ela nunca diagnostica nem prescreve, e nunca substitui terapia."
+            title="Como a Lis pensa"
+            content="A Lis (a IA do Mapa) conhece seu nome, seu objetivo (escolhido no onboarding), seus últimos 5 registros, e o humor + sentimentos + atividades do momento atual. Com isso ela responde de forma personalizada — nunca genérica. As respostas são curtas (no máximo 3 frases) e sempre acompanhadas de uma sugestão pequena, gentil e factível em 5 minutos. Ela nunca diagnostica nem prescreve, e nunca substitui terapia."
           />
 
           <Section
             emoji="📊"
-            title="Como ler seu Mapa"
-            content="A aba Mapa tem 5 cards: Resumo (números rápidos), Humor por dia (gráfico de barras), Sentimentos mais presentes (top 5), Atividades mais frequentes (top 5) e O que percebi (padrões automáticos). Em cada um você encontra o ícone ⓘ — toque para ver a explicação detalhada daquele card específico."
+            title="Como ler seus caminhos"
+            content="A aba Caminhos tem 5 cards: Resumo (números rápidos), Humor por dia (gráfico de barras), Sentimentos mais presentes (top 5), Atividades mais frequentes (top 5) e O que percebi (padrões automáticos). Em cada um você encontra o ícone ⓘ — toque para ver a explicação detalhada daquele card específico."
           />
 
           <Section
             emoji="🔒"
-            title="Sobre seus dados"
-            content="Tudo que você registra fica salvo de forma segura no Supabase, sob suas credenciais. Só você (e a Mapa IA quando você pede feedback) pode ver. Os áudios são guardados num espaço protegido e só você acessa. Você pode sair da conta a qualquer momento na aba Eu."
+            title="Sua Privacidade Intocável (LGPD)"
+            content="Tudo que você registra fica criptografado e salvo de forma segura. A inteligência artificial (Lis) NÃO treina e não aprende com os seus desabafos. Além disso, o Mapa possui uma tecnologia de proteção (Data Masking) que oculta automaticamente números de CPF e telefones antes de qualquer processamento. Seus segredos estão seguros."
           />
 
           <Section
