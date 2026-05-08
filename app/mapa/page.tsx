@@ -230,7 +230,7 @@ export default function MapaPage() {
       <main className="min-h-screen bg-mapa-bg pb-24">
         <div className="px-6 pt-6 text-center">
           <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-medium inline-flex items-center gap-2 justify-center">
-            Meus caminhos
+            Meu mapa
             <Compass size={22} strokeWidth={1.75} className="text-mapa-pink-deep" />
           </h1>
           {/* Streak invertido (Sprint 2.4) — pill celebratória, não cobrança */}
@@ -265,7 +265,7 @@ export default function MapaPage() {
 
         {loading && (
           <p className="text-center text-mapa-muted italic py-10">
-            carregando seus caminhos...
+            carregando seu mapa...
           </p>
         )}
 
@@ -274,7 +274,7 @@ export default function MapaPage() {
             <span className="text-[40px] block mb-3">🌱</span>
             <p className="text-sm text-mapa-muted">Ainda não tem registros nesse período</p>
             <p className="text-xs text-mapa-muted italic mt-1">
-              Quando você registrar alguns momentos, eu vou desenhar seus caminhos aqui.
+              Quando você registrar alguns momentos, eu vou desenhar seu mapa aqui.
             </p>
           </div>
         )}
