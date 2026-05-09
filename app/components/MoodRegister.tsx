@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Pencil, Mic } from "lucide-react";
+import { Pencil, Mic, ChevronDown } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { containsCrisisKeywords, maskSensitiveData } from "@/lib/safety";
+import Link from "next/link";
 
 const MOODS = [
   { key: "pessima", emoji: "😣", label: "Péssima", scale: 1 },
@@ -204,6 +205,16 @@ const FALLBACK: Record<string, string> = {
   pessima: "Está tudo bem não estar bem. Respire fundo, estou aqui. 🤍",
 };
 
+const triggerHaptic = () => {
+  if (typeof navigator !== "undefined" && navigator.vibrate) {
+    try {
+      navigator.vibrate([50]);
+    } catch (e) {
+      // ignore
+    }
+  }
+};
+
 export default function MoodRegister() {
   const [userName, setUserName] = useState("");
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
@@ -287,18 +298,9 @@ export default function MoodRegister() {
   });
 
   function handleMoodSelect(m: (typeof MOODS)[0]) {
+    triggerHaptic();
     setSelectedMood(m.key);
     setMoodScale(m.scale);
-  }
-
-  function handleScaleChange(v: string) {
-    const n = parseInt(v);
-    setMoodScale(n);
-    if (n <= 2) setSelectedMood("pessima");
-    else if (n <= 4) setSelectedMood("mal");
-    else if (n <= 6) setSelectedMood("neutra");
-    else if (n <= 8) setSelectedMood("bem");
-    else setSelectedMood("otima");
   }
 
   function toggleItem<T extends string>(
@@ -611,20 +613,6 @@ export default function MoodRegister() {
               </button>
             ))}
           </div>
-          {/* Slider padronizado (RangeBar) — Humor */}
-          <RangeBar
-            label="escala"
-            value={moodScale}
-            min={1}
-            max={10}
-            step={1}
-            ticks={["1", "5", "10"]}
-            onChange={(v) => handleScaleChange(String(v))}
-            bg="#FFF0F6"
-            border="rgba(196, 122, 155, 0.25)"
-            textColor="#C47A9B"
-            accent="#C47A9B"
-          />
         </Section>
         </div>
 
@@ -632,6 +620,8 @@ export default function MoodRegister() {
         <Section
           label="Energia"
           hint="como está seu corpo e sua disposição agora?"
+          collapsible
+          defaultExpanded={false}
         >
           <div className="flex gap-1.5 items-end h-11 mb-1">
             {[1, 2, 3, 4, 5, 6].map((l) => (
@@ -643,11 +633,11 @@ export default function MoodRegister() {
               />
             ))}
           </div>
-          <div className="flex justify-between">
-            <span className="text-[10px] text-mapa-muted italic">
+          <div className="flex justify-between mt-1 px-1">
+            <span className="text-[10px] text-mapa-muted">
               esgotada
             </span>
-            <span className="text-[10px] text-mapa-muted italic">
+            <span className="text-[10px] text-mapa-muted">
               energizada
             </span>
           </div>
@@ -658,6 +648,8 @@ export default function MoodRegister() {
           label="Como foi seu sono?"
           hint="se quiser registrar como você dormiu"
           optional
+          collapsible
+          defaultExpanded={false}
         >
           {/* 3 botões de qualidade — estilo V1: fundo branco + border padrão */}
           <div className="grid grid-cols-3 gap-2 mb-2.5">
@@ -696,9 +688,7 @@ export default function MoodRegister() {
             max={12}
             step={0.5}
             ticks={["4h", "8h", "12h"]}
-            onChange={(v) => setSleepHours(v)}
-            bg="#F3EEFF"
-            border="rgba(184, 169, 212, 0.5)"
+            onChange={(v) => { triggerHaptic(); setSleepHours(v); }}
             textColor="#5A4A8C"
             accent="#5A4A8C"
           />
@@ -724,6 +714,8 @@ export default function MoodRegister() {
         <Section
           label="Como você está se sentindo?"
           hint="escolha tudo que faz sentido para você neste momento"
+          collapsible
+          defaultExpanded={false}
         >
           <div className="flex flex-wrap gap-2">
             {TAGS.map((t) => (
@@ -744,6 +736,8 @@ export default function MoodRegister() {
         <Section
           label="O que você fez hoje?"
           hint="selecione as atividades que fizeram parte do seu dia"
+          collapsible
+          defaultExpanded={false}
         >
           <div className="grid grid-cols-3 gap-2">
             {ACTIVITIES.map((a) => (
@@ -770,10 +764,11 @@ export default function MoodRegister() {
           label="Tempo de tela hoje"
           hint="se quiser registrar — sem julgamento, é só seu mapa"
           optional
+          collapsible
+          defaultExpanded={false}
         >
           {/* Slider padronizado (RangeBar) — Tempo de tela */}
           <RangeBar
-            emoji="📱"
             label="horas no celular"
             value={screenTimeHours ?? 3}
             hasValue={screenTimeHours !== null}
@@ -785,9 +780,7 @@ export default function MoodRegister() {
             max={12}
             step={0.5}
             ticks={["0h", "6h", "12h"]}
-            onChange={(v) => setScreenTimeHours(v)}
-            bg="#F5F2F8"
-            border="rgba(168, 155, 188, 0.4)"
+            onChange={(v) => { triggerHaptic(); setScreenTimeHours(v); }}
             textColor="#6B6280"
             accent="#6B6280"
           />
@@ -811,7 +804,7 @@ export default function MoodRegister() {
           label="Nota pessoal"
           hint="escreva ou grave um áudio sobre como foi seu dia"
         >
-          <div className="bg-mapa-card rounded-[18px] border-[1.5px] border-mapa-border overflow-hidden">
+          <div className="rounded-[18px] border-[1.5px] border-mapa-border/60 bg-[#FAFAFA] overflow-hidden">
             <div className="flex border-b border-mapa-border/50">
               <button
                 onClick={() => setNoteTab("text")}
@@ -919,48 +912,70 @@ export default function MoodRegister() {
           </div>
         </Section>
 
-        {/* SAVE */}
+      </div>
+
+      {/* STICKY SAVE BUTTON */}
+      <div className="fixed bottom-[65px] left-1/2 -translate-x-1/2 w-full max-w-[420px] p-5 pt-10 bg-gradient-to-t from-mapa-bg via-mapa-bg/90 to-transparent z-40 pointer-events-none">
         <button
           onClick={handleSave}
           disabled={saving || aiLoading}
-          className="w-full py-[15px] rounded-3xl border-none bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white text-[15px] font-semibold cursor-pointer mt-1 tracking-wide hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(232,160,191,0.35)] active:scale-[0.97] transition-all disabled:opacity-70 font-[family-name:var(--font-quicksand)]"
+          className="w-full py-[15px] rounded-3xl border-none bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white text-[15px] font-semibold cursor-pointer tracking-wide shadow-[0_6px_20px_rgba(232,160,191,0.35)] active:scale-[0.95] active:brightness-95 transition-all duration-150 disabled:opacity-70 font-[family-name:var(--font-quicksand)] pointer-events-auto"
         >
-          {saving ? "Salvando..." : "Registrar momento 🌸"}
+          {saving ? "Salvando..." : "Registrar momento"}
         </button>
-        {savedAt && (
-          <p className="text-center text-[11px] text-mapa-muted italic mt-2">
-            {savedAt}
-          </p>
-        )}
-
-        {aiLoading && (
-          <div className="mt-4 p-5 rounded-[20px] bg-mapa-pink-light border border-mapa-border text-center">
-            <p className="text-xs text-mapa-pink-deep italic">
-              A Lis está pensando em você... 🌿
-            </p>
-          </div>
-        )}
-
-        {aiFeedback && (
-          <div className="mt-4 p-4 rounded-[20px] bg-mapa-mint-light border border-mapa-mint">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-2 h-2 rounded-full bg-mapa-mint" />
-              <span className="text-[11px] font-semibold text-[#5BA67D] uppercase tracking-wider">
-                Lis para você
-              </span>
-            </div>
-            <p className="text-[13px] leading-relaxed text-mapa-text">
-              {aiFeedback}
-            </p>
-            <button
-              onClick={handleNewEntry}
-              className="mt-3.5 py-2 px-4 rounded-[14px] border-[1.5px] border-mapa-mint bg-transparent text-xs font-semibold text-[#5BA67D] cursor-pointer w-full hover:bg-mapa-mint/10 font-[family-name:var(--font-quicksand)]"
-            >
-              Registrar outro momento
-            </button>
-          </div>
-        )}
       </div>
+
+      {/* MODAL DA LIS */}
+      {(aiLoading || aiFeedback) && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-sm rounded-[24px] p-6 shadow-2xl relative animate-in fade-in zoom-in duration-300 flex flex-col items-center">
+            {aiLoading ? (
+              <div className="py-6 flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-mapa-pink-light flex items-center justify-center mb-4 animate-pulse">
+                  <span className="text-xl">🌿</span>
+                </div>
+                <p className="text-[15px] font-[family-name:var(--font-quicksand)] font-semibold text-mapa-pink-deep mb-2">
+                  A Lis está pensando...
+                </p>
+                <p className="text-[13px] text-mapa-muted text-center italic font-[family-name:var(--font-playfair)]">
+                  refletindo sobre o seu dia
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="w-full flex items-center gap-2 mb-4">
+                  <div className="w-2 h-2 rounded-full bg-mapa-mint" />
+                  <span className="text-[11px] font-semibold text-[#5BA67D] uppercase tracking-wider">
+                    Lis para você
+                  </span>
+                </div>
+                <p className="text-[14px] leading-relaxed text-mapa-text w-full text-left mb-6 font-[family-name:var(--font-quicksand)]">
+                  {aiFeedback}
+                </p>
+                {savedAt && (
+                  <p className="text-[11px] text-mapa-muted italic w-full text-center mb-5 font-[family-name:var(--font-playfair)]">
+                    {savedAt}
+                  </p>
+                )}
+                <div className="flex gap-3 w-full">
+                  <button
+                    onClick={handleNewEntry}
+                    className="flex-1 py-3.5 rounded-[16px] border-[1.5px] border-mapa-mint bg-transparent text-[13px] font-semibold text-[#5BA67D] cursor-pointer hover:bg-mapa-mint/10 font-[family-name:var(--font-quicksand)] transition-colors"
+                  >
+                    Novo registro
+                  </button>
+                  <Link
+                    href="/mapa"
+                    className="flex-1 py-3.5 rounded-[16px] bg-[#5BA67D] text-white text-[13px] font-semibold cursor-pointer hover:bg-[#4A8F6A] text-center no-underline flex items-center justify-center font-[family-name:var(--font-quicksand)] transition-colors"
+                  >
+                    Ir para o Mapa
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* MODAL DE CRISE */}
       {showCrisisModal && (
@@ -1018,8 +1033,6 @@ function RangeBar({
   step,
   ticks,
   onChange,
-  bg,
-  border,
   textColor,
   accent,
 }: {
@@ -1035,16 +1048,11 @@ function RangeBar({
   step: number;
   ticks: [string, string, string];
   onChange: (v: number) => void;
-  bg: string;
-  border: string;
   textColor: string;
   accent: string;
 }) {
   return (
-    <div
-      className="rounded-2xl px-3.5 py-3 border"
-      style={{ background: bg, borderColor: border }}
-    >
+    <div className="px-1 pt-1">
       <div className="flex items-baseline justify-between mb-1.5">
         <span
           className="font-medium"
@@ -1055,19 +1063,19 @@ function RangeBar({
         </span>
         {hasValue ? (
           <span
-            className="text-[22px] font-semibold leading-none"
+            className="text-[16px] font-semibold leading-none"
             style={{ color: textColor }}
           >
             {displayText ?? value}
             {unit && (
-              <span className="text-[13px] font-normal opacity-75">
+              <span className="text-[12px] font-normal opacity-75 ml-0.5">
                 {unit}
               </span>
             )}
           </span>
         ) : (
           <span
-            className="text-[18px] leading-none opacity-60"
+            className="text-[16px] leading-none opacity-60"
             style={{ color: textColor }}
           >
             —
@@ -1097,26 +1105,59 @@ function Section({
   label,
   hint,
   optional = false,
+  collapsible = false,
+  defaultExpanded = true,
   children,
 }: {
   label: string;
   hint: string;
   optional?: boolean;
+  collapsible?: boolean;
+  defaultExpanded?: boolean;
   children: React.ReactNode;
 }) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
+
+  if (collapsible && !expanded) {
+    return (
+      <button 
+        type="button"
+        onClick={() => setExpanded(true)}
+        className="w-full text-left mb-5 bg-white border border-mapa-border/60 rounded-[20px] px-5 py-4 shadow-[0_2px_10px_rgba(232,160,191,0.04)] flex justify-between items-center transition-all cursor-pointer hover:bg-gray-50/50 group"
+      >
+        <div>
+          <p className="text-[13px] font-semibold text-mapa-pink-deep mb-0.5 font-[family-name:var(--font-quicksand)]">{label}</p>
+          <p className="text-[11px] text-mapa-muted italic font-[family-name:var(--font-playfair)]">toque para adicionar</p>
+        </div>
+        <ChevronDown size={16} className="text-mapa-muted group-hover:text-mapa-pink-deep transition-colors" />
+      </button>
+    );
+  }
+
   return (
-    <div className="mb-5">
-      <p className="text-sm font-semibold text-mapa-pink-deep mb-0.5">
-        {label}
-        {optional && (
-          <span className="font-[family-name:var(--font-playfair)] italic font-normal text-[11px] text-mapa-muted ml-1.5">
-            — opcional
-          </span>
-        )}
-      </p>
-      <p className="text-[11px] text-mapa-muted italic mb-2.5 leading-snug">
-        {hint}
-      </p>
+    <div className="mb-5 bg-white border border-mapa-border/60 rounded-[24px] p-5 shadow-[0_4px_20px_rgba(232,160,191,0.06)] relative">
+      <div className="mb-4 pr-6">
+        <p className="text-sm font-semibold text-mapa-pink-deep mb-0.5">
+          {label}
+          {optional && (
+            <span className="font-[family-name:var(--font-playfair)] italic font-normal text-[11px] text-mapa-muted ml-1.5">
+              — opcional
+            </span>
+          )}
+        </p>
+        <p className="text-[11px] text-mapa-muted italic leading-snug">
+          {hint}
+        </p>
+      </div>
+      {collapsible && (
+        <button 
+          type="button"
+          onClick={() => setExpanded(false)} 
+          className="absolute top-5 right-5 text-mapa-muted bg-transparent border-none cursor-pointer hover:text-mapa-coral transition-colors flex items-center justify-center p-1"
+        >
+          ✕
+        </button>
+      )}
       {children}
     </div>
   );

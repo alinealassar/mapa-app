@@ -2,13 +2,13 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { PenLine, Map, BookOpen, Heart, type LucideIcon } from "lucide-react";
+import { PenLine, Map, BookOpen, User, type LucideIcon } from "lucide-react";
 
 const TABS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/registrar", label: "Registrar", icon: PenLine },
   { href: "/mapa", label: "Mapa", icon: Map },
   { href: "/historico", label: "Histórico", icon: BookOpen },
-  { href: "/eu", label: "Eu", icon: Heart },
+  { href: "/eu", label: "Eu", icon: User },
 ];
 
 export default function BottomNav() {
@@ -28,14 +28,14 @@ export default function BottomNav() {
           <Link
             key={tab.href}
             href={tab.href}
-            className={`flex flex-col items-center gap-1 no-underline text-[11px] transition-all font-[family-name:var(--font-quicksand)] ${
+            className={`flex flex-col items-center gap-1 no-underline text-[11px] transition-all font-[family-name:var(--font-quicksand)] py-1.5 px-3.5 rounded-2xl ${
               isActive
-                ? "text-mapa-pink-deep font-semibold"
-                : "text-mapa-muted font-normal"
+                ? "text-white bg-mapa-pink font-semibold shadow-sm"
+                : "text-mapa-muted font-normal hover:bg-mapa-pink-light/30"
             }`}
           >
-            <Icon size={22} strokeWidth={1.75} />
-            {tab.label}
+            <Icon size={20} strokeWidth={isActive ? 2.5 : 1.75} />
+            <span>{tab.label}</span>
           </Link>
         );
       })}
