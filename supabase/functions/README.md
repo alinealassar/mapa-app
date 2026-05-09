@@ -9,6 +9,7 @@ Este diretório contém o **código-fonte versionado** das 3 Edge Functions depl
 | `generate-mood-feedback` | v12 | Feedback da Lis após cada registro. Inclui memória semântica (gte-small + pgvector) — gera embedding ao salvar e busca top-3 memórias relevantes antes de chamar Claude. |
 | `generate-mapa-insights` | v5 | Análise de padrões "O que percebi" no /mapa. Persona Lis + masking + correlação tripla (sono × tela × humor). |
 | `generate-weekly-summary` | v5 | Resumo semanal do /mapa em JSON estruturado. Persona Lis + masking + correlação tripla. Cache por week_start na tabela `weekly_summaries`. |
+| `daily-reminder` | v1 | Lembrete diário por e-mail para usuárias inativas nas últimas 24h. Usa **Resend API**. |
 
 ## Protocolo de deploy (IMPORTANTE)
 
@@ -28,6 +29,7 @@ As 3 functions usam estes secrets (já configurados em `Project Settings → Edg
 - `ANTHROPIC_API_KEY` — chave da Anthropic (Claude). Necessita saldo na conta `console.anthropic.com`.
 - `SUPABASE_URL` — auto-injetado pelo Supabase
 - `SUPABASE_SERVICE_ROLE_KEY` — auto-injetado pelo Supabase
+- `RESEND_API_KEY` — Chave da API do **Resend** para disparo de e-mails.
 
 ## Persona da Lis
 
