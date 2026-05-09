@@ -77,9 +77,9 @@ const ACTIVITIES = [
 // Sprint 3.1: opções de qualidade do sono. Os valores ('good', 'ok', 'bad')
 // batem com o CHECK constraint da coluna sleep_quality em mood_entries.
 const SLEEP_QUALITIES: { value: "good" | "ok" | "bad"; emoji: string; label: string }[] = [
-  { value: "good", emoji: "😴", label: "acordei bem" },
+  { value: "good", emoji: "😌💤", label: "dormi bem" },
   { value: "ok", emoji: "🥱", label: "mais ou menos" },
-  { value: "bad", emoji: "😵‍💫", label: "acordei mal" },
+  { value: "bad", emoji: "😵‍💫", label: "dormi mal" },
 ];
 
 // Tags pesadas — usadas para detectar se o último registro foi um momento difícil
