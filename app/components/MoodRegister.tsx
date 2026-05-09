@@ -930,14 +930,14 @@ export default function MoodRegister() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white w-full max-w-sm rounded-[24px] p-6 shadow-2xl relative animate-in fade-in zoom-in duration-300 flex flex-col items-center">
             {aiLoading ? (
-              <div className="py-6 flex flex-col items-center">
-                <div className="w-12 h-12 rounded-full bg-mapa-pink-light flex items-center justify-center mb-4 animate-pulse">
-                  <span className="text-xl">🌿</span>
+              <div className="py-8 flex flex-col items-center">
+                <div className="w-14 h-14 rounded-full bg-mapa-pink-light flex items-center justify-center mb-5 animate-pulse shadow-inner">
+                  <span className="text-2xl">✨</span>
                 </div>
-                <p className="text-[15px] font-[family-name:var(--font-quicksand)] font-semibold text-mapa-pink-deep mb-2">
+                <p className="text-[16px] font-[family-name:var(--font-quicksand)] font-semibold text-mapa-pink-deep mb-2">
                   A Lis está pensando...
                 </p>
-                <p className="text-[13px] text-mapa-muted text-center italic font-[family-name:var(--font-playfair)]">
+                <p className="text-[14px] text-mapa-muted text-center italic font-[family-name:var(--font-playfair)]">
                   refletindo sobre o seu dia
                 </p>
               </div>
@@ -953,7 +953,7 @@ export default function MoodRegister() {
                   {aiFeedback}
                 </p>
                 {savedAt && (
-                  <p className="text-[11px] text-mapa-muted italic w-full text-center mb-5 font-[family-name:var(--font-playfair)]">
+                  <p className="text-[14px] text-[#8E3A6B]/70 italic w-full text-center mb-6 font-[family-name:var(--font-playfair)]">
                     {savedAt}
                   </p>
                 )}
