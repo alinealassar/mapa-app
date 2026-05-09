@@ -620,8 +620,7 @@ export default function MoodRegister() {
         <Section
           label="Energia"
           hint="como está seu corpo e sua disposição agora?"
-          collapsible
-          defaultExpanded={false}
+          optional
         >
           <div className="flex gap-1.5 items-end h-11 mb-1">
             {[1, 2, 3, 4, 5, 6].map((l) => (
@@ -648,8 +647,6 @@ export default function MoodRegister() {
           label="Como foi seu sono?"
           hint="se quiser registrar como você dormiu"
           optional
-          collapsible
-          defaultExpanded={false}
         >
           {/* 3 botões de qualidade — estilo V1: fundo branco + border padrão */}
           <div className="grid grid-cols-3 gap-2 mb-2.5">
@@ -714,8 +711,7 @@ export default function MoodRegister() {
         <Section
           label="Como você está se sentindo?"
           hint="escolha tudo que faz sentido para você neste momento"
-          collapsible
-          defaultExpanded={false}
+          optional
         >
           <div className="flex flex-wrap gap-2">
             {TAGS.map((t) => (
@@ -736,8 +732,7 @@ export default function MoodRegister() {
         <Section
           label="O que você fez hoje?"
           hint="selecione as atividades que fizeram parte do seu dia"
-          collapsible
-          defaultExpanded={false}
+          optional
         >
           <div className="grid grid-cols-3 gap-2">
             {ACTIVITIES.map((a) => (
@@ -764,8 +759,6 @@ export default function MoodRegister() {
           label="Tempo de tela hoje"
           hint="se quiser registrar — sem julgamento, é só seu mapa"
           optional
-          collapsible
-          defaultExpanded={false}
         >
           {/* Slider padronizado (RangeBar) — Tempo de tela */}
           <RangeBar
@@ -803,6 +796,7 @@ export default function MoodRegister() {
         <Section
           label="Nota pessoal"
           hint="escreva ou grave um áudio sobre como foi seu dia"
+          optional
         >
           <div className="rounded-[18px] border-[1.5px] border-mapa-border/60 bg-[#FAFAFA] overflow-hidden">
             <div className="flex border-b border-mapa-border/50">
