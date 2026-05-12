@@ -230,6 +230,7 @@ export default function MoodRegister() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedActivities, setSelectedActivities] = useState<string[]>([]);
   const [note, setNote] = useState("");
+  const [audioTranscription, setAudioTranscription] = useState<string | null>(null);
   const [noteTab, setNoteTab] = useState<"text" | "audio">("text");
   const [showCrisisModal, setShowCrisisModal] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -456,6 +457,7 @@ export default function MoodRegister() {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Não autenticada");
       let uploadedAudioUrl: string | null = null;
+      let transcribedNote: string | null = null;
       if (audioBlob) {
         const fn = `${user.id}/${Date.now()}.webm`;
         const { error } = await supabase.storage
@@ -466,6 +468,23 @@ export default function MoodRegister() {
             .from("mood-audios")
             .getPublicUrl(fn);
           uploadedAudioUrl = data.publicUrl;
+        }
+        // Transcrever áudio com Groq Whisper
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          const fd = new FormData();
+          fd.append("audio", audioBlob, "audio.webm");
+          const tRes = await fetch(
+            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/transcribe-audio`,
+            { method: "POST", headers: { Authorization: `Bearer ${session?.access_token}` }, body: fd }
+          );
+          if (tRes.ok) {
+            const tData = await tRes.json();
+            transcribedNote = tData.transcription || null;
+            setAudioTranscription(transcribedNote);
+          }
+        } catch (e) {
+          console.warn("Transcrição não disponível:", e);
         }
       }
       const { data: entry, error: ie } = await supabase
@@ -506,7 +525,7 @@ export default function MoodRegister() {
                 energy_level: energyLevel,
                 tags: selectedTags,
                 activities: selectedActivities,
-                note: maskedNote || null,
+                note: transcribedNote || maskedNote || null,
               },
             },
           });
