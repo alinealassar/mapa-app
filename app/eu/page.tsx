@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import BottomNav from "@/app/components/BottomNav";
+import { useNotifications } from "@/lib/hooks/useNotifications";
 
 export default function EuPage() {
+  const { permission, loading, requestPermission } = useNotifications();
   const [authenticated, setAuthenticated] = useState(false);
   const [userId, setUserId] = useState("");
   const [name, setName] = useState("");
@@ -179,12 +181,21 @@ export default function EuPage() {
               </button>
             )}
             <button
-              onClick={emBreve}
-              className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-mapa-border/60 bg-transparent cursor-pointer text-left text-[13px] font-medium text-mapa-text font-[family-name:var(--font-quicksand)] hover:bg-mapa-pink-light/40 transition"
+              onClick={requestPermission}
+              disabled={loading}
+              className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-mapa-border/60 bg-transparent cursor-pointer text-left text-[13px] font-medium text-mapa-text font-[family-name:var(--font-quicksand)] hover:bg-mapa-pink-light/40 transition disabled:opacity-50"
             >
               <span className="text-lg">🔔</span>
-              <span className="flex-1">Lembretes</span>
-              <span className="text-mapa-muted text-base">›</span>
+              <div className="flex-1">
+                <span>Lembretes</span>
+                {permission === "granted" && (
+                  <span className="ml-2 text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-semibold uppercase">Ativos</span>
+                )}
+                {permission === "denied" && (
+                  <span className="ml-2 text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-semibold uppercase">Bloqueados</span>
+                )}
+              </div>
+              <span className="text-mapa-muted text-base">{loading ? "..." : "›"}</span>
             </button>
             <button
               onClick={() => (window.location.href = "/sobre")}
