@@ -2,7 +2,6 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import {
-  Sparkles,
   Heart,
   MessageCircle,
   BarChart3,
@@ -56,7 +55,7 @@ export default function SobrePage() {
 
         <div className="px-6 pt-2 text-center">
           <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-mapa-pink-light to-mapa-lavender-light flex items-center justify-center border-[3px] border-white/70 shadow-[0_8px_30px_rgba(232,160,191,0.2)] mb-3">
-            <Sparkles size={32} strokeWidth={1.5} className="text-mapa-pink-deep" />
+            <Map size={32} strokeWidth={1.5} className="text-mapa-pink-deep" />
           </div>
           <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold text-mapa-text">
             Sobre o Mapa
