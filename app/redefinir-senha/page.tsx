@@ -103,7 +103,7 @@ export default function RedefinirSenhaPage() {
             href="/login"
             className="inline-block w-full py-3.5 rounded-2xl bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white font-semibold text-[15px] cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(232,160,191,0.35)] transition font-[family-name:var(--font-quicksand)] no-underline"
           >
-            Entrar com a senha nova 🌷
+            Entrar com a senha nova
           </a>
         </div>
       </main>

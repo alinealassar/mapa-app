@@ -741,7 +741,7 @@ function InfoButton({
               onClick={() => setOpen(false)}
               className="mt-4 w-full py-2.5 rounded-xl bg-mapa-pink-light text-mapa-pink-deep font-semibold text-sm cursor-pointer hover:bg-mapa-pink-light/80 transition font-[family-name:var(--font-quicksand)]"
             >
-              Entendi 🌸
+              Entendi
             </button>
           </div>
         </div>

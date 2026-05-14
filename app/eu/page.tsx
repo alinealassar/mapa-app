@@ -188,7 +188,7 @@ export default function EuPage() {
                     disabled={savingName}
                     className="flex-1 py-2 rounded-xl bg-mapa-pink text-white text-xs font-semibold cursor-pointer disabled:opacity-50 font-[family-name:var(--font-quicksand)]"
                   >
-                    {savingName ? "Salvando..." : "Salvar 🌸"}
+                    {savingName ? "Salvando..." : "Salvar"}
                   </button>
                 </div>
               </div>

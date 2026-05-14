@@ -162,7 +162,7 @@ export default function ChangePasswordModal({ email, onClose, onSuccess }: Props
               disabled={loading}
               className="flex-1 py-2.5 rounded-xl bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white text-xs font-semibold cursor-pointer disabled:opacity-50 font-[family-name:var(--font-quicksand)]"
             >
-              {loading ? "Salvando..." : "Trocar senha 🌸"}
+              {loading ? "Salvando..." : "Trocar senha"}
             </button>
           </div>
         </form>
