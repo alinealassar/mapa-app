@@ -11,6 +11,9 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import BottomNav from "@/app/components/BottomNav";
 
+// Aplica o gradiente rosa->lavanda->mint definido em layout.tsx
+const gradientStroke = { stroke: "url(#mapa-grad-warm)" } as const;
+
 export default function SobrePage() {
   const [authenticated, setAuthenticated] = useState(false);
 
@@ -55,7 +58,7 @@ export default function SobrePage() {
 
         <div className="px-6 pt-2 text-center">
           <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-mapa-pink-light to-mapa-lavender-light flex items-center justify-center border-[3px] border-white/70 shadow-[0_8px_30px_rgba(232,160,191,0.2)] mb-3">
-            <Map size={32} strokeWidth={1.5} className="text-mapa-pink-deep" />
+            <Map size={32} strokeWidth={1.5} style={gradientStroke} />
           </div>
           <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold text-mapa-text">
             Sobre o Mapa
@@ -67,31 +70,31 @@ export default function SobrePage() {
 
         <div className="px-5 pt-6 space-y-3.5">
           <Section
-            icon={<Heart size={18} strokeWidth={1.75} className="text-mapa-pink-deep" />}
+            icon={<Heart size={18} strokeWidth={1.75} style={gradientStroke} />}
             title="A filosofia anti-culpa"
             content="O Mapa nasceu para ser um espaço diferente. Aqui você não precisa dar conta de nada. Sem streak, sem cobrança, sem 'você esqueceu hoje'. Cada momento que você registra é seu, no seu ritmo. Quando bate aquela culpa de não ter feito o suficiente, esse aplicativo te lembra: estar aqui já é o suficiente."
           />
 
           <Section
-            icon={<MessageCircle size={18} strokeWidth={1.75} className="text-mapa-pink-deep" />}
+            icon={<MessageCircle size={18} strokeWidth={1.75} style={gradientStroke} />}
             title="Como a Lis pensa"
             content="A Lis (a IA do Mapa) conhece seu nome, seu objetivo (escolhido no onboarding), seus últimos 5 registros, e o humor + sentimentos + atividades do momento atual. Com isso ela responde de forma personalizada — nunca genérica. As respostas são curtas (no máximo 3 frases) e sempre acompanhadas de uma sugestão pequena, gentil e factível em 5 minutos. Ela nunca diagnostica nem prescreve, e nunca substitui terapia."
           />
 
           <Section
-            icon={<BarChart3 size={18} strokeWidth={1.75} className="text-mapa-pink-deep" />}
+            icon={<BarChart3 size={18} strokeWidth={1.75} style={gradientStroke} />}
             title="Como ler seus caminhos"
             content="A aba Mapa tem 5 cards: Resumo (números rápidos), Humor por dia (gráfico de barras), Sentimentos mais presentes (top 5), Atividades mais frequentes (top 5) e O que percebi (padrões automáticos). Em cada um você encontra o ícone ⓘ — toque para ver a explicação detalhada daquele card específico."
           />
 
           <Section
-            icon={<ShieldCheck size={18} strokeWidth={1.75} className="text-mapa-pink-deep" />}
+            icon={<ShieldCheck size={18} strokeWidth={1.75} style={gradientStroke} />}
             title="Sua Privacidade Intocável (LGPD)"
             content="Tudo que você registra fica criptografado e salvo de forma segura. A inteligência artificial (Lis) NÃO treina e não aprende com os seus desabafos. Além disso, o Mapa possui uma tecnologia de proteção (Data Masking) que oculta automaticamente números de CPF e telefones antes de qualquer processamento. Seus segredos estão seguros."
           />
 
           <Section
-            icon={<Map size={18} strokeWidth={1.75} className="text-mapa-pink-deep" />}
+            icon={<Map size={18} strokeWidth={1.75} style={gradientStroke} />}
             title="Por que se chama Mapa"
             content="Porque a ideia não é te dizer para onde ir, mas te ajudar a desenhar o seu próprio mapa emocional. Os caminhos, os ciclos, os lugares onde você mais passa. O resto, você decide."
           />
@@ -127,6 +130,12 @@ function Section({
         <p className="text-[14px] font-semibold text-mapa-pink-deep font-[family-name:var(--font-quicksand)]">
           {title}
         </p>
+      </div>
+      <div
+        className="text-center text-mapa-pink/60 text-[10px] tracking-[6px] mb-2"
+        aria-hidden="true"
+      >
+        · · ·
       </div>
       <p className="text-[13px] text-mapa-text leading-relaxed font-[family-name:var(--font-quicksand)]">
         {content}
