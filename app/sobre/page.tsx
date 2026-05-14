@@ -7,7 +7,7 @@ import {
   MessageCircle,
   BarChart3,
   ShieldCheck,
-  Compass,
+  Map,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import BottomNav from "@/app/components/BottomNav";
@@ -92,7 +92,7 @@ export default function SobrePage() {
           />
 
           <Section
-            icon={<Compass size={18} strokeWidth={1.75} className="text-mapa-pink-deep" />}
+            icon={<Map size={18} strokeWidth={1.75} className="text-mapa-pink-deep" />}
             title="Por que se chama Mapa"
             content="Porque a ideia não é te dizer para onde ir, mas te ajudar a desenhar o seu próprio mapa emocional. Os caminhos, os ciclos, os lugares onde você mais passa. O resto, você decide."
           />
