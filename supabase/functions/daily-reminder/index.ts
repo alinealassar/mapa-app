@@ -100,12 +100,26 @@ Deno.serve(async (req) => {
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-    // 1. Buscar usuárias inativas (sem registro em 24h)
-    const { data: profiles } = await supabaseAdmin.from("profiles").select("id, name");
-    const { data: recentEntries } = await supabaseAdmin.from("mood_entries").select("user_id").gt("created_at", yesterday);
-    
+    // 1. Buscar usuárias com lembretes ativados (default true se a coluna for null)
+    const { data: profiles, error: profilesError } = await supabaseAdmin
+      .from("profiles")
+      .select("id, name, reminders_enabled")
+      .or("reminders_enabled.is.null,reminders_enabled.eq.true");
+
+    if (profilesError) {
+      console.error("Erro ao buscar profiles:", profilesError);
+      return new Response(JSON.stringify({ error: profilesError.message }), { status: 500 });
+    }
+
+    const { data: recentEntries } = await supabaseAdmin
+      .from("mood_entries")
+      .select("user_id")
+      .gt("created_at", yesterday);
+
     const activeUserIds = new Set(recentEntries?.map((e) => e.user_id) || []);
     const inactiveUsers = profiles?.filter((p) => !activeUserIds.has(p.id)) || [];
+
+    console.log(`[daily-reminder] profiles=${profiles?.length || 0} inactive=${inactiveUsers.length}`);
 
     // 2. Preparar Firebase Access Token
     let fcmAccessToken = "";

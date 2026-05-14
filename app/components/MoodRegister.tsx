@@ -458,6 +458,7 @@ export default function MoodRegister() {
       if (!user) throw new Error("Não autenticada");
       let uploadedAudioUrl: string | null = null;
       let transcribedNote: string | null = null;
+      let maskedTranscription: string | null = null;
       if (audioBlob) {
         const fn = `${user.id}/${Date.now()}.webm`;
         const { error } = await supabase.storage
@@ -481,12 +482,26 @@ export default function MoodRegister() {
           if (tRes.ok) {
             const tData = await tRes.json();
             transcribedNote = tData.transcription || null;
-            setAudioTranscription(transcribedNote);
+            // Defesa em profundidade: se o áudio mencionar palavras de crise,
+            // aborta o save e mostra modal CVV (igual ao que fazemos com texto)
+            if (transcribedNote && containsCrisisKeywords(transcribedNote)) {
+              setShowCrisisModal(true);
+              setSaving(false);
+              return;
+            }
+            // Mascara CPF/telefone falados antes de salvar e enviar pra IA
+            maskedTranscription = transcribedNote
+              ? maskSensitiveData(transcribedNote)
+              : null;
+            setAudioTranscription(maskedTranscription);
           }
         } catch (e) {
           console.warn("Transcrição não disponível:", e);
         }
       }
+      // Se a usuária só gravou áudio (sem escrever), guarda a transcrição
+      // mascarada como `note` — assim ela vê o texto no histórico depois.
+      const noteToSave = maskedNote || maskedTranscription || null;
       const { data: entry, error: ie } = await supabase
         .from("mood_entries")
         .insert({
@@ -496,7 +511,7 @@ export default function MoodRegister() {
           energy_level: energyLevel > 0 ? energyLevel : null,
           tags: selectedTags,
           activities: selectedActivities,
-          note: maskedNote || null,
+          note: noteToSave,
           audio_url: uploadedAudioUrl,
           // Sprint 3.1: campos de sono (NULL se não preenchidos)
           sleep_quality: sleepQuality,
@@ -525,7 +540,7 @@ export default function MoodRegister() {
                 energy_level: energyLevel,
                 tags: selectedTags,
                 activities: selectedActivities,
-                note: transcribedNote || maskedNote || null,
+                note: maskedTranscription || maskedNote || null,
               },
             },
           });

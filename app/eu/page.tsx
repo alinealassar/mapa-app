@@ -1,12 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Pencil, Bell, BellOff, Lock, Heart, LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import BottomNav from "@/app/components/BottomNav";
+import ChangePasswordModal from "@/app/components/ChangePasswordModal";
 import { useNotifications } from "@/lib/hooks/useNotifications";
 
 export default function EuPage() {
-  const { permission, loading, requestPermission } = useNotifications();
+  const {
+    permission,
+    loading: notifLoading,
+    enabled: remindersEnabled,
+    toggleReminders,
+  } = useNotifications();
   const [authenticated, setAuthenticated] = useState(false);
   const [userId, setUserId] = useState("");
   const [name, setName] = useState("");
@@ -17,6 +24,10 @@ export default function EuPage() {
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState("");
   const [savingName, setSavingName] = useState(false);
+
+  // Alterar senha
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordSavedToast, setPasswordSavedToast] = useState(false);
 
   useEffect(() => {
     async function check() {
@@ -45,7 +56,6 @@ export default function EuPage() {
         if (data?.name) {
           setName(data.name);
         } else if (user.email) {
-          // Fallback: parte do email antes do @, capitalizada
           const fromEmail = user.email.split("@")[0];
           setName(fromEmail.charAt(0).toUpperCase() + fromEmail.slice(1));
         }
@@ -99,9 +109,18 @@ export default function EuPage() {
     setEditingName(false);
   }
 
-  function emBreve() {
-    alert("Em breve! 🌸 Estou preparando essa parte com carinho.");
+  function handlePasswordSuccess() {
+    setShowPasswordModal(false);
+    setPasswordSavedToast(true);
+    setTimeout(() => setPasswordSavedToast(false), 3500);
   }
+
+  // Estado visual do toggle de lembretes:
+  // - "blocked": navegador negou permissão (não dá para reverter daqui, precisa do cadeado do navegador)
+  // - "on": flag profiles.reminders_enabled=true
+  // - "off": flag false (ou null)
+  const remindersBlocked = permission === "denied";
+  const remindersOn = remindersEnabled === true && !remindersBlocked;
 
   if (!authenticated) {
     return (
@@ -127,14 +146,17 @@ export default function EuPage() {
           <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-mapa-pink-light to-mapa-lavender-light flex items-center justify-center text-4xl border-[3px] border-mapa-pink-light mb-3">
             🌸
           </div>
-          <p className="font-[family-name:var(--font-playfair)] text-[22px] text-mapa-pink-deep">
+          <p className="font-[family-name:var(--font-quicksand)] text-[20px] font-semibold text-mapa-text">
             {name || "..."}
           </p>
-          <p className="text-xs text-mapa-muted mb-6 break-all">{email}</p>
+          <p className="text-xs text-mapa-muted mb-6 break-all font-[family-name:var(--font-quicksand)]">
+            {email}
+          </p>
         </div>
 
         <div className="px-5">
           <div className="bg-mapa-card border border-mapa-border rounded-[18px] overflow-hidden mb-3.5">
+            {/* EDITAR NOME */}
             {editingName ? (
               <div className="px-4 py-3.5 border-b border-mapa-border/60 bg-mapa-pink-light/30">
                 <p className="text-[11px] font-semibold text-mapa-pink-deep uppercase tracking-wide mb-2">
@@ -175,33 +197,69 @@ export default function EuPage() {
                 onClick={startEditingName}
                 className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-mapa-border/60 bg-transparent cursor-pointer text-left text-[13px] font-medium text-mapa-text font-[family-name:var(--font-quicksand)] hover:bg-mapa-pink-light/40 transition"
               >
-                <span className="text-lg">✏️</span>
+                <Pencil size={18} strokeWidth={1.75} className="text-mapa-pink-deep" />
                 <span className="flex-1">Editar meu nome</span>
                 <span className="text-mapa-muted text-base">›</span>
               </button>
             )}
-            <button
-              onClick={requestPermission}
-              disabled={loading}
-              className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-mapa-border/60 bg-transparent cursor-pointer text-left text-[13px] font-medium text-mapa-text font-[family-name:var(--font-quicksand)] hover:bg-mapa-pink-light/40 transition disabled:opacity-50"
-            >
-              <span className="text-lg">🔔</span>
-              <div className="flex-1">
-                <span>Lembretes</span>
-                {permission === "granted" && (
-                  <span className="ml-2 text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-semibold uppercase">Ativos</span>
+
+            {/* LEMBRETES — toggle real */}
+            <div className="px-4 py-3.5 border-b border-mapa-border/60">
+              <div className="flex items-center gap-3">
+                {remindersOn ? (
+                  <Bell size={18} strokeWidth={1.75} className="text-mapa-pink-deep" />
+                ) : (
+                  <BellOff size={18} strokeWidth={1.75} className="text-mapa-muted" />
                 )}
-                {permission === "denied" && (
-                  <span className="ml-2 text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-semibold uppercase">Bloqueados</span>
-                )}
+                <div className="flex-1">
+                  <p className="text-[13px] font-medium text-mapa-text font-[family-name:var(--font-quicksand)]">
+                    Lembretes diários
+                  </p>
+                  <p className="text-[11px] text-mapa-muted mt-0.5 font-[family-name:var(--font-quicksand)]">
+                    {remindersBlocked
+                      ? "Bloqueado no navegador — abra o cadeado 🔒 ao lado do endereço para liberar"
+                      : remindersOn
+                      ? "Você recebe um carinho da Lis às 20h"
+                      : "Ative para receber um lembrete gentil às 20h"}
+                  </p>
+                </div>
+                {/* Switch */}
+                <button
+                  onClick={toggleReminders}
+                  disabled={notifLoading || remindersBlocked || remindersEnabled === null}
+                  aria-label={remindersOn ? "Desativar lembretes" : "Ativar lembretes"}
+                  aria-pressed={remindersOn}
+                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border-none flex-shrink-0 ${
+                    remindersOn
+                      ? "bg-gradient-to-br from-mapa-pink to-mapa-lavender"
+                      : "bg-mapa-border"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${
+                      remindersOn ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
               </div>
-              <span className="text-mapa-muted text-base">{loading ? "..." : "›"}</span>
+            </div>
+
+            {/* ALTERAR SENHA */}
+            <button
+              onClick={() => setShowPasswordModal(true)}
+              className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-mapa-border/60 bg-transparent cursor-pointer text-left text-[13px] font-medium text-mapa-text font-[family-name:var(--font-quicksand)] hover:bg-mapa-pink-light/40 transition"
+            >
+              <Lock size={18} strokeWidth={1.75} className="text-mapa-pink-deep" />
+              <span className="flex-1">Alterar senha</span>
+              <span className="text-mapa-muted text-base">›</span>
             </button>
+
+            {/* SOBRE */}
             <button
               onClick={() => (window.location.href = "/sobre")}
               className="w-full flex items-center gap-3 px-4 py-3.5 bg-transparent cursor-pointer text-left text-[13px] font-medium text-mapa-text font-[family-name:var(--font-quicksand)] hover:bg-mapa-pink-light/40 transition"
             >
-              <span className="text-lg">💖</span>
+              <Heart size={18} strokeWidth={1.75} className="text-mapa-pink-deep" />
               <span className="flex-1">Sobre o Mapa</span>
               <span className="text-mapa-muted text-base">›</span>
             </button>
@@ -210,12 +268,28 @@ export default function EuPage() {
           <button
             onClick={handleSignOut}
             disabled={signingOut}
-            className="w-full py-3.5 rounded-[18px] border-[1.5px] border-mapa-coral bg-transparent text-mapa-coral font-semibold text-sm cursor-pointer disabled:opacity-50 transition font-[family-name:var(--font-quicksand)]"
+            className="w-full py-3.5 rounded-[18px] border-[1.5px] border-mapa-coral bg-transparent text-mapa-coral font-semibold text-sm cursor-pointer disabled:opacity-50 transition font-[family-name:var(--font-quicksand)] flex items-center justify-center gap-2"
           >
-            {signingOut ? "Saindo..." : "↗ Sair da minha conta"}
+            <LogOut size={16} strokeWidth={1.75} />
+            {signingOut ? "Saindo..." : "Sair da minha conta"}
           </button>
         </div>
+
+        {passwordSavedToast && (
+          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-mapa-mint text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-lg z-50 font-[family-name:var(--font-quicksand)]">
+            Senha atualizada 🌸
+          </div>
+        )}
       </main>
+
+      {showPasswordModal && (
+        <ChangePasswordModal
+          email={email}
+          onClose={() => setShowPasswordModal(false)}
+          onSuccess={handlePasswordSuccess}
+        />
+      )}
+
       <BottomNav />
     </>
   );

@@ -288,6 +288,17 @@ export default function Login() {
           </p>
         )}
 
+        {!isSignUp && (
+          <div className="mt-3 text-center">
+            <a
+              href="/recuperar-senha"
+              className="text-xs text-mapa-muted hover:text-mapa-pink-deep hover:underline font-[family-name:var(--font-quicksand)]"
+            >
+              Esqueci minha senha
+            </a>
+          </div>
+        )}
+
         <button
           onClick={() => {
             setIsSignUp(!isSignUp);
