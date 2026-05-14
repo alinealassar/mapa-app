@@ -211,7 +211,7 @@ export default function Login() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-mapa-bg p-6">
       <div className="w-full max-w-sm">
-        <h1 className="text-3xl font-bold text-mapa-text text-center mb-2 font-[family-name:var(--font-quicksand)]">
+        <h1 className="text-[26px] font-semibold text-mapa-text text-center mb-2 font-[family-name:var(--font-quicksand)]">
           Mapa
         </h1>
         <p className="text-sm text-mapa-pink-deep text-center mb-8 italic font-[family-name:var(--font-playfair)]">
@@ -264,9 +264,10 @@ export default function Login() {
               </button>
             </div>
             {isSignUp && (
-              <p className="mt-2 text-xs text-mapa-muted">
-                8 a 12 caracteres, com maiúscula, minúscula, número e caractere especial (ex: @ # $ % &).
-              </p>
+              <div className="mt-2 text-[11px] text-mapa-muted leading-relaxed font-[family-name:var(--font-quicksand)]">
+                <p>8 a 12 caracteres</p>
+                <p>1 maiúscula · 1 minúscula · 1 número · 1 caractere especial</p>
+              </div>
             )}
           </div>
           <button
@@ -289,10 +290,10 @@ export default function Login() {
         )}
 
         {!isSignUp && (
-          <div className="mt-3 text-center">
+          <div className="mt-4 text-center">
             <a
               href="/recuperar-senha"
-              className="text-xs text-mapa-muted hover:text-mapa-pink-deep hover:underline font-[family-name:var(--font-quicksand)]"
+              className="text-sm text-mapa-pink-deep hover:underline font-[family-name:var(--font-quicksand)]"
             >
               Esqueci minha senha
             </a>
