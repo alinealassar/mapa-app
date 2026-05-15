@@ -32,20 +32,6 @@ export default function RootLayout({
       className={`${quicksand.variable} ${playfair.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-mapa-bg font-[family-name:var(--font-quicksand)] text-mapa-text">
-        {/* Gradientes SVG globais — usados por icones lucide via stroke="url(#mapa-grad-...)" */}
-        <svg width="0" height="0" style={{ position: "absolute" }}>
-          <defs>
-            <linearGradient id="mapa-grad-warm" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#E8A0BF" />
-              <stop offset="50%" stopColor="#B8A9D4" />
-              <stop offset="100%" stopColor="#7BC8A4" />
-            </linearGradient>
-            <linearGradient id="mapa-grad-pink" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#E8A0BF" />
-              <stop offset="100%" stopColor="#B8A9D4" />
-            </linearGradient>
-          </defs>
-        </svg>
         <div className="max-w-[420px] mx-auto w-full min-h-screen relative pb-[72px]">
           {children}
         </div>
