@@ -259,6 +259,19 @@ export default function MoodRegister() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Quando a transcricao termina (audioState passa para "done" ou "error"),
+  // o card cresce com a transcricao editavel + botoes. Re-sobe a tela pra
+  // garantir que o conteudo todo fique visivel acima do sticky button.
+  useEffect(() => {
+    if (audioState === "done" || audioState === "error") {
+      const el = document.getElementById("section-nota-pessoal");
+      if (el) {
+        const top = el.getBoundingClientRect().top + window.scrollY - 8;
+        window.scrollTo({ top, behavior: "smooth" });
+      }
+    }
+  }, [audioState]);
+
   useEffect(() => {
     (async () => {
       const {
@@ -882,13 +895,18 @@ export default function MoodRegister() {
               <button
                 onClick={() => {
                   setNoteTab("audio");
-                  // Sobe a tela ate a Section de Nota pessoal pra o card de
-                  // audio nao ficar embaixo do sticky "Registrar momento".
+                  // Sobe a tela bem alto pra o card de audio nao ficar embaixo
+                  // do sticky "Registrar momento" (~150px no fundo da tela).
+                  // Usa scrollTo com offset manual (mais agressivo que
+                  // scrollIntoView).
                   setTimeout(() => {
-                    document
-                      .getElementById("section-nota-pessoal")
-                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                  }, 50);
+                    const el = document.getElementById("section-nota-pessoal");
+                    if (el) {
+                      const top =
+                        el.getBoundingClientRect().top + window.scrollY - 8;
+                      window.scrollTo({ top, behavior: "smooth" });
+                    }
+                  }, 80);
                 }}
                 className={`flex-1 py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer border-none font-[family-name:var(--font-quicksand)] ${noteTab === "audio" ? "text-mapa-pink-deep bg-mapa-pink-light" : "text-mapa-muted bg-transparent"}`}
               >
