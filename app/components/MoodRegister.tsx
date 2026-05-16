@@ -230,7 +230,6 @@ export default function MoodRegister() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedActivities, setSelectedActivities] = useState<string[]>([]);
   const [note, setNote] = useState("");
-  const [audioTranscription, setAudioTranscription] = useState<string | null>(null);
   const [noteTab, setNoteTab] = useState<"text" | "audio">("text");
   const [showCrisisModal, setShowCrisisModal] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -240,12 +239,18 @@ export default function MoodRegister() {
   const [placeholderText, setPlaceholderText] = useState(
     "Conte o que quiser, esse espaço é só seu..."
   );
-  const [audioState, setAudioState] = useState<"idle" | "recording" | "done">(
-    "idle"
-  );
+  // audioState: "idle" -> "recording" -> "transcribing" -> "done" | "error"
+  // Quando done, transcribedText tem o texto (editavel pela usuaria) e
+  // audioDurationSeconds tem a duracao retornada pelo Whisper.
+  const [audioState, setAudioState] = useState<
+    "idle" | "recording" | "transcribing" | "done" | "error"
+  >("idle");
   const [recSeconds, setRecSeconds] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [transcribedText, setTranscribedText] = useState("");
+  const [audioDurationSeconds, setAudioDurationSeconds] = useState(0);
+  const [transcriptionError, setTranscriptionError] = useState("");
   const [isPlaying, setIsPlaying] = useState(false);
   const [playProgress, setPlayProgress] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -335,6 +340,9 @@ export default function MoodRegister() {
         setAudioBlob(b);
         setAudioUrl(URL.createObjectURL(b));
         stream.getTracks().forEach((t) => t.stop());
+        // Transcricao em background: comeca assim que para de gravar,
+        // sem esperar a usuaria clicar em "Registrar momento".
+        void transcribeAudio(b);
       };
       mr.start();
       setAudioState("recording");
@@ -374,7 +382,46 @@ export default function MoodRegister() {
     if (mediaRecorderRef.current?.state !== "inactive")
       mediaRecorderRef.current?.stop();
     clearInterval(recTimerRef.current!);
-    setAudioState("done");
+    // Vai pra "transcribing" enquanto Whisper roda. transcribeAudio() seta "done" ou "error".
+    setAudioState("transcribing");
+  }
+
+  // Manda o blob pro transcribe-audio (Groq Whisper) e atualiza estado.
+  // Roda em background ao parar a gravacao. Tambem pode ser chamado por retry.
+  async function transcribeAudio(blob: Blob) {
+    setTranscriptionError("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const fd = new FormData();
+      fd.append("audio", blob, "audio.webm");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/transcribe-audio`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${session?.access_token}` },
+          body: fd,
+        }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const text: string = (data.transcription || "").trim();
+      const dur: number = data.duration_seconds || 0;
+      setTranscribedText(text);
+      setAudioDurationSeconds(dur);
+      setAudioState("done");
+    } catch (e) {
+      console.warn("Falha na transcricao:", e);
+      setTranscriptionError(
+        "Não consegui transcrever agora. Você pode tentar de novo, salvar só o áudio ou escrever no lugar."
+      );
+      setAudioState("error");
+    }
+  }
+
+  function retryTranscribe() {
+    if (!audioBlob) return;
+    setAudioState("transcribing");
+    void transcribeAudio(audioBlob);
   }
 
   function deleteRecording() {
@@ -383,6 +430,9 @@ export default function MoodRegister() {
     setAudioUrl(null);
     setAudioState("idle");
     setRecSeconds(0);
+    setTranscribedText("");
+    setAudioDurationSeconds(0);
+    setTranscriptionError("");
     setIsPlaying(false);
     setPlayProgress(0);
     if (audioRef.current) {
@@ -436,18 +486,32 @@ export default function MoodRegister() {
       alert(
         "Para registrar, escolha primeiro como está seu humor (toque em um dos emojis no topo: 😣 😒 😐 😊 🤩)."
       );
-      // Rola a tela até a seção de Humor pra Marina ver onde clicar
       document
         .getElementById("section-humor")
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
-    if (containsCrisisKeywords(note)) {
+    // Bloqueia save enquanto Whisper ainda esta processando
+    if (audioState === "transcribing") {
+      alert("Espera só um instante, ainda estou ouvindo seu áudio 🌸");
+      return;
+    }
+    // Decide qual nota vai pra IA e pra db:
+    // - se ela gravou audio: usa transcribedText (que ela pode ter editado) ou
+    //   fallback pra texto digitado se transcricao falhou
+    // - se so digitou: usa note
+    const hasAudio = !!audioBlob;
+    const rawNote = hasAudio
+      ? (transcribedText.trim() || note.trim())
+      : note;
+    const noteSource: "text" | "audio" =
+      hasAudio && transcribedText.trim() ? "audio" : "text";
+
+    if (containsCrisisKeywords(rawNote)) {
       setShowCrisisModal(true);
       return;
     }
-
-    const maskedNote = maskSensitiveData(note);
+    const maskedNote = maskSensitiveData(rawNote);
 
     setSaving(true);
     setAiFeedback(null);
@@ -457,8 +521,6 @@ export default function MoodRegister() {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Não autenticada");
       let uploadedAudioUrl: string | null = null;
-      let transcribedNote: string | null = null;
-      let maskedTranscription: string | null = null;
       if (audioBlob) {
         const fn = `${user.id}/${Date.now()}.webm`;
         const { error } = await supabase.storage
@@ -470,38 +532,7 @@ export default function MoodRegister() {
             .getPublicUrl(fn);
           uploadedAudioUrl = data.publicUrl;
         }
-        // Transcrever áudio com Groq Whisper
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          const fd = new FormData();
-          fd.append("audio", audioBlob, "audio.webm");
-          const tRes = await fetch(
-            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/transcribe-audio`,
-            { method: "POST", headers: { Authorization: `Bearer ${session?.access_token}` }, body: fd }
-          );
-          if (tRes.ok) {
-            const tData = await tRes.json();
-            transcribedNote = tData.transcription || null;
-            // Defesa em profundidade: se o áudio mencionar palavras de crise,
-            // aborta o save e mostra modal CVV (igual ao que fazemos com texto)
-            if (transcribedNote && containsCrisisKeywords(transcribedNote)) {
-              setShowCrisisModal(true);
-              setSaving(false);
-              return;
-            }
-            // Mascara CPF/telefone falados antes de salvar e enviar pra IA
-            maskedTranscription = transcribedNote
-              ? maskSensitiveData(transcribedNote)
-              : null;
-            setAudioTranscription(maskedTranscription);
-          }
-        } catch (e) {
-          console.warn("Transcrição não disponível:", e);
-        }
       }
-      // Se a usuária só gravou áudio (sem escrever), guarda a transcrição
-      // mascarada como `note` — assim ela vê o texto no histórico depois.
-      const noteToSave = maskedNote || maskedTranscription || null;
       const { data: entry, error: ie } = await supabase
         .from("mood_entries")
         .insert({
@@ -511,12 +542,10 @@ export default function MoodRegister() {
           energy_level: energyLevel > 0 ? energyLevel : null,
           tags: selectedTags,
           activities: selectedActivities,
-          note: noteToSave,
+          note: maskedNote || null,
           audio_url: uploadedAudioUrl,
-          // Sprint 3.1: campos de sono (NULL se não preenchidos)
           sleep_quality: sleepQuality,
           sleep_hours: sleepHours,
-          // Sprint 3.2: tempo de tela manual (NULL se não preenchido)
           screen_time_hours: screenTimeHours,
         })
         .select("id")
@@ -540,7 +569,12 @@ export default function MoodRegister() {
                 energy_level: energyLevel,
                 tags: selectedTags,
                 activities: selectedActivities,
-                note: maskedTranscription || maskedNote || null,
+                note: maskedNote || null,
+                // v13: quando a nota veio de audio, a Lis adapta tom (reconhece
+                // a coragem de gravar voz, hesitacoes como sinais, e usa a
+                // duracao pra detectar desabafo vs registro rapido).
+                note_source: noteSource,
+                audio_duration_seconds: audioDurationSeconds || undefined,
               },
             },
           });
@@ -596,6 +630,9 @@ export default function MoodRegister() {
     setAudioBlob(null);
     setAudioUrl(null);
     setRecSeconds(0);
+    setTranscribedText("");
+    setAudioDurationSeconds(0);
+    setTranscriptionError("");
     setSavedAt(null);
     setAiFeedback(null);
     setAiLoading(false);
@@ -890,16 +927,30 @@ export default function MoodRegister() {
                     </p>
                   </>
                 )}
-                {audioState === "done" && (
+                {audioState === "transcribing" && (
+                  <div className="flex flex-col items-center py-2">
+                    <div className="w-14 h-14 rounded-full bg-mapa-pink-light flex items-center justify-center mb-3 animate-pulse">
+                      <Mic size={22} strokeWidth={1.75} className="text-mapa-pink-deep" />
+                    </div>
+                    <p className="text-[12px] font-semibold text-mapa-pink-deep mb-0.5 font-[family-name:var(--font-quicksand)]">
+                      Ouvindo seu áudio...
+                    </p>
+                    <p className="text-[10px] text-mapa-muted italic font-[family-name:var(--font-playfair)]">
+                      transcrevendo em segundos
+                    </p>
+                  </div>
+                )}
+                {(audioState === "done" || audioState === "error") && (
                   <div className="bg-mapa-pink-light rounded-2xl p-3.5 px-4 text-left">
-                    <div className="flex items-center gap-2.5 mb-2.5">
+                    <div className="flex items-center gap-2.5 mb-3">
                       <button
                         onClick={togglePlayback}
                         className="w-[38px] h-[38px] rounded-full bg-mapa-pink border-none cursor-pointer flex items-center justify-center shrink-0"
+                        aria-label={isPlaying ? "Pausar" : "Ouvir"}
                       >
                         {isPlaying ? <PauseIcon /> : <PlayIcon />}
                       </button>
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-semibold text-mapa-pink-deep">
                           {fmt(
                             audioRef.current
@@ -913,24 +964,57 @@ export default function MoodRegister() {
                         </p>
                       </div>
                     </div>
-                    <div className="w-full h-1 bg-mapa-border rounded-sm overflow-hidden mb-2.5">
+                    <div className="w-full h-1 bg-mapa-border rounded-sm overflow-hidden mb-3">
                       <div
                         className="h-full bg-mapa-pink rounded-sm transition-[width] duration-100"
                         style={{ width: `${playProgress}%` }}
                       />
                     </div>
+
+                    {audioState === "done" && (
+                      <div className="mb-3">
+                        <p className="text-[10px] font-semibold text-mapa-pink-deep uppercase tracking-wide mb-1.5">
+                          O que entendi
+                        </p>
+                        <textarea
+                          value={transcribedText}
+                          onChange={(e) => setTranscribedText(e.target.value)}
+                          placeholder="(áudio em silêncio)"
+                          rows={3}
+                          className="w-full px-3 py-2 rounded-xl border border-mapa-pink/30 bg-white/70 text-[12.5px] text-mapa-text leading-relaxed outline-none focus:ring-2 focus:ring-mapa-pink/30 resize-none font-[family-name:var(--font-quicksand)]"
+                        />
+                        <p className="text-[10px] text-mapa-muted mt-1 italic font-[family-name:var(--font-playfair)]">
+                          dá pra editar, se Whisper errou alguma palavra
+                        </p>
+                      </div>
+                    )}
+
+                    {audioState === "error" && (
+                      <div className="mb-3 p-2.5 rounded-xl bg-mapa-coral/10 border border-mapa-coral/30">
+                        <p className="text-[11.5px] text-mapa-coral leading-relaxed font-[family-name:var(--font-quicksand)]">
+                          {transcriptionError}
+                        </p>
+                        <button
+                          onClick={retryTranscribe}
+                          className="mt-2 text-[11px] font-semibold text-mapa-pink-deep bg-transparent border-none cursor-pointer py-0.5 px-1 underline font-[family-name:var(--font-quicksand)]"
+                        >
+                          Tentar transcrever de novo
+                        </button>
+                      </div>
+                    )}
+
                     <div className="flex justify-center gap-4">
                       <button
                         onClick={redoRecording}
                         className="text-[11px] font-semibold text-mapa-pink-deep bg-transparent border-none cursor-pointer py-1 px-2 rounded-lg hover:bg-mapa-pink-deep/10 font-[family-name:var(--font-quicksand)]"
                       >
-                        🔄 Regravar
+                        Regravar
                       </button>
                       <button
                         onClick={deleteRecording}
                         className="text-[11px] font-semibold text-mapa-coral bg-transparent border-none cursor-pointer py-1 px-2 rounded-lg hover:bg-mapa-coral/10 font-[family-name:var(--font-quicksand)]"
                       >
-                        🗑️ Excluir
+                        Excluir
                       </button>
                     </div>
                   </div>
@@ -946,10 +1030,14 @@ export default function MoodRegister() {
       <div className="fixed bottom-[65px] left-1/2 -translate-x-1/2 w-full max-w-[420px] p-5 pt-10 bg-gradient-to-t from-mapa-bg via-mapa-bg/90 to-transparent z-40 pointer-events-none">
         <button
           onClick={handleSave}
-          disabled={saving || aiLoading}
+          disabled={saving || aiLoading || audioState === "transcribing"}
           className="w-full py-[15px] rounded-3xl border-none bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white text-[15px] font-semibold cursor-pointer tracking-wide shadow-[0_6px_20px_rgba(232,160,191,0.35)] active:scale-[0.95] active:brightness-95 transition-all duration-150 disabled:opacity-70 font-[family-name:var(--font-quicksand)] pointer-events-auto"
         >
-          {saving ? "Salvando..." : "Registrar momento"}
+          {audioState === "transcribing"
+            ? "Ouvindo seu áudio..."
+            : saving
+            ? "Salvando seu momento..."
+            : "Registrar momento"}
         </button>
       </div>
 

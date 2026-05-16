@@ -1,4 +1,8 @@
-// generate-mood-feedback v12 — com memória semântica (Supabase.ai gte-small + pgvector)
+// generate-mood-feedback v13 — sensível ao áudio (nota falada vs digitada)
+// v13 (16/05/2026): recebe `note_source` ("audio" | "text") e
+// `audio_duration_seconds`. Quando vier de áudio, instrui a Lis a reconhecer
+// a coragem de gravar voz, ouvir hesitações como sinais emocionais, e adaptar
+// tom pra desabafos longos (>60s).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -52,6 +56,8 @@ interface MoodEntry {
   tags: string[];
   activities: string[];
   note: string | null;
+  note_source?: "text" | "audio";
+  audio_duration_seconds?: number;
 }
 
 interface RecentEntry {
@@ -186,12 +192,34 @@ CONTEXTO DE ANSIEDADE: ela está ansiosa ou estressada.
 `;
   }
 
+  // Camada de áudio: a nota veio de uma fala gravada, não de texto digitado.
+  // Whisper preserva hesitações ("ah", "tipo"), gírias e o ritmo da fala.
+  // Use isso como dado emocional — não comente erros de transcrição.
+  if (entry.note_source === "audio") {
+    const dur = entry.audio_duration_seconds || 0;
+    const isDesabafo = dur >= 60;
+    const isQuickVoice = dur > 0 && dur < 15;
+    systemPrompt += `
+NOTA VEIO DE ÁUDIO (não foi digitada): ela gravou a voz.
+- O texto da nota é a transcrição automática da fala dela. Hesitações, repetições e pausas (registradas como vírgulas/reticências) são parte do estado emocional — não corrija nem comente erros de transcrição.
+- Reconheça implicitamente o ato de gravar voz quando fizer sentido (gravar é mais íntimo que digitar; muitas vezes acontece quando o sentimento é maior do que dá para escrever).
+`;
+    if (isDesabafo) {
+      systemPrompt += `- Áudio LONGO (${dur}s): é um desabafo. Dê espaço, não corra para a sugestão. Valide o tamanho do que ela sentiu necessidade de tirar para fora antes de qualquer micro-sugestão.\n`;
+    } else if (isQuickVoice) {
+      systemPrompt += `- Áudio CURTO (${dur}s): registro rápido. Resposta também curta, sem encher.\n`;
+    }
+  }
+
   let userPrompt = `${userName} acabou de registrar como está se sentindo:\n`;
   userPrompt += `- Humor: ${MOOD_LABELS[entry.mood_emoji] || entry.mood_emoji} (${moodScale}/10)\n`;
   if (entry.energy_level) userPrompt += `- Energia: ${energyLabels[entry.energy_level] || "não informada"}\n`;
   if (entry.tags && entry.tags.length > 0) userPrompt += `- Sentimentos marcados: ${entry.tags.join(", ")}\n`;
   if (entry.activities && entry.activities.length > 0) userPrompt += `- Atividades do dia: ${entry.activities.join(", ")}\n`;
-  if (entry.note) userPrompt += `- Nota pessoal dela: "${maskSensitiveData(entry.note)}"\n`;
+  if (entry.note) {
+    const noteLabel = entry.note_source === "audio" ? "Nota dela (gravada em áudio)" : "Nota pessoal dela";
+    userPrompt += `- ${noteLabel}: "${maskSensitiveData(entry.note)}"\n`;
+  }
   if (goal && goalLabels[goal]) userPrompt += `\nObjetivo dela no Mapa: ${goalLabels[goal]}\n`;
   if (recentEntries.length > 0) {
     userPrompt += `\nRegistros recentes dela (mais recente primeiro):\n`;
