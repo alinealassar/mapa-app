@@ -1,0 +1,18 @@
+name: Cron Lembretes (20h)
+
+on:
+  schedule:
+    # 23:00 UTC = 20:00 no Horario de Brasilia
+    - cron: '0 23 * * *'
+  # botao manual no GitHub para testar na hora
+  workflow_dispatch:
+
+jobs:
+  disparar-lembretes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Acordando a Edge Function do Mapa
+        run: |
+          curl -i -X POST "https://hsgotkeydyvrollnzbbf.supabase.co/functions/v1/daily-reminder" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json"
