@@ -1026,20 +1026,23 @@ export default function MoodRegister() {
 
       </div>
 
-      {/* STICKY SAVE BUTTON */}
-      <div className="fixed bottom-[65px] left-1/2 -translate-x-1/2 w-full max-w-[420px] p-5 pt-10 bg-gradient-to-t from-mapa-bg via-mapa-bg/90 to-transparent z-40 pointer-events-none">
-        <button
-          onClick={handleSave}
-          disabled={saving || aiLoading || audioState === "transcribing"}
-          className="w-full py-[15px] rounded-3xl border-none bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white text-[15px] font-semibold cursor-pointer tracking-wide shadow-[0_6px_20px_rgba(232,160,191,0.35)] active:scale-[0.95] active:brightness-95 transition-all duration-150 disabled:opacity-70 font-[family-name:var(--font-quicksand)] pointer-events-auto"
-        >
-          {audioState === "transcribing"
-            ? "Ouvindo seu áudio..."
-            : saving
-            ? "Salvando seu momento..."
-            : "Registrar momento"}
-        </button>
-      </div>
+      {/* STICKY SAVE BUTTON — escondido durante a gravacao para nao tampar
+          o timer do microfone. Volta quando parar de gravar. */}
+      {audioState !== "recording" && (
+        <div className="fixed bottom-[65px] left-1/2 -translate-x-1/2 w-full max-w-[420px] p-5 pt-10 bg-gradient-to-t from-mapa-bg via-mapa-bg/90 to-transparent z-40 pointer-events-none">
+          <button
+            onClick={handleSave}
+            disabled={saving || aiLoading || audioState === "transcribing"}
+            className="w-full py-[15px] rounded-3xl border-none bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white text-[15px] font-semibold cursor-pointer tracking-wide shadow-[0_6px_20px_rgba(232,160,191,0.35)] active:scale-[0.95] active:brightness-95 transition-all duration-150 disabled:opacity-70 font-[family-name:var(--font-quicksand)] pointer-events-auto"
+          >
+            {audioState === "transcribing"
+              ? "Ouvindo seu áudio..."
+              : saving
+              ? "Salvando seu momento..."
+              : "Registrar momento"}
+          </button>
+        </div>
+      )}
 
       {/* MODAL DA LIS */}
       {(aiLoading || aiFeedback) && (
