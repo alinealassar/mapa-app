@@ -7,7 +7,11 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FIREBASE_SERVICE_ACCOUNT = JSON.parse(Deno.env.get("FIREBASE_SERVICE_ACCOUNT") || "{}");
 
-// Template de E-mail (Lis Persona)
+// Quick fix enquanto mapaapp.com.br nao esta verificado no Resend.
+// Para usar dominio proprio: adicionar mapaapp.com.br em resend.com/domains
+// e voltar o from para "Lis do Mapa <oi@mapaapp.com.br>".
+const EMAIL_FROM = "Lis do Mapa <onboarding@resend.dev>";
+
 const EMAIL_TEMPLATE = `
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -28,11 +32,11 @@ const EMAIL_TEMPLATE = `
     <div class="container">
         <div class="top-strip"></div>
         <div class="content">
-            <h1>Que bom te ver por aqui.</h1>
-            <p>Oi {{name}}, como você está se sentindo agora?</p>
-            <p>Notei que hoje o seu mapa ficou um pouco em silêncio. Passo por aqui apenas para te lembrar que este espaço é seu.</p>
+            <h1>Como você está hoje?</h1>
+            <p>Oi {{name}}, aqui é a Lis. Passei só para te dar um oi e perguntar como está o seu dia.</p>
+            <p>Se quiser, vem dar uma passada no seu mapa — em palavras, emojis ou áudio. Sem cobrança, no seu ritmo.</p>
             <p style="font-style: italic; color: #8E3A6B;">"Aqui você não precisa dar conta de nada."</p>
-            <a href="https://mapa-app-q3rh.onrender.com/registrar" class="button">Abrir meu Mapa 🗺️</a>
+            <a href="https://mapa-app-q3rh.onrender.com/registrar" class="button">Abrir meu Mapa</a>
             <p style="margin-top: 40px; font-style: italic; color: #8E3A6B;">com carinho, Lis.</p>
         </div>
     </div>
@@ -40,7 +44,11 @@ const EMAIL_TEMPLATE = `
 </html>
 `;
 
-// Helper para gerar token de acesso do Google para o FCM
+const PUSH_TITLE = "Oi, é a Lis";
+function pushBody(name: string | null) {
+  return `${name || "Você"}, passei pra te dar um oi. Como você está hoje?`;
+}
+
 async function getAccessToken(serviceAccount: any) {
   const header = { alg: "RS256", typ: "JWT" };
   const now = Math.floor(Date.now() / 1000);
@@ -96,86 +104,123 @@ function str2ab(str: string) {
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
 
+  // Body opcional para casos de teste/debug
+  let body: { only_user_id?: string; skip_email?: boolean; skip_push?: boolean } = {};
+  try {
+    const text = await req.text();
+    if (text) body = JSON.parse(text);
+  } catch (_) { /* body opcional */ }
+
   try {
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-    // 1. Buscar usuárias com lembretes ativados (default true se a coluna for null)
-    const { data: profiles, error: profilesError } = await supabaseAdmin
+    // Busca usuárias com lembretes ativados (default true).
+    // SEM filtro de 24h — manda diariamente para TODOS conforme decidido em 16/05/2026.
+    let query = supabaseAdmin
       .from("profiles")
       .select("id, name, reminders_enabled")
       .or("reminders_enabled.is.null,reminders_enabled.eq.true");
+    if (body.only_user_id) query = query.eq("id", body.only_user_id);
 
+    const { data: profiles, error: profilesError } = await query;
     if (profilesError) {
       console.error("Erro ao buscar profiles:", profilesError);
       return new Response(JSON.stringify({ error: profilesError.message }), { status: 500 });
     }
 
-    const { data: recentEntries } = await supabaseAdmin
-      .from("mood_entries")
-      .select("user_id")
-      .gt("created_at", yesterday);
+    const targets = profiles || [];
+    console.log(`[daily-reminder] targets=${targets.length}`);
 
-    const activeUserIds = new Set(recentEntries?.map((e) => e.user_id) || []);
-    const inactiveUsers = profiles?.filter((p) => !activeUserIds.has(p.id)) || [];
-
-    console.log(`[daily-reminder] profiles=${profiles?.length || 0} inactive=${inactiveUsers.length}`);
-
-    // 2. Preparar Firebase Access Token
     let fcmAccessToken = "";
-    if (FIREBASE_SERVICE_ACCOUNT.project_id) {
+    if (!body.skip_push && FIREBASE_SERVICE_ACCOUNT.project_id) {
       fcmAccessToken = await getAccessToken(FIREBASE_SERVICE_ACCOUNT);
     }
 
-    const results = [];
+    let emails_sent = 0;
+    let emails_failed = 0;
+    let pushes_sent = 0;
+    let pushes_failed = 0;
 
-    for (const user of inactiveUsers) {
-      // --- ENVIO DE E-MAIL ---
-      const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(user.id);
-      if (authUser.user?.email) {
-        const html = EMAIL_TEMPLATE.replace("{{name}}", user.name || "Aline");
-        await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
-          body: JSON.stringify({
-            from: "Lis do Mapa <oi@mapaapp.com.br>",
-            to: [authUser.user.email],
-            subject: "Passando para te dar um oi 🌸",
-            html
-          }),
-        });
-      }
-
-      // --- ENVIO DE PUSH ---
-      if (fcmAccessToken) {
-        const { data: tokens } = await supabaseAdmin.from("user_push_tokens").select("token").eq("user_id", user.id);
-        if (tokens && tokens.length > 0) {
-          for (const { token } of tokens) {
-            await fetch(`https://fcm.googleapis.com/v1/projects/${FIREBASE_SERVICE_ACCOUNT.project_id}/messages:send`, {
+    for (const user of targets) {
+      // --- EMAIL ---
+      if (!body.skip_email) {
+        const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(user.id);
+        const email = authUser.user?.email;
+        if (email) {
+          try {
+            const html = EMAIL_TEMPLATE.replace("{{name}}", user.name || "amiga");
+            const resp = await fetch("https://api.resend.com/emails", {
               method: "POST",
-              headers: { "Content-Type": "application/json", Authorization: `Bearer ${fcmAccessToken}` },
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
               body: JSON.stringify({
-                message: {
-                  token,
-                  notification: {
-                    title: "Passando para te dar um oi 🌸",
-                    body: `${user.name || "Aline"}, notei que o seu mapa ficou em silêncio hoje. Estou aqui para te ouvir.`
-                  },
-                  webpush: {
-                    fcm_options: { link: "https://mapa-app-q3rh.onrender.com/registrar" }
-                  }
-                }
+                from: EMAIL_FROM,
+                to: [email],
+                subject: "Oi, é a Lis 🌸",
+                html,
               }),
             });
+            if (resp.ok) emails_sent++;
+            else {
+              emails_failed++;
+              console.warn(`Email falhou para ${email}: ${resp.status} ${await resp.text()}`);
+            }
+          } catch (e: any) {
+            emails_failed++;
+            console.warn(`Email throw para ${user.id}:`, e.message);
           }
         }
       }
-      results.push(user.id);
+
+      // --- PUSH ---
+      if (!body.skip_push && fcmAccessToken) {
+        const { data: tokens } = await supabaseAdmin
+          .from("user_push_tokens")
+          .select("token")
+          .eq("user_id", user.id);
+        if (tokens && tokens.length > 0) {
+          for (const { token } of tokens) {
+            try {
+              const resp = await fetch(
+                `https://fcm.googleapis.com/v1/projects/${FIREBASE_SERVICE_ACCOUNT.project_id}/messages:send`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", Authorization: `Bearer ${fcmAccessToken}` },
+                  body: JSON.stringify({
+                    message: {
+                      token,
+                      notification: { title: PUSH_TITLE, body: pushBody(user.name) },
+                      webpush: { fcm_options: { link: "https://mapa-app-q3rh.onrender.com/registrar" } },
+                    },
+                  }),
+                }
+              );
+              if (resp.ok) pushes_sent++;
+              else {
+                pushes_failed++;
+                console.warn(`Push falhou para token ${token.slice(0,12)}...: ${resp.status}`);
+              }
+            } catch (e: any) {
+              pushes_failed++;
+              console.warn(`Push throw:`, e.message);
+            }
+          }
+        }
+      }
     }
 
-    return new Response(JSON.stringify({ success: true, notified: results.length }), { status: 200 });
-
-  } catch (error) {
+    return new Response(
+      JSON.stringify({
+        success: true,
+        targets: targets.length,
+        emails_sent,
+        emails_failed,
+        pushes_sent,
+        pushes_failed,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  } catch (error: any) {
+    console.error("daily-reminder erro fatal:", error);
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 });

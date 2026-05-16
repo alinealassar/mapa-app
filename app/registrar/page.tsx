@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import MoodRegister from "@/app/components/MoodRegister";
 import BottomNav from "@/app/components/BottomNav";
+import RemindersPrompt from "@/app/components/RemindersPrompt";
 
 export default function RegistrarPage() {
   const [authenticated, setAuthenticated] = useState(false);
@@ -46,6 +47,7 @@ export default function RegistrarPage() {
 
   return (
     <>
+      <RemindersPrompt />
       <MoodRegister />
       <BottomNav />
     </>
