@@ -17,7 +17,7 @@ const DISMISS_KEY = "mapa_reminders_prompt_v1";
  * salva token FCM). Se clicar "Agora não", fecha e nunca mais aparece.
  */
 export default function RemindersPrompt() {
-  const { enableReminders, loading } = useNotifications();
+  const { enableReminders, disableReminders, loading } = useNotifications();
   const [show, setShow] = useState(false);
   const [activating, setActivating] = useState(false);
 
@@ -52,9 +52,17 @@ export default function RemindersPrompt() {
     })();
   }, []);
 
-  function dismiss() {
+  // Quando dispensa o banner (Agora não / X), também marca no banco
+  // reminders_enabled=false + reminders_disabled_at=now. Assim a decisão fica
+  // registrada (não só local no navegador) e o disparo das 20h pula ela.
+  async function dismiss() {
     localStorage.setItem(DISMISS_KEY, "true");
     setShow(false);
+    try {
+      await disableReminders();
+    } catch (e) {
+      console.warn("Não consegui salvar a dispensa do banner:", e);
+    }
   }
 
   async function handleActivate() {
@@ -81,7 +89,7 @@ export default function RemindersPrompt() {
             Posso te lembrar às 20h?
           </p>
           <p className="text-[11.5px] text-mapa-muted mt-1 leading-relaxed font-[family-name:var(--font-quicksand)]">
-            Um oi rapidinho da Lis, sem cobrança. Você pode desativar a qualquer momento na sua conta.
+            Um oi rapidinho da Lis, sem cobrança. Pode mudar essa escolha depois na sua conta.
           </p>
           <div className="flex gap-2 mt-2.5">
             <button
@@ -96,7 +104,7 @@ export default function RemindersPrompt() {
               disabled={activating}
               className="px-3 py-1.5 rounded-xl bg-transparent text-mapa-muted text-[12px] font-semibold cursor-pointer disabled:opacity-50 font-[family-name:var(--font-quicksand)]"
             >
-              Agora não
+              Não quero
             </button>
           </div>
         </div>

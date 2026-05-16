@@ -56,9 +56,13 @@ export const useNotifications = () => {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return;
-    await supabase
-      .from("profiles")
-      .upsert({ id: user.id, reminders_enabled: value });
+    // Quando desativa, marca o timestamp (analytics: saber quem optou e quando).
+    // Quando reativa, limpa o timestamp.
+    await supabase.from("profiles").upsert({
+      id: user.id,
+      reminders_enabled: value,
+      reminders_disabled_at: value ? null : new Date().toISOString(),
+    });
   }, []);
 
   const enableReminders = useCallback(async () => {
