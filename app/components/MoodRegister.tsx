@@ -984,7 +984,7 @@ export default function MoodRegister() {
                           className="w-full px-3 py-2 rounded-xl border border-mapa-pink/30 bg-white/70 text-[12.5px] text-mapa-text leading-relaxed outline-none focus:ring-2 focus:ring-mapa-pink/30 resize-none font-[family-name:var(--font-quicksand)]"
                         />
                         <p className="text-[10px] text-mapa-muted mt-1 italic font-[family-name:var(--font-playfair)]">
-                          dá pra editar, se Whisper errou alguma palavra
+                          dá pra editar se entendi errado alguma palavra
                         </p>
                       </div>
                     )}
