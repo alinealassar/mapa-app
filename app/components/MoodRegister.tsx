@@ -661,7 +661,10 @@ export default function MoodRegister() {
         </div>
       </div>
 
-      <div className="px-5 pb-7">
+      {/* pb-44 (~176px) garante folga para o sticky "Registrar momento" nao
+          tampar o conteudo do ultimo card (especialmente o de audio com
+          transcricao editavel + botoes Regravar/Excluir). */}
+      <div className="px-5 pb-44">
         {/* HUMOR — obrigatório, único campo que bloqueia o save se vazio */}
         <div id="section-humor">
         <Section
@@ -864,6 +867,7 @@ export default function MoodRegister() {
         </Section>
 
         {/* NOTA PESSOAL */}
+        <div id="section-nota-pessoal">
         <Section
           label="Nota pessoal"
           hint="escreva ou grave um áudio sobre como foi seu dia"
@@ -879,7 +883,16 @@ export default function MoodRegister() {
                 Escrever
               </button>
               <button
-                onClick={() => setNoteTab("audio")}
+                onClick={() => {
+                  setNoteTab("audio");
+                  // Sobe a tela ate a Section de Nota pessoal pra o card de
+                  // audio nao ficar embaixo do sticky "Registrar momento".
+                  setTimeout(() => {
+                    document
+                      .getElementById("section-nota-pessoal")
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }, 50);
+                }}
                 className={`flex-1 py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer border-none font-[family-name:var(--font-quicksand)] ${noteTab === "audio" ? "text-mapa-pink-deep bg-mapa-pink-light" : "text-mapa-muted bg-transparent"}`}
               >
                 <Mic size={14} strokeWidth={1.75} />
@@ -1023,6 +1036,7 @@ export default function MoodRegister() {
             )}
           </div>
         </Section>
+        </div>
 
       </div>
 
