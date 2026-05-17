@@ -115,13 +115,15 @@ export default function TutorialPage() {
         </button>
       </div>
 
-      {/* Conteudo central com mockup ilustrativo */}
-      <div className="flex-1 flex flex-col items-center justify-center max-w-sm w-full mx-auto py-2">
+      {/* Conteudo central: SEM justify-center pra colar no topo logo apos
+          o header. flex-1 garante que o footer (botoes) fique grudado
+          na base sem espaco extra. */}
+      <div className="flex-1 flex flex-col items-center max-w-sm w-full mx-auto pt-2">
         {slide.key === "registrar" && <RegistrarMock />}
         {slide.key === "lis" && <LisMock />}
         {slide.key === "mapa" && <MapaMock />}
 
-        <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-semibold text-mapa-text mt-5 mb-1.5 text-center">
+        <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-semibold text-mapa-text mt-4 mb-1.5 text-center">
           {slide.title}
         </h1>
         <p className="text-[13.5px] text-mapa-text leading-relaxed font-[family-name:var(--font-quicksand)] text-center max-w-xs">
