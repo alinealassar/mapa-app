@@ -94,44 +94,47 @@ export default function TutorialPage() {
   const isLast = step === SLIDES.length - 1;
 
   return (
-    <main className="bg-gradient-to-b from-mapa-bg via-mapa-pink-light to-mapa-lavender-light flex flex-col px-6 py-3">
-      {/* Topo: progresso + pular */}
-      <div className="max-w-sm w-full mx-auto pt-1 pb-4 flex items-center justify-between">
-        <div className="flex gap-1.5 flex-1">
-          {SLIDES.map((s, i) => (
-            <div
-              key={s.key}
-              className={`flex-1 h-1 rounded-full transition-all ${
-                i <= step ? "bg-mapa-pink" : "bg-mapa-border"
-              }`}
-            />
-          ))}
+    <main className="h-[100dvh] overflow-y-auto bg-gradient-to-b from-mapa-bg via-mapa-pink-light to-mapa-lavender-light px-6 py-3">
+      {/* Estrutura: header em cima (sempre visivel), conteudo central
+          flexivel, botoes na base. Se a viewport for muito pequena,
+          o main tem overflow-y-auto e a tela pode rolar. */}
+      <div className="min-h-full max-w-sm w-full mx-auto flex flex-col">
+        {/* Header */}
+        <div className="pt-1 pb-3 flex items-center justify-between">
+          <div className="flex gap-1.5 flex-1">
+            {SLIDES.map((s, i) => (
+              <div
+                key={s.key}
+                className={`flex-1 h-1 rounded-full transition-all ${
+                  i <= step ? "bg-mapa-pink" : "bg-mapa-border"
+                }`}
+              />
+            ))}
+          </div>
+          <button
+            onClick={finish}
+            className="ml-4 text-xs text-mapa-muted hover:text-mapa-pink-deep cursor-pointer bg-transparent border-none font-[family-name:var(--font-quicksand)]"
+          >
+            Pular
+          </button>
         </div>
-        <button
-          onClick={finish}
-          className="ml-4 text-xs text-mapa-muted hover:text-mapa-pink-deep cursor-pointer bg-transparent border-none font-[family-name:var(--font-quicksand)]"
-        >
-          Pular
-        </button>
-      </div>
 
-      {/* Conteudo: tudo flui em sequencia natural, sem flex-1 nem justify
-          que criavam vazios. Mockup -> titulo -> texto -> botoes,
-          colados verticalmente. */}
-      <div className="flex flex-col items-center max-w-sm w-full mx-auto">
-        {slide.key === "registrar" && <RegistrarMock />}
-        {slide.key === "lis" && <LisMock />}
-        {slide.key === "mapa" && <MapaMock />}
+        {/* Conteudo central — ocupa o que sobrar entre header e botoes */}
+        <div className="flex-1 flex flex-col items-center justify-center py-4">
+          {slide.key === "registrar" && <RegistrarMock />}
+          {slide.key === "lis" && <LisMock />}
+          {slide.key === "mapa" && <MapaMock />}
 
-        <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-semibold text-mapa-text mt-5 mb-1.5 text-center">
-          {slide.title}
-        </h1>
-        <p className="text-[13.5px] text-mapa-text leading-relaxed font-[family-name:var(--font-quicksand)] text-center max-w-xs mb-6">
-          {slide.text}
-        </p>
+          <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-semibold text-mapa-text mt-5 mb-1.5 text-center">
+            {slide.title}
+          </h1>
+          <p className="text-[13.5px] text-mapa-text leading-relaxed font-[family-name:var(--font-quicksand)] text-center max-w-xs">
+            {slide.text}
+          </p>
+        </div>
 
-        {/* Navegacao logo apos o texto, sem espaco forcado */}
-        <div className="w-full flex gap-3">
+        {/* Botoes sempre na base */}
+        <div className="flex gap-3 pb-2 pt-3">
           {step > 0 && (
             <button
               onClick={back}
