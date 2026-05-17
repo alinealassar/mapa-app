@@ -94,9 +94,9 @@ export default function TutorialPage() {
   const isLast = step === SLIDES.length - 1;
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-mapa-bg via-mapa-pink-light to-mapa-lavender-light flex flex-col p-6">
+    <main className="min-h-screen bg-gradient-to-b from-mapa-bg via-mapa-pink-light to-mapa-lavender-light flex flex-col px-6 py-3">
       {/* Topo: progresso + pular */}
-      <div className="max-w-sm w-full mx-auto pt-2 pb-6 flex items-center justify-between">
+      <div className="max-w-sm w-full mx-auto pt-1 pb-3 flex items-center justify-between">
         <div className="flex gap-1.5 flex-1">
           {SLIDES.map((s, i) => (
             <div
@@ -116,25 +116,25 @@ export default function TutorialPage() {
       </div>
 
       {/* Conteudo central com mockup ilustrativo */}
-      <div className="flex-1 flex flex-col items-center justify-center max-w-sm w-full mx-auto">
+      <div className="flex-1 flex flex-col items-center justify-center max-w-sm w-full mx-auto py-2">
         {slide.key === "registrar" && <RegistrarMock />}
         {slide.key === "lis" && <LisMock />}
         {slide.key === "mapa" && <MapaMock />}
 
-        <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold text-mapa-text mt-6 mb-2 text-center">
+        <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-semibold text-mapa-text mt-5 mb-1.5 text-center">
           {slide.title}
         </h1>
-        <p className="text-[14px] text-mapa-text leading-relaxed font-[family-name:var(--font-quicksand)] text-center max-w-xs">
+        <p className="text-[13.5px] text-mapa-text leading-relaxed font-[family-name:var(--font-quicksand)] text-center max-w-xs">
           {slide.text}
         </p>
       </div>
 
       {/* Navegacao */}
-      <div className="max-w-sm w-full mx-auto pt-6 pb-2 flex gap-3">
+      <div className="max-w-sm w-full mx-auto pt-3 pb-2 flex gap-3">
         {step > 0 && (
           <button
             onClick={back}
-            className="flex-1 py-3.5 rounded-2xl border-[1.5px] border-mapa-border bg-transparent text-mapa-muted font-semibold text-sm cursor-pointer font-[family-name:var(--font-quicksand)]"
+            className="flex-1 py-3 rounded-2xl border-[1.5px] border-mapa-border bg-transparent text-mapa-muted font-semibold text-sm cursor-pointer font-[family-name:var(--font-quicksand)]"
           >
             Voltar
           </button>
@@ -143,7 +143,7 @@ export default function TutorialPage() {
           onClick={next}
           className={`${
             step > 0 ? "flex-[2]" : "w-full"
-          } py-3.5 rounded-2xl bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white font-semibold text-[15px] cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(232,160,191,0.35)] transition font-[family-name:var(--font-quicksand)]`}
+          } py-3 rounded-2xl bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white font-semibold text-[15px] cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(232,160,191,0.35)] transition font-[family-name:var(--font-quicksand)]`}
         >
           {isLast ? "Começar a usar" : "Próximo"}
         </button>
