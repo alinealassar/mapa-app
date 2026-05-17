@@ -49,13 +49,10 @@ interface WeeklySummaryMeta {
   week_end: string;
 }
 
-type Period = "7d" | "30d" | "all";
-
 export default function MapaPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [entries, setEntries] = useState<MoodEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState<Period>("7d");
   const [aiInsights, setAiInsights] = useState<string[] | null>(null);
   const [aiInsightsLoading, setAiInsightsLoading] = useState(false);
   const [weeklySummary, setWeeklySummary] = useState<WeeklySummary | null>(null);
@@ -95,11 +92,16 @@ export default function MapaPage() {
     check();
   }, []);
 
+  // Recarrega entries + insights da IA sempre que a semana muda. A semana
+  // efetiva vem do meta (que reflete o que o backend resolveu pra essa
+  // requisicao). Se ainda nao chegou meta, espera.
   useEffect(() => {
     if (!authenticated) return;
+    if (!weeklySummaryMeta?.week_start || !weeklySummaryMeta?.week_end) return;
     loadEntries();
     loadAiInsights();
-  }, [authenticated, period]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authenticated, weeklySummaryMeta?.week_start, weeklySummaryMeta?.week_end]);
 
   // Resumo semanal: recarrega ao autenticar OU ao mudar a semana selecionada.
   useEffect(() => {
@@ -236,25 +238,20 @@ export default function MapaPage() {
   async function loadEntries() {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    let query = supabase
+    if (!user) { setLoading(false); return; }
+    const ws = weeklySummaryMeta?.week_start;
+    const we = weeklySummaryMeta?.week_end;
+    if (!ws || !we) { setLoading(false); return; }
+    // Tudo na /mapa filtra pela semana atualmente selecionada (dom-sab UTC).
+    const startISO = `${ws}T00:00:00.000Z`;
+    const endISO = `${we}T23:59:59.999Z`;
+    const { data } = await supabase
       .from("mood_entries")
       .select("id, mood_emoji, mood_scale, energy_level, tags, activities, created_at")
       .eq("user_id", user.id)
+      .gte("created_at", startISO)
+      .lte("created_at", endISO)
       .order("created_at", { ascending: false });
-
-    if (period === "7d") {
-      const d = new Date();
-      d.setDate(d.getDate() - 7);
-      query = query.gte("created_at", d.toISOString());
-    } else if (period === "30d") {
-      const d = new Date();
-      d.setDate(d.getDate() - 30);
-      query = query.gte("created_at", d.toISOString());
-    }
-
-    const { data } = await query;
     if (data) setEntries(data as MoodEntry[]);
     setLoading(false);
   }
@@ -263,9 +260,11 @@ export default function MapaPage() {
     setAiInsightsLoading(true);
     setAiInsights(null);
     try {
+      const ws = weeklySummaryMeta?.week_start;
+      const we = weeklySummaryMeta?.week_end;
       const { data, error } = await supabase.functions.invoke(
         "generate-mapa-insights",
-        { body: { period } }
+        { body: ws && we ? { week_start: ws, week_end: we } : {} }
       );
       if (error) {
         console.error("Erro ao buscar insights da IA:", error);
@@ -320,22 +319,8 @@ export default function MapaPage() {
           />
         </div>
 
-        {/* SELETOR DE PERÍODO */}
-        <div className="flex gap-2 px-5 pt-4 pb-3 justify-center">
-          {(["7d", "30d", "all"] as Period[]).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={`py-[7px] px-[18px] rounded-[20px] border-[1.5px] text-xs font-medium cursor-pointer font-[family-name:var(--font-quicksand)] ${
-                period === p
-                  ? "bg-mapa-pink text-white border-mapa-pink"
-                  : "bg-mapa-card text-mapa-muted border-mapa-border"
-              }`}
-            >
-              {p === "7d" ? "7 dias" : p === "30d" ? "30 dias" : "Tudo"}
-            </button>
-          ))}
-        </div>
+        {/* Seletor de periodo removido em 17/05/2026: /mapa virou narrativa
+            semanal. Filtros 7d/30d/Tudo foram para /historico. */}
 
         {loading && (
           <p className="text-center text-mapa-muted italic py-10">

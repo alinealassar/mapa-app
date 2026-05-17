@@ -1,4 +1,7 @@
-// generate-mapa-insights v5 — análise de padrões com persona Lis + masking + correlação tripla
+// generate-mapa-insights v6 — aceita week_start/week_end pra analise semanal
+// v6 (17/05/2026): a tela /mapa virou narrativa semanal. Quando o frontend
+// passa week_start (e opcionalmente week_end), a IA analisa SO os registros
+// daquela semana. Sem param, comportamento antigo (period 7d/30d/all).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -87,8 +90,7 @@ const GOAL_LABELS: Record<string, string> = {
 };
 const WEEKDAY_NAMES = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
 
-function buildPrompts(entries: MoodEntry[], userName: string, goal: string | null, period: string, relevantMemories: string[]): { systemPrompt: string; userPrompt: string } {
-  const periodLabel = period === "7d" ? "últimos 7 dias" : period === "30d" ? "últimos 30 dias" : "todos os registros";
+function buildPrompts(entries: MoodEntry[], userName: string, goal: string | null, periodLabel: string, relevantMemories: string[]): { systemPrompt: string; userPrompt: string } {
   const entriesWithSleep = entries.filter((e) => e.sleep_quality !== null || e.sleep_hours !== null);
   const hasSleepData = entriesWithSleep.length >= 2;
   const entriesWithScreen = entries.filter((e) => e.screen_time_hours !== null);
@@ -185,11 +187,29 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
     if (authError || !user) return new Response(JSON.stringify({ error: "Usuária não autenticada" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
+    // Compat: aceita week_start (string YYYY-MM-DD) + week_end opcional pra
+    // analise semanal. Sem week_start, usa period (7d/30d/all) como antes.
+    const weekStartStr: string | undefined = body.week_start;
+    const weekEndStr: string | undefined = body.week_end;
     const period: string = body.period || "7d";
+
     let query = supabase.from("mood_entries").select("mood_emoji, mood_scale, energy_level, tags, activities, note, created_at, sleep_quality, sleep_hours, screen_time_hours").eq("user_id", user.id).order("created_at", { ascending: false });
-    if (period === "7d") { const d = new Date(); d.setDate(d.getDate() - 7); query = query.gte("created_at", d.toISOString()); }
-    else if (period === "30d") { const d = new Date(); d.setDate(d.getDate() - 30); query = query.gte("created_at", d.toISOString()); }
+    let periodLabel: string;
+    if (weekStartStr) {
+      const start = new Date(`${weekStartStr}T00:00:00.000Z`);
+      const end = weekEndStr
+        ? new Date(`${weekEndStr}T23:59:59.999Z`)
+        : (() => { const e = new Date(start); e.setUTCDate(start.getUTCDate() + 6); e.setUTCHours(23, 59, 59, 999); return e; })();
+      query = query.gte("created_at", start.toISOString()).lte("created_at", end.toISOString());
+      const startBR = start.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+      const endBR = end.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+      periodLabel = `semana de ${startBR} a ${endBR}`;
+    } else {
+      if (period === "7d") { const d = new Date(); d.setDate(d.getDate() - 7); query = query.gte("created_at", d.toISOString()); }
+      else if (period === "30d") { const d = new Date(); d.setDate(d.getDate() - 30); query = query.gte("created_at", d.toISOString()); }
+      periodLabel = period === "7d" ? "últimos 7 dias" : period === "30d" ? "últimos 30 dias" : "todos os registros";
+    }
     const { data: entries } = await query;
     if (!entries || entries.length < 3) {
       return new Response(JSON.stringify({ insights: ["Conforme você for fazendo mais registros, eu vou identificando padrões aqui para você."], source: "too_few_entries", count: entries?.length || 0 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -226,7 +246,7 @@ Deno.serve(async (req: Request) => {
       console.error("Falha ao buscar memórias:", e instanceof Error ? e.message : e);
     }
 
-    const { systemPrompt, userPrompt } = buildPrompts(entries as MoodEntry[], userName, goal, period, relevantMemories);
+    const { systemPrompt, userPrompt } = buildPrompts(entries as MoodEntry[], userName, goal, periodLabel, relevantMemories);
     const attempts: Array<{ model: string; status: number; body: string }> = [];
     for (const model of MODELS_TO_TRY) {
       const result = await callClaude(model, systemPrompt, userPrompt, ANTHROPIC_API_KEY);
