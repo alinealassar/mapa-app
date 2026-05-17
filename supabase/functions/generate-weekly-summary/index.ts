@@ -1,4 +1,9 @@
-// generate-weekly-summary v5 — resumo semanal poetico em JSON com persona Lis + masking + correlacao tripla
+// generate-weekly-summary v6 — semana dom-sab (era seg-dom)
+// v6 (17/05/2026): mudanca de produto. Agora a "semana" comeca no domingo
+// e termina no sabado, em vez de segunda-domingo. Motivo: domingo de manha
+// e' o momento ideal pra revisitar a semana (pausa, contemplacao) em vez
+// da segunda agitada. Resumos antigos em cache com week_start segunda
+// ficam orfaos no banco (preservados, nao apagados — decisao 17/05).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -84,15 +89,19 @@ const GOAL_LABELS: Record<string, string> = {
 };
 const WEEKDAY_NAMES = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
 
+// Retorna a ultima semana FECHADA (domingo a sabado, UTC).
+// Se hoje for domingo, retorna a semana que terminou ontem (sabado).
 function computeLastWeek(now: Date): { weekStart: Date; weekEnd: Date } {
   const today = new Date(now);
-  const day = today.getUTCDay();
-  const daysToCurrentMonday = day === 0 ? 6 : day - 1;
-  const currentMonday = new Date(today);
-  currentMonday.setUTCDate(today.getUTCDate() - daysToCurrentMonday);
-  currentMonday.setUTCHours(0, 0, 0, 0);
-  const weekStart = new Date(currentMonday);
-  weekStart.setUTCDate(currentMonday.getUTCDate() - 7);
+  const day = today.getUTCDay(); // 0=dom, 1=seg, ..., 6=sab
+  // Quantos dias atras esta o domingo desta semana
+  const daysToCurrentSunday = day;
+  const currentSunday = new Date(today);
+  currentSunday.setUTCDate(today.getUTCDate() - daysToCurrentSunday);
+  currentSunday.setUTCHours(0, 0, 0, 0);
+  // Semana anterior comeca 7 dias antes do domingo atual
+  const weekStart = new Date(currentSunday);
+  weekStart.setUTCDate(currentSunday.getUTCDate() - 7);
   const weekEnd = new Date(weekStart);
   weekEnd.setUTCDate(weekStart.getUTCDate() + 6);
   weekEnd.setUTCHours(23, 59, 59, 999);
@@ -142,7 +151,7 @@ VOCÊ TEM MEMÓRIA. Abaixo há 'MEMÓRIAS RELEVANTES' do passado de ${userName}.
   "closing": "1 frase curta de fechamento acolhedor, máximo 15 palavras"
 }`;
 
-  let userPrompt = `Resumo da semana de ${userName}, de segunda ${formatDateBR(weekStart)} a domingo ${formatDateBR(weekEnd)}.\n\n${entries.length} registros nessa semana:\n\n`;
+  let userPrompt = `Resumo da semana de ${userName}, de domingo ${formatDateBR(weekStart)} a sábado ${formatDateBR(weekEnd)}.\n\n${entries.length} registros nessa semana:\n\n`;
   entries.forEach((e, i) => {
     const date = new Date(e.created_at);
     const weekday = WEEKDAY_NAMES[date.getUTCDay()];
