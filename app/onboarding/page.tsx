@@ -123,13 +123,15 @@ export default function OnboardingPage() {
     // Pede permissão de push automaticamente ao finalizar o onboarding
     // (lembretes já vêm habilitados por default via migration reminders_enabled=true).
     // Email continua mesmo se ela negar push. Erros silenciosos: o que importa é
-    // chegar no /registrar mesmo se o popup do navegador for negado.
+    // chegar no tutorial mesmo se o popup do navegador for negado.
     try {
       await enableReminders();
     } catch (e) {
       console.warn("Não foi possível ativar push no onboarding:", e);
     }
-    window.location.href = "/registrar";
+    // Passa pelo tutorial de 3 slides antes do app real. O tutorial verifica
+    // onboarding_done=true via guard, entao precisa estar setado antes.
+    window.location.href = "/tutorial";
   }
 
   if (!authenticated) {
