@@ -929,7 +929,7 @@ export default function MoodRegister() {
               </div>
             )}
             {noteTab === "audio" && (
-              <div className="py-5 px-4 text-center flex-1 flex flex-col justify-center">
+              <div className="py-5 px-4 text-center flex-1 flex flex-col items-center justify-center">
                 {audioState === "idle" && (
                   <>
                     <p className="text-[11px] text-mapa-muted mb-3.5 italic">
@@ -973,7 +973,7 @@ export default function MoodRegister() {
                   </div>
                 )}
                 {(audioState === "done" || audioState === "error") && (
-                  <div className="bg-mapa-pink-light rounded-2xl p-3.5 px-4 text-left">
+                  <div className="w-full bg-mapa-pink-light rounded-2xl p-3.5 px-4 text-left">
                     <div className="flex items-center gap-2.5 mb-3">
                       <button
                         onClick={togglePlayback}
