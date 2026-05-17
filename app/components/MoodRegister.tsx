@@ -883,7 +883,11 @@ export default function MoodRegister() {
           hint="escreva ou grave um áudio sobre como foi seu dia"
           optional
         >
-          <div className="rounded-[18px] border-[1.5px] border-mapa-border/60 bg-[#FAFAFA] overflow-hidden">
+          {/* min-h padronizado para acomodar o maior estado (audio "done"
+              com transcricao editavel + botoes) sem que o sticky button
+              "Registrar momento" tampe o conteudo. Texto e audio compartilham
+              o mesmo tamanho de caixa. */}
+          <div className="rounded-[18px] border-[1.5px] border-mapa-border/60 bg-[#FAFAFA] overflow-hidden min-h-[340px] flex flex-col">
             <div className="flex border-b border-mapa-border/50">
               <button
                 onClick={() => setNoteTab("text")}
@@ -915,17 +919,17 @@ export default function MoodRegister() {
               </button>
             </div>
             {noteTab === "text" && (
-              <div className="p-3 px-4">
+              <div className="p-3 px-4 flex-1 flex">
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder={placeholderText}
-                  className="w-full border-none text-[13px] resize-none h-16 bg-transparent text-mapa-text outline-none leading-relaxed placeholder:text-mapa-muted/50 font-[family-name:var(--font-quicksand)]"
+                  className="w-full border-none text-[13px] resize-none bg-transparent text-mapa-text outline-none leading-relaxed placeholder:text-mapa-muted/50 font-[family-name:var(--font-quicksand)]"
                 />
               </div>
             )}
             {noteTab === "audio" && (
-              <div className="py-5 px-4 text-center">
+              <div className="py-5 px-4 text-center flex-1 flex flex-col justify-center">
                 {audioState === "idle" && (
                   <>
                     <p className="text-[11px] text-mapa-muted mb-3.5 italic">
