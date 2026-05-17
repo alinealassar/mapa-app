@@ -64,6 +64,10 @@ export default function MapaPage() {
   // null = ultima semana fechada (default). String YYYY-MM-DD (domingo) = semana
   // especifica do passado. Usuaria navega com as setas no card de Resumo Semanal.
   const [weekStartOverride, setWeekStartOverride] = useState<string | null>(null);
+  // Domingo da semana onde esta o registro mais antigo da usuaria. A seta de
+  // voltar para de funcionar quando atinge essa semana (nao tem como ter
+  // resumo de semana anterior ao primeiro registro).
+  const [oldestWeekStart, setOldestWeekStart] = useState<string | null>(null);
 
   useEffect(() => {
     async function check() {
@@ -103,6 +107,31 @@ export default function MapaPage() {
     loadWeeklySummary();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authenticated, weekStartOverride]);
+
+  // Busca a data do primeiro registro da usuaria UMA vez ao autenticar.
+  // Usado pra desabilitar a seta de voltar quando chega na primeira semana
+  // com dados (nao tem como gerar resumo de semana anterior ao primeiro
+  // registro).
+  useEffect(() => {
+    if (!authenticated) return;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("mood_entries")
+        .select("created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true })
+        .limit(1);
+      const first = data?.[0]?.created_at;
+      if (!first) return;
+      const d = new Date(first);
+      const day = d.getUTCDay();
+      d.setUTCDate(d.getUTCDate() - day); // volta pro domingo dessa semana
+      d.setUTCHours(0, 0, 0, 0);
+      setOldestWeekStart(d.toISOString().slice(0, 10));
+    })();
+  }, [authenticated]);
 
   async function loadWeeklySummary() {
     setWeeklySummaryLoading(true);
@@ -195,6 +224,15 @@ export default function MapaPage() {
     return currentStart < lastClosedStart.toISOString().slice(0, 10);
   }
 
+  // Pode voltar se a semana atual ainda for >= a semana do primeiro registro.
+  // (Nao tem como ter resumo de semana sem registro algum.)
+  function canGoPrev(): boolean {
+    if (!oldestWeekStart) return true; // ainda nao carregou, permite por seguranca
+    const currentStart = weeklySummaryMeta?.week_start;
+    if (!currentStart) return true;
+    return currentStart > oldestWeekStart;
+  }
+
   async function loadEntries() {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
@@ -278,6 +316,7 @@ export default function MapaPage() {
             onPrevWeek={goPrevWeek}
             onNextWeek={goNextWeek}
             canGoNext={canGoNext()}
+            canGoPrev={canGoPrev()}
           />
         </div>
 
@@ -527,6 +566,7 @@ function WeeklySummaryCard({
   onPrevWeek,
   onNextWeek,
   canGoNext,
+  canGoPrev,
 }: {
   summary: WeeklySummary | null;
   meta: WeeklySummaryMeta | null;
@@ -534,6 +574,7 @@ function WeeklySummaryCard({
   onPrevWeek?: () => void;
   onNextWeek?: () => void;
   canGoNext?: boolean;
+  canGoPrev?: boolean;
 }) {
   // Navegacao por semanas — renderizada em todos os estados (loading, too_few,
   // completo). Setas ficam desabilitadas se nao tem handler ou se ja' esta na
@@ -547,7 +588,7 @@ function WeeklySummaryCard({
       <button
         type="button"
         onClick={onPrevWeek}
-        disabled={!onPrevWeek}
+        disabled={!onPrevWeek || canGoPrev === false}
         aria-label="Semana anterior"
         className="w-8 h-8 rounded-full bg-white/60 hover:bg-white/90 flex items-center justify-center cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-none transition-colors"
         style={{ color: SUMMARY_TITLE_COLOR }}
