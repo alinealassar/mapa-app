@@ -94,13 +94,13 @@ export default function TutorialPage() {
   const isLast = step === SLIDES.length - 1;
 
   return (
-    <main className="h-[100dvh] overflow-y-auto bg-gradient-to-b from-mapa-bg via-mapa-pink-light to-mapa-lavender-light px-6 py-3">
-      {/* Estrutura: header em cima (sempre visivel), conteudo central
-          flexivel, botoes na base. Se a viewport for muito pequena,
-          o main tem overflow-y-auto e a tela pode rolar. */}
-      <div className="min-h-full max-w-sm w-full mx-auto flex flex-col">
+    <main
+      className="bg-gradient-to-b from-mapa-bg via-mapa-pink-light to-mapa-lavender-light flex flex-col items-center px-6 py-4"
+      style={{ minHeight: "100dvh" }}
+    >
+      <div className="w-full max-w-sm flex flex-col flex-1 min-h-0">
         {/* Header */}
-        <div className="pt-1 pb-3 flex items-center justify-between">
+        <div className="pb-3 flex items-center justify-between w-full">
           <div className="flex gap-1.5 flex-1">
             {SLIDES.map((s, i) => (
               <div
@@ -119,22 +119,22 @@ export default function TutorialPage() {
           </button>
         </div>
 
-        {/* Conteudo central — ocupa o que sobrar entre header e botoes */}
-        <div className="flex-1 flex flex-col items-center justify-center py-4">
+        {/* Conteudo: cresce com flex-1, centro vertical com justify-center */}
+        <div className="flex-1 flex flex-col items-center justify-center text-center w-full py-4">
           {slide.key === "registrar" && <RegistrarMock />}
           {slide.key === "lis" && <LisMock />}
           {slide.key === "mapa" && <MapaMock />}
 
-          <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-semibold text-mapa-text mt-5 mb-1.5 text-center">
+          <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-semibold text-mapa-text mt-5 mb-1.5">
             {slide.title}
           </h1>
-          <p className="text-[13.5px] text-mapa-text leading-relaxed font-[family-name:var(--font-quicksand)] text-center max-w-xs">
+          <p className="text-[13.5px] text-mapa-text leading-relaxed font-[family-name:var(--font-quicksand)] max-w-xs">
             {slide.text}
           </p>
         </div>
 
         {/* Botoes sempre na base */}
-        <div className="flex gap-3 pb-2 pt-3">
+        <div className="w-full flex gap-3 pt-3">
           {step > 0 && (
             <button
               onClick={back}
