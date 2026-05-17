@@ -1,9 +1,9 @@
-// generate-weekly-summary v6 — semana dom-sab (era seg-dom)
-// v6 (17/05/2026): mudanca de produto. Agora a "semana" comeca no domingo
-// e termina no sabado, em vez de segunda-domingo. Motivo: domingo de manha
-// e' o momento ideal pra revisitar a semana (pausa, contemplacao) em vez
-// da segunda agitada. Resumos antigos em cache com week_start segunda
-// ficam orfaos no banco (preservados, nao apagados — decisao 17/05).
+// generate-weekly-summary v7 — semana dom-sab + navegacao por semana especifica
+// v7 (17/05/2026): aceita body { week_start: "YYYY-MM-DD" } opcional pra
+// gerar resumo de qualquer semana fechada do passado (frontend usa pra
+// permitir navegacao no card "Carta de diario"). Sem param, retorna a
+// ultima semana fechada (comportamento anterior).
+// v6 (17/05/2026): semana mudou de seg-dom para dom-sab.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -212,7 +212,38 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
     if (authError || !user) return new Response(JSON.stringify({ error: "Usuária não autenticada" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    const { weekStart, weekEnd } = computeLastWeek(new Date());
+    // Aceita body opcional { week_start: "YYYY-MM-DD" } pra resumo de uma
+    // semana especifica do passado. Sem body, usa a ultima semana fechada.
+    let customWeekStart: string | undefined;
+    try {
+      const txt = await req.text();
+      if (txt) {
+        const body = JSON.parse(txt);
+        if (typeof body.week_start === "string") customWeekStart = body.week_start;
+      }
+    } catch (_) { /* body opcional, ignora */ }
+
+    let weekStart: Date;
+    let weekEnd: Date;
+    if (customWeekStart) {
+      const customDate = new Date(`${customWeekStart}T00:00:00.000Z`);
+      if (isNaN(customDate.getTime())) {
+        return new Response(JSON.stringify({ error: "week_start invalido" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (customDate.getUTCDay() !== 0) {
+        return new Response(JSON.stringify({ error: "week_start precisa ser um domingo (formato YYYY-MM-DD)" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const customEnd = new Date(customDate);
+      customEnd.setUTCDate(customDate.getUTCDate() + 6);
+      customEnd.setUTCHours(23, 59, 59, 999);
+      if (customEnd >= new Date()) {
+        return new Response(JSON.stringify({ error: "Essa semana ainda nao fechou" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      weekStart = customDate;
+      weekEnd = customEnd;
+    } else {
+      ({ weekStart, weekEnd } = computeLastWeek(new Date()));
+    }
     const weekStartStr = weekStart.toISOString().slice(0, 10);
     const { data: existing } = await supabase.from("weekly_summaries").select("id, week_start, summary_text, patterns, created_at").eq("user_id", user.id).eq("week_start", weekStartStr).maybeSingle();
     if (existing) {

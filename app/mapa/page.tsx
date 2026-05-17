@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Map } from "lucide-react";
+import { Map, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import BottomNav from "@/app/components/BottomNav";
 
@@ -61,6 +61,9 @@ export default function MapaPage() {
   const [weeklySummary, setWeeklySummary] = useState<WeeklySummary | null>(null);
   const [weeklySummaryMeta, setWeeklySummaryMeta] = useState<WeeklySummaryMeta | null>(null);
   const [weeklySummaryLoading, setWeeklySummaryLoading] = useState(false);
+  // null = ultima semana fechada (default). String YYYY-MM-DD (domingo) = semana
+  // especifica do passado. Usuaria navega com as setas no card de Resumo Semanal.
+  const [weekStartOverride, setWeekStartOverride] = useState<string | null>(null);
 
   useEffect(() => {
     async function check() {
@@ -94,18 +97,20 @@ export default function MapaPage() {
     loadAiInsights();
   }, [authenticated, period]);
 
-  // Resumo semanal: carrega só uma vez ao autenticar (não depende do período)
+  // Resumo semanal: recarrega ao autenticar OU ao mudar a semana selecionada.
   useEffect(() => {
     if (!authenticated) return;
     loadWeeklySummary();
-  }, [authenticated]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authenticated, weekStartOverride]);
 
   async function loadWeeklySummary() {
     setWeeklySummaryLoading(true);
     try {
+      const body = weekStartOverride ? { week_start: weekStartOverride } : {};
       const { data, error } = await supabase.functions.invoke(
         "generate-weekly-summary",
-        { body: {} }
+        { body }
       );
       if (error) {
         console.error("Erro ao buscar resumo semanal:", error);
@@ -140,6 +145,54 @@ export default function MapaPage() {
     } finally {
       setWeeklySummaryLoading(false);
     }
+  }
+
+  // Vai pra semana anterior (subtrai 7 dias do weekStart atual)
+  function goPrevWeek() {
+    const currentStart = weeklySummaryMeta?.week_start || weekStartOverride;
+    if (!currentStart) return;
+    const d = new Date(`${currentStart}T00:00:00.000Z`);
+    d.setUTCDate(d.getUTCDate() - 7);
+    setWeekStartOverride(d.toISOString().slice(0, 10));
+  }
+
+  // Vai pra semana seguinte. Se a proxima for a "ultima fechada" ou a "em
+  // curso", volta pra null (default: comportamento de "ultima fechada").
+  function goNextWeek() {
+    const currentStart = weeklySummaryMeta?.week_start || weekStartOverride;
+    if (!currentStart) return;
+    const d = new Date(`${currentStart}T00:00:00.000Z`);
+    d.setUTCDate(d.getUTCDate() + 7);
+    const nextStr = d.toISOString().slice(0, 10);
+    // Calcula qual seria a "ultima fechada" se chamasse sem override
+    const today = new Date();
+    const todayDay = today.getUTCDay();
+    const currentSunday = new Date(today);
+    currentSunday.setUTCDate(today.getUTCDate() - todayDay);
+    currentSunday.setUTCHours(0, 0, 0, 0);
+    const lastClosedStart = new Date(currentSunday);
+    lastClosedStart.setUTCDate(currentSunday.getUTCDate() - 7);
+    const lastClosedStr = lastClosedStart.toISOString().slice(0, 10);
+    // Se chegou na ultima fechada, volta pra null (mesmo resultado, mais limpo)
+    if (nextStr >= lastClosedStr) {
+      setWeekStartOverride(null);
+    } else {
+      setWeekStartOverride(nextStr);
+    }
+  }
+
+  // Pode avancar se a semana atual nao for a ultima fechada
+  function canGoNext(): boolean {
+    const currentStart = weeklySummaryMeta?.week_start;
+    if (!currentStart) return false;
+    const today = new Date();
+    const todayDay = today.getUTCDay();
+    const currentSunday = new Date(today);
+    currentSunday.setUTCDate(today.getUTCDate() - todayDay);
+    currentSunday.setUTCHours(0, 0, 0, 0);
+    const lastClosedStart = new Date(currentSunday);
+    lastClosedStart.setUTCDate(currentSunday.getUTCDate() - 7);
+    return currentStart < lastClosedStart.toISOString().slice(0, 10);
   }
 
   async function loadEntries() {
@@ -222,6 +275,9 @@ export default function MapaPage() {
             summary={weeklySummary}
             meta={weeklySummaryMeta}
             loading={weeklySummaryLoading}
+            onPrevWeek={goPrevWeek}
+            onNextWeek={goNextWeek}
+            canGoNext={canGoNext()}
           />
         </div>
 
@@ -468,11 +524,55 @@ function WeeklySummaryCard({
   summary,
   meta,
   loading,
+  onPrevWeek,
+  onNextWeek,
+  canGoNext,
 }: {
   summary: WeeklySummary | null;
   meta: WeeklySummaryMeta | null;
   loading: boolean;
+  onPrevWeek?: () => void;
+  onNextWeek?: () => void;
+  canGoNext?: boolean;
 }) {
+  // Navegacao por semanas — renderizada em todos os estados (loading, too_few,
+  // completo). Setas ficam desabilitadas se nao tem handler ou se ja' esta na
+  // ultima semana fechada (canGoNext=false).
+  const navRange = meta?.week_start && meta?.week_end
+    ? formatWeekRangeBR(meta.week_start, meta.week_end)
+    : "";
+  const showNav = !!(onPrevWeek || onNextWeek);
+  const nav = showNav ? (
+    <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/40">
+      <button
+        type="button"
+        onClick={onPrevWeek}
+        disabled={!onPrevWeek}
+        aria-label="Semana anterior"
+        className="w-8 h-8 rounded-full bg-white/60 hover:bg-white/90 flex items-center justify-center cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-none transition-colors"
+        style={{ color: SUMMARY_TITLE_COLOR }}
+      >
+        <ChevronLeft size={16} strokeWidth={2} />
+      </button>
+      <span
+        className="text-[11px] font-semibold tracking-wider uppercase font-[family-name:var(--font-quicksand)]"
+        style={{ color: SUMMARY_TITLE_COLOR }}
+      >
+        {navRange ? `Semana de ${navRange}` : "Semana"}
+      </span>
+      <button
+        type="button"
+        onClick={onNextWeek}
+        disabled={!onNextWeek || canGoNext === false}
+        aria-label="Semana seguinte"
+        className="w-8 h-8 rounded-full bg-white/60 hover:bg-white/90 flex items-center justify-center cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-none transition-colors"
+        style={{ color: SUMMARY_TITLE_COLOR }}
+      >
+        <ChevronRight size={16} strokeWidth={2} />
+      </button>
+    </div>
+  ) : null;
+
   // Estado: carregando
   if (loading) {
     return (
@@ -488,6 +588,7 @@ function WeeklySummaryCard({
           className="h-[8px] w-full"
           style={{ background: SUMMARY_TOP_STRIP }}
         />
+        {nav}
         <p className="text-[12px] text-mapa-muted italic font-[family-name:var(--font-playfair)] text-center py-8 px-5">
           Tecendo seu resumo da semana...
         </p>
@@ -510,15 +611,10 @@ function WeeklySummaryCard({
           className="h-[8px] w-full"
           style={{ background: SUMMARY_TOP_STRIP }}
         />
+        {nav}
         <div className="px-5 py-5">
-          <p
-            className="text-[11px] font-semibold uppercase tracking-wider mb-2 font-[family-name:var(--font-quicksand)]"
-            style={{ color: SUMMARY_TITLE_COLOR }}
-          >
-            🌸 Sua semana
-          </p>
           <p className="text-[13.5px] text-mapa-text leading-[1.6] font-[family-name:var(--font-quicksand)]">
-            Sua semana passada teve {meta.count ?? 0}{" "}
+            Essa semana teve {meta.count ?? 0}{" "}
             {meta.count === 1 ? "registro" : "registros"}. A partir de 3
             momentos numa semana, eu desenho seu resumo aqui — com os dias
             mais leves, os mais pesados e os padrões que percebi.
@@ -536,7 +632,8 @@ function WeeklySummaryCard({
   if (!summary) return null;
 
   const p = summary.patterns || {};
-  const weekRange = formatWeekRangeBR(summary.week_start, meta?.week_end);
+  // Tag "Semana de X" agora ficou no header de navegacao (nav), entao nao
+  // duplica aqui no body.
 
   return (
     <div
@@ -552,23 +649,9 @@ function WeeklySummaryCard({
         className="h-[8px] w-full"
         style={{ background: SUMMARY_TOP_STRIP }}
       />
+      {nav}
 
       <div className="px-5 pt-5 pb-5">
-        {/* Tag da semana com sublinhado (estilo mockup: Quicksand bold uppercase, sem italic) */}
-        {weekRange && (
-          <span
-            className="inline-block text-[11px] font-bold mb-1 pb-[2px] font-[family-name:var(--font-quicksand)]"
-            style={{
-              color: SUMMARY_TITLE_COLOR,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              borderBottom: "1px solid rgba(142, 58, 107, 0.3)",
-            }}
-          >
-            Semana de {weekRange}
-          </span>
-        )}
-
         {/* Aspas decorativas grandes */}
         <div
           className="font-[family-name:var(--font-playfair)] italic select-none"
