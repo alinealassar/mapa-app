@@ -339,7 +339,7 @@ export default function MapaPage() {
         )}
 
         {!loading && entries.length > 0 && (
-          <div className="px-5 space-y-4">
+          <div className="px-5 pt-6 space-y-4">
             {/* Card Resumo (3 stats coloridos: momentos / humor medio / energia media) */}
             <div className="bg-mapa-card rounded-[20px] border border-mapa-border p-4">
               <div className="flex items-center justify-between mb-3">
