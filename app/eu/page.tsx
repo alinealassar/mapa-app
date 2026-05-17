@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Pencil, Bell, BellOff, Lock, Heart, LogOut } from "lucide-react";
+import { Pencil, Bell, BellOff, Lock, Heart, LogOut, Sparkles } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import BottomNav from "@/app/components/BottomNav";
 import ChangePasswordModal from "@/app/components/ChangePasswordModal";
@@ -251,6 +251,16 @@ export default function EuPage() {
             >
               <Lock size={18} strokeWidth={1.75} className="text-mapa-pink-deep" />
               <span className="flex-1">Alterar senha</span>
+              <span className="text-mapa-muted text-base">›</span>
+            </button>
+
+            {/* TUTORIAL */}
+            <button
+              onClick={() => (window.location.href = "/tutorial")}
+              className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-mapa-border/60 bg-transparent cursor-pointer text-left text-[13px] font-medium text-mapa-text font-[family-name:var(--font-quicksand)] hover:bg-mapa-pink-light/40 transition"
+            >
+              <Sparkles size={18} strokeWidth={1.75} className="text-mapa-pink-deep" />
+              <span className="flex-1">Ver tutorial</span>
               <span className="text-mapa-muted text-base">›</span>
             </button>
 

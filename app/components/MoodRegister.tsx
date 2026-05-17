@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Pencil, Mic, ChevronDown } from "lucide-react";
+import { Pencil, Mic, ChevronDown, Sparkles } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { containsCrisisKeywords, maskSensitiveData } from "@/lib/safety";
 import Link from "next/link";
@@ -1093,7 +1093,7 @@ export default function MoodRegister() {
             ) : (
               <>
                 <div className="w-full flex items-center gap-2 mb-4">
-                  <div className="w-2 h-2 rounded-full bg-mapa-mint" />
+                  <Sparkles size={14} strokeWidth={1.75} className="text-[#5BA67D]" />
                   <span className="text-[11px] font-semibold text-[#5BA67D] uppercase tracking-wider">
                     Lis para você
                   </span>
