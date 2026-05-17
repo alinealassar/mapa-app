@@ -1,8 +1,15 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { BookOpen } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronUp, Play, Pause } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+
+function fmtSec(s: number): string {
+  if (!isFinite(s) || s < 0) return "00:00";
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+}
 
 const MOOD_MAP: Record<
   string,
@@ -93,7 +100,10 @@ export default function MoodHistory() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+  const [audioPosition, setAudioPosition] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const playTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // loadData declarada ANTES do useEffect pra agradar a regra react-hooks/immutability
   async function loadData() {
@@ -141,18 +151,52 @@ export default function MoodHistory() {
     return groups;
   }
 
+  function stopTicker() {
+    if (playTimerRef.current) {
+      clearInterval(playTimerRef.current);
+      playTimerRef.current = null;
+    }
+  }
+
   function toggleAudio(id: string, url: string) {
+    // Mesmo entry tocando: pausa
     if (playingAudioId === id) {
       audioRef.current?.pause();
       setPlayingAudioId(null);
+      stopTicker();
       return;
     }
+    // Toca outro: para o atual e inicia o novo do zero
     if (audioRef.current) audioRef.current.pause();
-    audioRef.current = new Audio(url);
-    audioRef.current.onended = () => setPlayingAudioId(null);
-    audioRef.current.play();
+    stopTicker();
+    setAudioPosition(0);
+    setAudioDuration(0);
+    const audio = new Audio(url);
+    audioRef.current = audio;
+    audio.onloadedmetadata = () => {
+      setAudioDuration(isFinite(audio.duration) ? audio.duration : 0);
+    };
+    audio.onended = () => {
+      setPlayingAudioId(null);
+      stopTicker();
+      setAudioPosition(0);
+    };
+    audio.play();
     setPlayingAudioId(id);
+    // Atualiza a barra de progresso a cada 200ms (suave o suficiente sem
+    // gastar CPU)
+    playTimerRef.current = setInterval(() => {
+      if (audioRef.current) setAudioPosition(audioRef.current.currentTime);
+    }, 200);
   }
+
+  // Limpa timer ao desmontar pra evitar leak
+  useEffect(() => {
+    return () => {
+      stopTicker();
+      audioRef.current?.pause();
+    };
+  }, []);
 
   function getStats() {
     if (!entries.length) return null;
@@ -331,9 +375,11 @@ export default function MoodHistory() {
                           />
                         ))}
                       </div>
-                      <span className="text-[10px] text-mapa-muted">
-                        {isExp ? "▲" : "▼"}
-                      </span>
+                      {isExp ? (
+                        <ChevronUp size={14} strokeWidth={2} className="text-mapa-muted" />
+                      ) : (
+                        <ChevronDown size={14} strokeWidth={2} className="text-mapa-muted" />
+                      )}
                     </div>
                   </div>
                   {!isExp &&
@@ -476,7 +522,9 @@ export default function MoodHistory() {
                       {entry.note && (
                         <div className="mb-3">
                           <p className="text-[11px] font-semibold text-mapa-pink-deep uppercase tracking-wide mb-1.5">
-                            Nota pessoal
+                            {entry.audio_url
+                              ? "Nota pessoal (gravada em áudio)"
+                              : "Nota pessoal"}
                           </p>
                           <p className="text-[13px] leading-relaxed text-mapa-text italic">
                             &ldquo;{entry.note}&rdquo;
@@ -485,16 +533,18 @@ export default function MoodHistory() {
                       )}
                       {entry.audio_url && (
                         <div className="mb-3">
-                          <button
-                            onClick={() =>
+                          <AudioPlayer
+                            isPlaying={playingAudioId === entry.id}
+                            position={
+                              playingAudioId === entry.id ? audioPosition : 0
+                            }
+                            duration={
+                              playingAudioId === entry.id ? audioDuration : 0
+                            }
+                            onToggle={() =>
                               toggleAudio(entry.id, entry.audio_url!)
                             }
-                            className="py-2 px-4 rounded-[14px] border-[1.5px] border-mapa-pink bg-mapa-pink-light text-xs font-semibold text-mapa-pink-deep cursor-pointer font-[family-name:var(--font-quicksand)]"
-                          >
-                            {playingAudioId === entry.id
-                              ? "⏸ Pausar"
-                              : "▶️ Ouvir áudio"}
-                          </button>
+                          />
                         </div>
                       )}
                       {entry.ai_feedback && (
@@ -514,6 +564,54 @@ export default function MoodHistory() {
             })}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// Mini-player de audio reutilizavel: play/pause + barra + tempo.
+// Recebe estado de fora pra permitir um state global (so um audio toca por
+// vez no /historico).
+function AudioPlayer({
+  isPlaying,
+  position,
+  duration,
+  onToggle,
+}: {
+  isPlaying: boolean;
+  position: number;
+  duration: number;
+  onToggle: () => void;
+}) {
+  const pct = duration > 0 ? Math.min(100, (position / duration) * 100) : 0;
+  return (
+    <div className="bg-mapa-pink-light rounded-[14px] p-3 px-3.5">
+      <div className="flex items-center gap-2.5">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggle();
+          }}
+          aria-label={isPlaying ? "Pausar" : "Ouvir"}
+          className="w-9 h-9 rounded-full bg-mapa-pink text-white border-none cursor-pointer flex items-center justify-center shrink-0 hover:bg-mapa-pink-deep transition-colors"
+        >
+          {isPlaying ? (
+            <Pause size={16} strokeWidth={2} fill="white" />
+          ) : (
+            <Play size={16} strokeWidth={2} fill="white" />
+          )}
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className="text-[12px] font-semibold text-mapa-pink-deep tabular-nums">
+            {fmtSec(position)} / {fmtSec(duration)}
+          </p>
+          <div className="w-full h-1 bg-white/70 rounded-sm overflow-hidden mt-1">
+            <div
+              className="h-full bg-mapa-pink rounded-sm transition-[width] duration-200"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
