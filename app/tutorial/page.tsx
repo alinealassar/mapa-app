@@ -94,9 +94,9 @@ export default function TutorialPage() {
   const isLast = step === SLIDES.length - 1;
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-mapa-bg via-mapa-pink-light to-mapa-lavender-light flex flex-col px-6 py-3">
+    <main className="bg-gradient-to-b from-mapa-bg via-mapa-pink-light to-mapa-lavender-light flex flex-col px-6 py-3">
       {/* Topo: progresso + pular */}
-      <div className="max-w-sm w-full mx-auto pt-1 pb-3 flex items-center justify-between">
+      <div className="max-w-sm w-full mx-auto pt-1 pb-4 flex items-center justify-between">
         <div className="flex gap-1.5 flex-1">
           {SLIDES.map((s, i) => (
             <div
@@ -115,40 +115,40 @@ export default function TutorialPage() {
         </button>
       </div>
 
-      {/* Conteudo central: SEM justify-center pra colar no topo logo apos
-          o header. flex-1 garante que o footer (botoes) fique grudado
-          na base sem espaco extra. */}
-      <div className="flex-1 flex flex-col items-center max-w-sm w-full mx-auto pt-2">
+      {/* Conteudo: tudo flui em sequencia natural, sem flex-1 nem justify
+          que criavam vazios. Mockup -> titulo -> texto -> botoes,
+          colados verticalmente. */}
+      <div className="flex flex-col items-center max-w-sm w-full mx-auto">
         {slide.key === "registrar" && <RegistrarMock />}
         {slide.key === "lis" && <LisMock />}
         {slide.key === "mapa" && <MapaMock />}
 
-        <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-semibold text-mapa-text mt-4 mb-1.5 text-center">
+        <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-semibold text-mapa-text mt-5 mb-1.5 text-center">
           {slide.title}
         </h1>
-        <p className="text-[13.5px] text-mapa-text leading-relaxed font-[family-name:var(--font-quicksand)] text-center max-w-xs">
+        <p className="text-[13.5px] text-mapa-text leading-relaxed font-[family-name:var(--font-quicksand)] text-center max-w-xs mb-6">
           {slide.text}
         </p>
-      </div>
 
-      {/* Navegacao */}
-      <div className="max-w-sm w-full mx-auto pt-3 pb-2 flex gap-3">
-        {step > 0 && (
+        {/* Navegacao logo apos o texto, sem espaco forcado */}
+        <div className="w-full flex gap-3">
+          {step > 0 && (
+            <button
+              onClick={back}
+              className="flex-1 py-3 rounded-2xl border-[1.5px] border-mapa-border bg-transparent text-mapa-muted font-semibold text-sm cursor-pointer font-[family-name:var(--font-quicksand)]"
+            >
+              Voltar
+            </button>
+          )}
           <button
-            onClick={back}
-            className="flex-1 py-3 rounded-2xl border-[1.5px] border-mapa-border bg-transparent text-mapa-muted font-semibold text-sm cursor-pointer font-[family-name:var(--font-quicksand)]"
+            onClick={next}
+            className={`${
+              step > 0 ? "flex-[2]" : "w-full"
+            } py-3 rounded-2xl bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white font-semibold text-[15px] cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(232,160,191,0.35)] transition font-[family-name:var(--font-quicksand)]`}
           >
-            Voltar
+            {isLast ? "Começar a usar" : "Próximo"}
           </button>
-        )}
-        <button
-          onClick={next}
-          className={`${
-            step > 0 ? "flex-[2]" : "w-full"
-          } py-3 rounded-2xl bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white font-semibold text-[15px] cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(232,160,191,0.35)] transition font-[family-name:var(--font-quicksand)]`}
-        >
-          {isLast ? "Começar a usar" : "Próximo"}
-        </button>
+        </div>
       </div>
     </main>
   );
