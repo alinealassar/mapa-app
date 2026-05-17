@@ -1,0 +1,18 @@
+name: Cron Resumo Semanal (domingo 10h BRT)
+
+on:
+  schedule:
+    # 13:00 UTC todo domingo = 10:00 BRT
+    - cron: '0 13 * * 0'
+  # botao manual no GitHub para testar na hora
+  workflow_dispatch:
+
+jobs:
+  disparar-resumo-semanal:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Acordando a Edge Function de Resumo Semanal
+        run: |
+          curl -i -X POST "https://hsgotkeydyvrollnzbbf.supabase.co/functions/v1/weekly-summary-reminder" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json"

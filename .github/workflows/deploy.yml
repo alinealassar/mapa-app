@@ -25,6 +25,7 @@ jobs:
           supabase functions deploy generate-mapa-insights --project-ref hsgotkeydyvrollnzbbf --no-verify-jwt
           supabase functions deploy generate-weekly-summary --project-ref hsgotkeydyvrollnzbbf --no-verify-jwt
           supabase functions deploy daily-reminder --project-ref hsgotkeydyvrollnzbbf --no-verify-jwt
+          supabase functions deploy weekly-summary-reminder --project-ref hsgotkeydyvrollnzbbf --no-verify-jwt
           supabase functions deploy transcribe-audio --project-ref hsgotkeydyvrollnzbbf --no-verify-jwt
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
