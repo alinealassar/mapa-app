@@ -143,54 +143,63 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-mapa-bg via-mapa-pink-light to-mapa-lavender-light flex flex-col p-6">
-      {/* Indicador de progresso */}
-      <div className="flex gap-1.5 max-w-sm w-full mx-auto pt-2 pb-6">
-        {STEPS.map((s, i) => (
-          <div
-            key={s}
-            className={`flex-1 h-1 rounded-full transition-all ${
-              i <= stepIndex ? "bg-mapa-pink" : "bg-mapa-border"
-            }`}
-          />
-        ))}
-      </div>
+    <main
+      className="bg-gradient-to-b from-mapa-bg via-mapa-pink-light to-mapa-lavender-light flex flex-col items-center px-6 py-4"
+      style={{ minHeight: "100dvh" }}
+    >
+      {/* Mesma tecnica do tutorial: minHeight 100dvh + flex flex-col flex-1
+          + min-h-0 distribui as 3 zonas (header, conteudo, botoes) sem
+          conflito com o pb-[72px] do layout pai. */}
+      <div className="w-full max-w-sm flex flex-col flex-1 min-h-0">
+        {/* Indicador de progresso */}
+        <div className="flex gap-1.5 pt-2 pb-3 w-full">
+          {STEPS.map((s, i) => (
+            <div
+              key={s}
+              className={`flex-1 h-1 rounded-full transition-all ${
+                i <= stepIndex ? "bg-mapa-pink" : "bg-mapa-border"
+              }`}
+            />
+          ))}
+        </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center max-w-sm w-full mx-auto">
-        {step === "welcome" && <WelcomeStep name={name} />}
-        {step === "how" && <HowStep />}
-        {step === "goal" && <GoalStep selected={goal} onSelect={setGoal} />}
-        {step === "ready" && <ReadyStep name={name} goal={goal} />}
+        {/* Conteudo central */}
+        <div className="flex-1 flex flex-col items-center justify-center text-center w-full py-4">
+          {step === "welcome" && <WelcomeStep name={name} />}
+          {step === "how" && <HowStep />}
+          {step === "goal" && <GoalStep selected={goal} onSelect={setGoal} />}
+          {step === "ready" && <ReadyStep name={name} goal={goal} />}
 
-        {error && (
-          <p className="mt-4 text-xs text-mapa-coral text-center">{error}</p>
-        )}
-      </div>
+          {error && (
+            <p className="mt-4 text-xs text-mapa-coral text-center">{error}</p>
+          )}
+        </div>
 
-      {/* Navegação */}
-      <div className="max-w-sm w-full mx-auto pt-6 pb-2 flex gap-3">
-        {!isFirstStep && (
+        {/* Navegação na base */}
+        <div className="w-full pt-3 flex gap-3">
+          {!isFirstStep && (
+            <button
+              onClick={back}
+              disabled={saving}
+              className="flex-1 py-3 rounded-2xl border-[1.5px] border-mapa-border bg-transparent text-mapa-muted font-semibold text-sm cursor-pointer disabled:opacity-50 font-[family-name:var(--font-quicksand)]"
+            >
+              Voltar
+            </button>
+          )}
           <button
-            onClick={back}
+            onClick={next}
             disabled={saving}
-            className="flex-1 py-3.5 rounded-2xl border-[1.5px] border-mapa-border bg-transparent text-mapa-muted font-semibold text-sm cursor-pointer disabled:opacity-50 font-[family-name:var(--font-quicksand)]"
+            className={`${
+              isFirstStep ? "w-full" : "flex-[2]"
+            } py-3 rounded-2xl bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white font-semibold text-[15px] cursor-pointer disabled:opacity-50 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(232,160,191,0.35)] transition font-[family-name:var(--font-quicksand)]`}
           >
-            Voltar
+            {saving
+              ? "Preparando seu mapa..."
+              : isLastStep
+                ? "Entrar no Mapa"
+                : "Continuar"}
           </button>
-        )}
-        <button
-          onClick={next}
-          disabled={saving}
-          className={`${
-            isFirstStep ? "w-full" : "flex-[2]"
-          } py-3.5 rounded-2xl bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white font-semibold text-[15px] cursor-pointer disabled:opacity-50 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(232,160,191,0.35)] transition font-[family-name:var(--font-quicksand)]`}
-        >
-          {saving
-            ? "Preparando..."
-            : isLastStep
-              ? "Entrar no Mapa"
-              : "Continuar"}
-        </button>
+        </div>
       </div>
     </main>
   );
@@ -202,7 +211,7 @@ function WelcomeStep({ name }: { name: string }) {
       <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-mapa-pink-light to-mapa-lavender-light flex items-center justify-center text-4xl border-[3px] border-white/70 shadow-[0_8px_30px_rgba(232,160,191,0.22)] mb-5">
         🌸
       </div>
-      <h1 className="font-[family-name:var(--font-quicksand)] text-[28px] font-semibold text-mapa-text mb-3">
+      <h1 className="font-[family-name:var(--font-quicksand)] text-[26px] font-semibold text-mapa-text mb-3">
         Bem-vinda ao Mapa{name && ` ${name}`}
       </h1>
       <p className="font-[family-name:var(--font-playfair)] italic text-base text-mapa-pink-deep mb-5">
