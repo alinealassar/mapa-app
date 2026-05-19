@@ -212,7 +212,7 @@ export default function Login() {
     <main className="min-h-screen flex flex-col items-center justify-center bg-mapa-bg p-6">
       <div className="w-full max-w-sm">
         <h1 className="text-[26px] font-semibold text-mapa-text text-center mb-2 font-[family-name:var(--font-quicksand)]">
-          Mapa
+          Lis
         </h1>
         <p className="text-sm text-mapa-pink-deep text-center mb-8 italic font-[family-name:var(--font-playfair)]">
           Antes de qualquer coisa, respira.

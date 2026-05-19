@@ -372,7 +372,7 @@ export default function MapaPage() {
                   </p>
                   <InfoButton
                     title="Humor ao longo dos dias"
-                    content="Cada barra é a média de humor de um dia. Se você registrou várias vezes no mesmo dia, o Mapa calcula a média de todas. Barras cinzas = dias sem registro. A escala vai de 1 (Péssima) a 10 (Ótima), com os emojis na lateral para te orientar."
+                    content="Cada barra é a média de humor de um dia. Se você registrou várias vezes no mesmo dia, a Lis calcula a média de todas. Barras cinzas = dias sem registro. A escala vai de 1 (Péssima) a 10 (Ótima), com os emojis na lateral para te orientar."
                   />
                 </div>
                 <p className="text-[11px] text-mapa-muted italic mb-3">
@@ -471,7 +471,7 @@ export default function MapaPage() {
                 </p>
                 <InfoButton
                   title="O que percebi"
-                  content="Aqui a Lis (a IA do Mapa) analisa todos os seus registros do período e identifica padrões reais — citando dias, sentimentos e atividades específicas. São observações gentis, sem julgamento. Você decide o que fazer com elas. Se a IA não conseguir, mostro padrões básicos baseados em estatística simples."
+                  content="Aqui a Lis analisa todos os seus registros do período e identifica padrões reais — citando dias, sentimentos e atividades específicas. São observações gentis, sem julgamento. Você decide o que fazer com elas. Se a IA não conseguir, mostro padrões básicos baseados em estatística simples."
                   color="mint"
                 />
               </div>

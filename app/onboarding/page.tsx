@@ -194,9 +194,9 @@ export default function OnboardingPage() {
             } py-3 rounded-2xl bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white font-semibold text-[15px] cursor-pointer disabled:opacity-50 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(232,160,191,0.35)] transition font-[family-name:var(--font-quicksand)]`}
           >
             {saving
-              ? "Preparando seu mapa..."
+              ? "Preparando seu espaço..."
               : isLastStep
-                ? "Entrar no Mapa"
+                ? "Começar"
                 : "Continuar"}
           </button>
         </div>
@@ -212,7 +212,7 @@ function WelcomeStep({ name }: { name: string }) {
         🌸
       </div>
       <h1 className="font-[family-name:var(--font-quicksand)] text-[26px] font-semibold text-mapa-text mb-3">
-        Bem-vinda ao Mapa{name && ` ${name}`}
+        Bem-vinda à Lis{name && ` ${name}`}
       </h1>
       <p className="font-[family-name:var(--font-playfair)] italic text-base text-mapa-pink-deep mb-5">
         Antes de qualquer coisa, respira.
@@ -238,7 +238,7 @@ function HowStep() {
     {
       emoji: "🌿",
       title: "Receba acolhimento",
-      text: "A Lis (IA do Mapa) te responde com carinho e contexto, baseada no que você compartilhou.",
+      text: "A Lis te responde com carinho e contexto, baseada no que você compartilhou.",
     },
     {
       emoji: "📖",

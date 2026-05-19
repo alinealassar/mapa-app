@@ -27,7 +27,7 @@ const SLIDES = [
   {
     key: "mapa",
     title: "Veja sua jornada",
-    text: "No Mapa, sua semana ganha um resumo da Lis. No Histórico, todos os momentos ficam guardados pra você revisitar quando quiser.",
+    text: "Na aba Mapa, sua semana ganha um resumo da Lis. No Histórico, todos os momentos ficam guardados pra você revisitar quando quiser.",
   },
 ];
 

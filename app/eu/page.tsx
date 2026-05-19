@@ -270,7 +270,7 @@ export default function EuPage() {
               className="w-full flex items-center gap-3 px-4 py-3.5 bg-transparent cursor-pointer text-left text-[13px] font-medium text-mapa-text font-[family-name:var(--font-quicksand)] hover:bg-mapa-pink-light/40 transition"
             >
               <Heart size={18} strokeWidth={1.75} className="text-mapa-pink-deep" />
-              <span className="flex-1">Sobre o Mapa</span>
+              <span className="flex-1">Sobre a Lis</span>
               <span className="text-mapa-muted text-base">›</span>
             </button>
           </div>

@@ -7,10 +7,10 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FIREBASE_SERVICE_ACCOUNT = JSON.parse(Deno.env.get("FIREBASE_SERVICE_ACCOUNT") || "{}");
 
-// Quick fix enquanto mapaapp.com.br nao esta verificado no Resend.
-// Para usar dominio proprio: adicionar mapaapp.com.br em resend.com/domains
-// e voltar o from para "Lis do Mapa <oi@mapaapp.com.br>".
-const EMAIL_FROM = "Lis do Mapa <onboarding@resend.dev>";
+// Quick fix enquanto o dominio proprio nao esta verificado no Resend.
+// Quando comprar (provavel colodalis.com.br), trocar o from para
+// "Lis <oi@colodalis.com.br>" (ou similar).
+const EMAIL_FROM = "Lis <onboarding@resend.dev>";
 
 const EMAIL_TEMPLATE = `
 <!DOCTYPE html>
@@ -34,9 +34,9 @@ const EMAIL_TEMPLATE = `
         <div class="content">
             <h1>Como você está hoje?</h1>
             <p>Oi {{name}}, aqui é a Lis. Passei só para te dar um oi e perguntar como está o seu dia.</p>
-            <p>Se quiser, vem dar uma passada no seu mapa — em palavras, emojis ou áudio. Sem cobrança, no seu ritmo.</p>
+            <p>Se quiser, vem dar uma passada aqui — em palavras, emojis ou áudio. Sem cobrança, no seu ritmo.</p>
             <p style="font-style: italic; color: #8E3A6B;">"Aqui você não precisa dar conta de nada."</p>
-            <a href="https://mapa-app-q3rh.onrender.com/registrar" class="button">Abrir meu Mapa</a>
+            <a href="https://mapa-app-q3rh.onrender.com/registrar" class="button">Vem dar uma passada</a>
             <p style="margin-top: 40px; font-style: italic; color: #8E3A6B;">com carinho, Lis.</p>
         </div>
     </div>

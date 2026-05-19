@@ -1134,7 +1134,7 @@ export default function MoodRegister() {
               Você não está sozinha
             </h2>
             <p className="text-[13px] leading-relaxed font-[family-name:var(--font-quicksand)] text-mapa-text mb-5 text-center">
-              Percebi que você escreveu palavras muito difíceis. Nesses momentos de crise e de dor profunda, o Mapa (que é uma IA) não substitui o calor de um ser humano preparado para te ouvir.
+              Percebi que você escreveu palavras muito difíceis. Nesses momentos de crise e de dor profunda, a Lis (que é uma IA) não substitui o calor de um ser humano preparado para te ouvir.
             </p>
             <div className="bg-[#FFF0F6] rounded-xl p-4 mb-5 border border-[#FCE4ED]">
               <p className="text-sm font-semibold font-[family-name:var(--font-quicksand)] text-center text-[#8E3A6B] mb-1">

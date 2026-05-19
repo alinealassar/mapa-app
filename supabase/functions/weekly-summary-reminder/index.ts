@@ -19,7 +19,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FIREBASE_SERVICE_ACCOUNT = JSON.parse(Deno.env.get("FIREBASE_SERVICE_ACCOUNT") || "{}");
 
-const EMAIL_FROM = "Lis do Mapa <onboarding@resend.dev>";
+const EMAIL_FROM = "Lis <onboarding@resend.dev>";
 
 const EMAIL_TEMPLATE = `
 <!DOCTYPE html>
