@@ -344,7 +344,7 @@ export default function MoodRegister() {
     } else {
       ambientAudioRef.current.src = ambientSound === "rain" 
         ? "https://actions.google.com/sounds/v1/weather/rain_on_roof.ogg" 
-        : "https://upload.wikimedia.org/wikipedia/commons/4/4b/Brown_noise.ogg";
+        : "https://actions.google.com/sounds/v1/water/waves_crashing_on_rock_beach.ogg";
       
       // Alguns navegadores bloqueiam autoplay sem interação, então tratamos o catch
       ambientAudioRef.current.play().catch(e => console.log("Áudio bloqueado pelo navegador até haver interação."));
