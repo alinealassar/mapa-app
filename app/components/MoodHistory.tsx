@@ -246,9 +246,11 @@ export default function MoodHistory() {
   return (
     <div>
       <div className="px-6 pt-6 text-center">
-        <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold inline-flex items-center gap-2 justify-center">
+        <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-mapa-pink-light to-mapa-lavender-light flex items-center justify-center border-[3px] border-white/70 shadow-[0_6px_24px_rgba(232,160,191,0.22)] mb-3">
+          <BookOpen size={26} strokeWidth={1.5} className="text-mapa-pink-deep" />
+        </div>
+        <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold text-mapa-text">
           Meu histórico
-          <BookOpen size={22} strokeWidth={1.75} className="text-mapa-pink-deep" />
         </h1>
       </div>
 
@@ -324,11 +326,13 @@ export default function MoodHistory() {
         </p>
       )}
       {!loading && !entries.length && (
-        <div className="text-center py-16">
+        <div className="text-center py-16 px-6">
           <span className="text-[40px] block mb-3">🌱</span>
-          <p className="text-sm text-mapa-muted">Nenhum registro ainda</p>
-          <p className="text-xs text-mapa-muted italic">
-            Comece registrando como você está se sentindo
+          <p className="text-sm text-mapa-text font-[family-name:var(--font-quicksand)]">
+            Esse espaço ainda tá vazio.
+          </p>
+          <p className="text-xs text-mapa-muted italic font-[family-name:var(--font-playfair)] mt-1.5 leading-relaxed">
+            Quando você registrar seu primeiro momento, ele aparece aqui.
           </p>
         </div>
       )}

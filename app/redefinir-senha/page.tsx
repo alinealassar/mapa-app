@@ -61,7 +61,7 @@ export default function RedefinirSenhaPage() {
       return;
     }
     if (password !== confirmPassword) {
-      setError("As senhas não estão iguais.");
+      setError("As duas senhas ficaram diferentes — repete a mesma nos dois campos?");
       return;
     }
 

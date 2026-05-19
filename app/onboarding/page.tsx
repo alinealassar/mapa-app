@@ -113,7 +113,7 @@ export default function OnboardingPage() {
     });
     if (upsertError) {
       setError(
-        "Não consegui salvar agora. Tenta de novo daqui a pouco. (" +
+        "Não consegui salvar agora — tenta de novo em alguns minutos? (" +
           upsertError.message +
           ")"
       );

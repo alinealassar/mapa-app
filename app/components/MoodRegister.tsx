@@ -661,10 +661,13 @@ export default function MoodRegister() {
     <div>
       {/* HEADER */}
       <div className="px-6 pt-6">
-        <h1 className="text-center font-[family-name:var(--font-quicksand)] text-[24px] font-semibold mb-3">
+        <h1 className="text-center font-[family-name:var(--font-quicksand)] text-[24px] font-semibold mb-1">
           Diário da{" "}
           <span className="text-mapa-pink-deep">{userName || "..."}</span>
         </h1>
+        <p className="text-center text-[13px] text-mapa-pink-deep italic font-[family-name:var(--font-playfair)] mb-3">
+          aqui é o seu espaço
+        </p>
         <div className="flex items-baseline justify-center gap-2 pb-3">
           <span className="font-[family-name:var(--font-playfair)] italic text-xs text-mapa-muted">
             Querido diário,

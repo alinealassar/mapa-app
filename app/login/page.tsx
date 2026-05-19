@@ -95,10 +95,10 @@ export default function Login() {
           setSignupComplete(true);
           setPassword("");
         } else if (error.message.includes("Invalid login credentials")) {
-          setMessage("E-mail ou senha incorretos.");
+          setMessage("Esse e-mail e senha não combinam — confere se digitou certinho?");
           setMessageType("error");
         } else {
-          setMessage("Não consegui entrar agora. Tenta de novo daqui a pouco.");
+          setMessage("Não consegui entrar agora — tenta de novo em alguns minutos?");
           setMessageType("error");
         }
       } else {

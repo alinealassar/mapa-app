@@ -45,7 +45,7 @@ export default function ChangePasswordModal({ email, onClose, onSuccess }: Props
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError("As senhas novas não estão iguais.");
+      setError("As duas senhas ficaram diferentes — repete a mesma nos dois campos?");
       return;
     }
     if (newPassword === currentPassword) {
@@ -63,7 +63,7 @@ export default function ChangePasswordModal({ email, onClose, onSuccess }: Props
 
     if (signInError) {
       setLoading(false);
-      setError("Senha atual incorreta.");
+      setError("Essa senha não tá batendo — confere se digitou certinho?");
       return;
     }
 
@@ -75,7 +75,7 @@ export default function ChangePasswordModal({ email, onClose, onSuccess }: Props
     setLoading(false);
 
     if (upError) {
-      setError("Não consegui trocar a senha agora. Tenta de novo daqui a pouco.");
+      setError("Não consegui trocar agora — tenta de novo em alguns minutos?");
       return;
     }
 

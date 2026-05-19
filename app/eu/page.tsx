@@ -90,7 +90,7 @@ export default function EuPage() {
       return;
     }
     if (trimmed.length > 40) {
-      alert("Nome muito longo (máximo 40 caracteres).");
+      alert("Esse nome ficou longo demais 🌸 que tal cortar pra até 40 letras?");
       return;
     }
     setSavingName(true);
@@ -100,7 +100,7 @@ export default function EuPage() {
     setSavingName(false);
     if (error) {
       alert(
-        "Não consegui salvar agora. Tenta de novo daqui a pouco.\n\nDetalhe: " +
+        "Não consegui salvar agora — tenta de novo em alguns minutos?\n\nDetalhe técnico: " +
           error.message
       );
       return;

@@ -28,7 +28,7 @@ export default function RecuperarSenhaPage() {
 
     if (rpError) {
       setError(
-        "Não consegui enviar agora. Confere se o e-mail está certo e tenta de novo."
+        "Não consegui enviar agora — confere se o e-mail está certinho e tenta de novo?"
       );
       return;
     }
