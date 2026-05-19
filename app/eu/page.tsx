@@ -125,7 +125,7 @@ export default function EuPage() {
   if (!authenticated) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-mapa-bg">
-        <p className="text-mapa-muted italic">Carregando...</p>
+        <p className="text-mapa-muted italic">um instante</p>
       </main>
     );
   }
@@ -134,7 +134,7 @@ export default function EuPage() {
     <>
       <main className="min-h-screen bg-mapa-bg pb-24">
         <div className="px-6 pt-6 text-center">
-          <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-medium text-mapa-text">
+          <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold text-mapa-text">
             Minha conta
           </h1>
           <p className="text-[13px] text-mapa-pink-deep mt-1 font-[family-name:var(--font-playfair)] italic">

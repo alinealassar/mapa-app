@@ -795,7 +795,7 @@ export default function MoodRegister() {
                   setSleepQuality(null);
                   setSleepHours(null);
                 }}
-                className="text-[11px] text-mapa-muted italic font-[family-name:var(--font-playfair)] underline underline-offset-[3px] cursor-pointer hover:text-mapa-pink-deep transition-colors"
+                className="py-2 px-3 text-[11px] text-mapa-muted italic font-[family-name:var(--font-playfair)] underline underline-offset-[3px] cursor-pointer hover:text-mapa-pink-deep transition-colors bg-transparent border-none"
               >
                 prefiro não responder
               </button>
@@ -880,7 +880,7 @@ export default function MoodRegister() {
               <button
                 type="button"
                 onClick={() => setScreenTimeHours(null)}
-                className="text-[11px] text-mapa-muted italic font-[family-name:var(--font-playfair)] underline underline-offset-[3px] cursor-pointer hover:text-mapa-pink-deep transition-colors"
+                className="py-2 px-3 text-[11px] text-mapa-muted italic font-[family-name:var(--font-playfair)] underline underline-offset-[3px] cursor-pointer hover:text-mapa-pink-deep transition-colors bg-transparent border-none"
               >
                 prefiro não responder
               </button>

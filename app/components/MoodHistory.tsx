@@ -320,7 +320,7 @@ export default function MoodHistory() {
 
       {loading && (
         <p className="text-center text-mapa-muted italic py-10">
-          carregando seus registros...
+          buscando seus momentos
         </p>
       )}
       {!loading && !entries.length && (

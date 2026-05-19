@@ -40,7 +40,7 @@ export default function RegistrarPage() {
   if (!authenticated) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-mapa-bg">
-        <p className="text-mapa-muted italic">Carregando...</p>
+        <p className="text-mapa-muted italic">um instante</p>
       </main>
     );
   }

@@ -285,7 +285,7 @@ export default function MapaPage() {
   if (!authenticated) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-mapa-bg">
-        <p className="text-mapa-muted italic">Carregando...</p>
+        <p className="text-mapa-muted italic">um instante</p>
       </main>
     );
   }
@@ -300,7 +300,7 @@ export default function MapaPage() {
     <>
       <main className="min-h-screen bg-mapa-bg pb-24">
         <div className="px-6 pt-6 text-center">
-          <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-medium inline-flex items-center gap-2 justify-center">
+          <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold inline-flex items-center gap-2 justify-center">
             Meu mapa
             <Map size={22} strokeWidth={1.75} className="text-mapa-pink-deep" />
           </h1>
@@ -324,7 +324,7 @@ export default function MapaPage() {
 
         {loading && (
           <p className="text-center text-mapa-muted italic py-10">
-            carregando seu mapa...
+            montando seu mapa
           </p>
         )}
 

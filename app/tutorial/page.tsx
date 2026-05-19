@@ -85,7 +85,7 @@ export default function TutorialPage() {
   if (!authenticated) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-mapa-bg">
-        <p className="text-mapa-muted italic">Carregando...</p>
+        <p className="text-mapa-muted italic">um instante</p>
       </main>
     );
   }
@@ -113,7 +113,7 @@ export default function TutorialPage() {
           </div>
           <button
             onClick={finish}
-            className="ml-4 text-xs text-mapa-muted hover:text-mapa-pink-deep cursor-pointer bg-transparent border-none font-[family-name:var(--font-quicksand)]"
+            className="ml-2 py-2 px-3 text-xs text-mapa-muted hover:text-mapa-pink-deep cursor-pointer bg-transparent border-none font-[family-name:var(--font-quicksand)]"
           >
             Pular
           </button>

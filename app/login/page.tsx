@@ -198,7 +198,7 @@ export default function Login() {
 
           <button
             onClick={handleChangeEmail}
-            className="text-sm text-mapa-pink-deep hover:underline bg-transparent border-none cursor-pointer font-[family-name:var(--font-quicksand)]"
+            className="py-2 px-3 text-sm text-mapa-pink-deep hover:underline bg-transparent border-none cursor-pointer font-[family-name:var(--font-quicksand)]"
           >
             Usei o e-mail errado, criar de novo
           </button>
@@ -275,7 +275,7 @@ export default function Login() {
             disabled={loading}
             className="w-full py-3 rounded-2xl bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white font-medium hover:opacity-90 transition disabled:opacity-50 font-[family-name:var(--font-quicksand)]"
           >
-            {loading ? "Aguarde..." : isSignUp ? "Criar conta" : "Entrar"}
+            {loading ? (isSignUp ? "Criando conta..." : "Entrando...") : isSignUp ? "Criar conta" : "Entrar"}
           </button>
         </form>
 
@@ -290,10 +290,10 @@ export default function Login() {
         )}
 
         {!isSignUp && (
-          <div className="mt-4 text-center">
+          <div className="mt-3 text-center">
             <a
               href="/recuperar-senha"
-              className="text-sm text-mapa-pink-deep hover:underline font-[family-name:var(--font-quicksand)]"
+              className="inline-block py-2 px-3 text-sm text-mapa-pink-deep hover:underline font-[family-name:var(--font-quicksand)]"
             >
               Esqueci minha senha
             </a>
@@ -308,7 +308,7 @@ export default function Login() {
             setPassword("");
             setName("");
           }}
-          className="mt-6 w-full text-sm text-mapa-pink-deep hover:underline text-center bg-transparent border-none cursor-pointer"
+          className="mt-4 w-full py-3 text-sm text-mapa-pink-deep hover:underline text-center bg-transparent border-none cursor-pointer"
         >
           {isSignUp ? "Já tem conta? Entrar" : "Primeira vez? Criar conta"}
         </button>

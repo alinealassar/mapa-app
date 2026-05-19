@@ -107,7 +107,7 @@ export default function RecuperarSenhaPage() {
 
         <a
           href="/login"
-          className="mt-6 block w-full text-sm text-mapa-pink-deep hover:underline text-center font-[family-name:var(--font-quicksand)]"
+          className="mt-4 block w-full py-3 text-sm text-mapa-pink-deep hover:underline text-center font-[family-name:var(--font-quicksand)]"
         >
           ← Voltar para o login
         </a>
