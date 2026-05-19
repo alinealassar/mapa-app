@@ -139,7 +139,7 @@ export default function OnboardingPage() {
 
   if (!authenticated) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-mapa-bg">
+      <main className="min-h-screen flex items-center justify-center">
         <p className="text-mapa-muted italic">um instante</p>
       </main>
     );
@@ -147,7 +147,7 @@ export default function OnboardingPage() {
 
   return (
     <main
-      className="bg-gradient-to-b from-mapa-bg via-mapa-pink-light to-mapa-lavender-light flex flex-col items-center px-6 py-4"
+      className="flex flex-col items-center px-6 py-4"
       style={{ minHeight: "100dvh" }}
     >
       {/* Mesma tecnica do tutorial: minHeight 100dvh + flex flex-col flex-1
@@ -213,19 +213,21 @@ function WelcomeStep({ name }: { name: string }) {
       <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-mapa-pink-light to-mapa-lavender-light flex items-center justify-center text-4xl border-[3px] border-white/70 shadow-[0_8px_30px_rgba(232,160,191,0.22)] mb-5">
         🌸
       </div>
-      <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold text-mapa-text mb-3">
-        Bem-vinda à Lis{name && ` ${name}`}
+      <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold text-mapa-text mb-1">
+        Bem-vinda. Aqui é a Lis{name && `, ${name}`}.
       </h1>
       <p className="font-[family-name:var(--font-playfair)] italic text-base text-mapa-pink-deep mb-5">
         Antes de qualquer coisa, respira.
       </p>
-      <p className="text-[14px] text-mapa-text leading-relaxed font-[family-name:var(--font-quicksand)] max-w-xs mx-auto">
-        Aqui você não precisa{" "}
-        <span className="font-semibold text-mapa-pink-deep">
-          dar conta de nada
-        </span>
-        . Esse é o seu espaço para se ouvir, sem julgamentos.
-      </p>
+      <div className="lis-glass rounded-[18px] p-4 text-left">
+        <p className="text-[14px] text-mapa-text leading-relaxed font-[family-name:var(--font-quicksand)] max-w-xs mx-auto">
+          Aqui você não precisa{" "}
+          <span className="font-semibold text-mapa-pink-deep">
+            dar conta de nada
+          </span>
+          . Esse é o seu espaço para se ouvir, sem julgamentos.
+        </p>
+      </div>
     </div>
   );
 }
@@ -253,7 +255,7 @@ function GoalStep({
             className={`w-full px-4 py-3 rounded-2xl border-[1.5px] text-left flex items-center gap-3 cursor-pointer transition-all font-[family-name:var(--font-quicksand)] ${
               selected === g.key
                 ? "bg-mapa-pink-light border-mapa-pink shadow-[0_2px_8px_rgba(232,160,191,0.2)]"
-                : "bg-mapa-card border-mapa-border hover:border-mapa-pink"
+                : "lis-glass border-white/60 hover:border-mapa-pink"
             }`}
           >
             <span className="text-xl shrink-0">{g.emoji}</span>
@@ -284,7 +286,7 @@ function ReadyStep({ name, goal }: { name: string; goal: string }) {
       <p className="font-[family-name:var(--font-playfair)] italic text-sm text-mapa-pink-deep mb-5">
         agora é só começar
       </p>
-      <div className="bg-mapa-card/70 backdrop-blur rounded-[18px] border border-mapa-border/60 p-5 text-center">
+      <div className="lis-glass rounded-[18px] border-white/50 p-5 text-center">
         <p className="text-[13px] text-mapa-text leading-relaxed font-[family-name:var(--font-quicksand)]">
           Quando você registrar seu primeiro momento, eu vou te ouvir{" "}
           <span className="font-semibold text-mapa-pink-deep">

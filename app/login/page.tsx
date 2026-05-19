@@ -147,7 +147,7 @@ export default function Login() {
   // ===== TELA DE PÓS-CADASTRO (esperando confirmação) =====
   if (signupComplete) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-mapa-bg p-6">
+      <main className="min-h-screen flex flex-col items-center justify-center p-6">
         <div className="w-full max-w-sm text-center">
           <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-mapa-pink-light to-mapa-lavender-light flex items-center justify-center text-5xl border-4 border-white/70 shadow-[0_10px_40px_rgba(232,160,191,0.25)] mb-5">
             💌
@@ -160,7 +160,7 @@ export default function Login() {
             só falta confirmar seu e-mail
           </p>
 
-          <div className="bg-mapa-card border border-mapa-border rounded-[18px] p-5 text-center mb-5">
+          <div className="lis-glass rounded-[18px] p-5 text-center mb-5">
             <p className="text-[13px] text-mapa-text leading-relaxed font-[family-name:var(--font-quicksand)] mb-3">
               Mandamos um link para:
             </p>
@@ -174,7 +174,7 @@ export default function Login() {
 
           <button
             onClick={handleAlreadyConfirmed}
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white font-semibold text-[15px] cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(232,160,191,0.35)] transition mb-3 font-[family-name:var(--font-quicksand)]"
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white font-semibold text-[15px] cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(232,160,191,0.35)] transition mb-3 font-[family-name:var(--font-quicksand)] lis-pressable"
           >
             Já confirmei, entrar
           </button>
@@ -182,7 +182,7 @@ export default function Login() {
           <button
             onClick={handleResendEmail}
             disabled={resendStatus === "loading" || resendStatus === "sent"}
-            className="w-full py-3 rounded-2xl border-[1.5px] border-mapa-border bg-transparent text-mapa-text font-semibold text-sm cursor-pointer disabled:opacity-50 hover:bg-mapa-pink-light/40 transition mb-4 font-[family-name:var(--font-quicksand)]"
+            className="w-full py-3 rounded-2xl border-[1.5px] border-mapa-border bg-white/50 text-mapa-text font-semibold text-sm cursor-pointer disabled:opacity-50 hover:bg-mapa-pink-light/40 transition mb-4 font-[family-name:var(--font-quicksand)] lis-pressable"
           >
             {resendStatus === "loading" && "Enviando..."}
             {resendStatus === "sent" && "✓ E-mail reenviado"}
@@ -209,79 +209,87 @@ export default function Login() {
 
   // ===== TELA NORMAL DE LOGIN/CADASTRO =====
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-mapa-bg p-6">
+    <main className="min-h-screen flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-sm">
-        <h1 className="text-[24px] font-semibold text-mapa-text text-center mb-2 font-[family-name:var(--font-quicksand)]">
-          Lis
-        </h1>
-        <p className="text-sm text-mapa-pink-deep text-center mb-8 italic font-[family-name:var(--font-playfair)]">
-          Antes de qualquer coisa, respira.
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {isSignUp && (
-            <input
-              type="text"
-              placeholder="Como você quer ser chamada?"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              maxLength={40}
-              className="w-full px-4 py-3 rounded-2xl border border-mapa-border bg-mapa-card text-mapa-text placeholder-mapa-muted focus:outline-none focus:ring-2 focus:ring-mapa-pink"
-            />
-          )}
-          <input
-            type="email"
-            placeholder="Seu e-mail"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full px-4 py-3 rounded-2xl border border-mapa-border bg-mapa-card text-mapa-text placeholder-mapa-muted focus:outline-none focus:ring-2 focus:ring-mapa-pink"
-          />
-          <div>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Sua senha"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full pl-4 pr-12 py-3 rounded-2xl border border-mapa-border bg-mapa-card text-mapa-text placeholder-mapa-muted focus:outline-none focus:ring-2 focus:ring-mapa-pink"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                aria-label={
-                  showPassword ? "Ocultar senha" : "Mostrar senha"
-                }
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-mapa-muted hover:text-mapa-pink-deep cursor-pointer transition-colors bg-transparent border-none"
-              >
-                {showPassword ? (
-                  <EyeOff size={18} strokeWidth={1.75} />
-                ) : (
-                  <Eye size={18} strokeWidth={1.75} />
-                )}
-              </button>
-            </div>
-            {isSignUp && (
-              <div className="mt-2 text-[11px] text-mapa-muted leading-relaxed font-[family-name:var(--font-quicksand)]">
-                <p>8 a 12 caracteres</p>
-                <p>1 maiúscula · 1 minúscula · 1 número · 1 caractere especial</p>
-              </div>
-            )}
+        {/* Logo / identidade */}
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-mapa-pink-light to-mapa-lavender-light flex items-center justify-center text-3xl border-[3px] border-white/70 shadow-[0_6px_24px_rgba(232,160,191,0.22)] mb-4">
+            🌸
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-2xl bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white font-medium hover:opacity-90 transition disabled:opacity-50 font-[family-name:var(--font-quicksand)]"
-          >
-            {loading ? (isSignUp ? "Criando conta..." : "Entrando...") : isSignUp ? "Criar conta" : "Entrar"}
-          </button>
-        </form>
+          <h1 className="text-[26px] font-semibold text-mapa-text font-[family-name:var(--font-quicksand)] mb-1">
+            {isSignUp ? "Bem-vinda. Aqui é a Lis." : "Lis"}
+          </h1>
+          <p className="text-sm text-mapa-pink-deep italic font-[family-name:var(--font-playfair)]">
+            {isSignUp ? "Criação demora 30 segundos." : "Antes de qualquer coisa, respira."}
+          </p>
+        </div>
+
+        <div className="lis-glass rounded-[24px] p-6 mb-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {isSignUp && (
+              <input
+                type="text"
+                placeholder="Como você quer ser chamada?"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                maxLength={40}
+                className="w-full px-4 py-3 rounded-2xl border border-white/60 bg-white/70 text-mapa-text placeholder-mapa-muted focus:outline-none focus:ring-2 focus:ring-mapa-pink backdrop-blur-sm"
+              />
+            )}
+            <input
+              type="email"
+              placeholder="Seu e-mail"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-4 py-3 rounded-2xl border border-white/60 bg-white/70 text-mapa-text placeholder-mapa-muted focus:outline-none focus:ring-2 focus:ring-mapa-pink backdrop-blur-sm"
+            />
+            <div>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Sua senha"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full pl-4 pr-12 py-3 rounded-2xl border border-white/60 bg-white/70 text-mapa-text placeholder-mapa-muted focus:outline-none focus:ring-2 focus:ring-mapa-pink backdrop-blur-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={
+                    showPassword ? "Ocultar senha" : "Mostrar senha"
+                  }
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-mapa-muted hover:text-mapa-pink-deep cursor-pointer transition-colors bg-transparent border-none"
+                >
+                  {showPassword ? (
+                    <EyeOff size={18} strokeWidth={1.75} />
+                  ) : (
+                    <Eye size={18} strokeWidth={1.75} />
+                  )}
+                </button>
+              </div>
+              {isSignUp && (
+                <div className="mt-2 text-[11px] text-mapa-muted leading-relaxed font-[family-name:var(--font-quicksand)]">
+                  <p>8 a 12 caracteres</p>
+                  <p>1 maiúscula · 1 minúscula · 1 número · 1 caractere especial</p>
+                </div>
+              )}
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white font-semibold text-[15px] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(232,160,191,0.35)] transition disabled:opacity-50 font-[family-name:var(--font-quicksand)] lis-pressable cursor-pointer"
+            >
+              {loading ? (isSignUp ? "Criando conta..." : "Entrando...") : isSignUp ? "Criar conta" : "Entrar"}
+            </button>
+          </form>
+        </div>
 
         {message && (
           <p
-            className={`mt-4 text-sm text-center ${
+            className={`mb-3 text-sm text-center ${
               messageType === "error" ? "text-mapa-coral" : "text-mapa-mint"
             }`}
           >
@@ -290,7 +298,7 @@ export default function Login() {
         )}
 
         {!isSignUp && (
-          <div className="mt-3 text-center">
+          <div className="text-center">
             <a
               href="/recuperar-senha"
               className="inline-block py-2 px-3 text-sm text-mapa-pink-deep hover:underline font-[family-name:var(--font-quicksand)]"
@@ -308,7 +316,7 @@ export default function Login() {
             setPassword("");
             setName("");
           }}
-          className="mt-4 w-full py-3 text-sm text-mapa-pink-deep hover:underline text-center bg-transparent border-none cursor-pointer"
+          className="mt-2 w-full py-3 text-sm text-mapa-pink-deep hover:underline text-center bg-transparent border-none cursor-pointer"
         >
           {isSignUp ? "Já tem conta? Entrar" : "Primeira vez? Criar conta"}
         </button>

@@ -1593,7 +1593,7 @@ function Section({
       <button 
         type="button"
         onClick={() => setExpanded(true)}
-        className="w-full text-left mb-5 bg-white border border-mapa-border/60 rounded-[20px] px-5 py-4 shadow-[0_2px_10px_rgba(232,160,191,0.04)] flex justify-between items-center transition-all cursor-pointer hover:bg-gray-50/50 group"
+        className="w-full text-left mb-5 bg-white border border-mapa-border/60 rounded-[20px] px-5 py-4 shadow-[0_2px_10px_rgba(232,160,191,0.04)] flex justify-between items-center transition-all cursor-pointer hover:bg-mapa-pink-light/20 group"
       >
         <div>
           <p className="text-[13px] font-semibold text-mapa-pink-deep mb-0.5 font-[family-name:var(--font-quicksand)]">{label}</p>

@@ -5,8 +5,8 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-quicksand);
 
-  /* Mapa — paleta principal */
-  --color-mapa-bg: #FFF9F5;
+  /* Lis — paleta principal */
+  --color-mapa-bg: #FFF6F2;
   --color-mapa-card: #FFFFFF;
   --color-mapa-text: #3A312D;
   --color-mapa-muted: #7E6F69;
@@ -33,31 +33,11 @@
   --color-mapa-coral: #E88B8B;
 }
 
-/* === DESIGN TOKENS (referência para futuras telas) ===
-   Padronização visual decidida em 18/05/2026. Use como referência
-   ao adicionar tela nova ou refatorar — evita o caos de 6 valores
-   diferentes de border-radius e 4 de shadow.
-
+/* === DESIGN TOKENS ===
    BORDER-RADIUS:
    - rounded-2xl    (16px) — chips, pills, botões pequenos
    - rounded-[18px] (18px) — cards, inputs, modais médios
    - rounded-[24px] (24px) — cards destacados, modais grandes
-
-   SHADOWS (suaves, identidade rosa-quente):
-   - --shadow-soft:   0 4px 16px rgba(60,30,50,0.06)   // chips, hover
-   - --shadow-medium: 0 8px 30px rgba(60,30,50,0.10)   // cards normais
-   - --shadow-large:  0 12px 36px rgba(60,30,50,0.14)  // modais, cards destaque
-
-   AVATAR DECORATIVO (header de tela):
-   w-16 h-16 rounded-full bg-gradient-to-br from-mapa-pink-light to-mapa-lavender-light
-   border-[3px] border-white/70 shadow-[0_6px_24px_rgba(232,160,191,0.22)]
-   ícone lucide size=26 strokeWidth=1.5 cor text-mapa-pink-deep
-
-   H1 DE TELA:
-   text-[24px] font-semibold text-mapa-text font-[family-name:var(--font-quicksand)]
-
-   SUBTÍTULO POÉTICO (Playfair italic):
-   text-[13px] text-mapa-pink-deep italic font-[family-name:var(--font-playfair)]
 */
 :root {
   --shadow-soft: 0 4px 16px rgba(60, 30, 50, 0.06);
@@ -66,13 +46,26 @@
 }
 
 :root {
-  --background: #FFF9F5;
+  --background: #FFF6F2;
   --foreground: #3A312D;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/* === GLASSMORPHISM "Jelly" ===
+   Funciona agora porque o container do app tem gradiente visível por baixo.
+   Efeito: vidro fosco aconchegante — branco semi-transparente com borda rosada fina. */
+.lis-glass {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.80);
+  box-shadow:
+    0 4px 24px rgba(185, 130, 160, 0.08),
+    0 1px 2px rgba(255, 255, 255, 0.9) inset;
 }
 
 /* Range input custom para escala de humor */
@@ -114,4 +107,12 @@ input[type="range"]::-moz-range-thumb {
 
 .animate-pulse-rec {
   animation: pulse-rec 1.2s ease-in-out infinite;
+}
+
+/* Micro-animação: afunda suavemente ao clicar */
+.lis-pressable {
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.lis-pressable:active {
+  transform: scale(0.97) translateY(1px);
 }
