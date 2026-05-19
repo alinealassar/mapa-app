@@ -5,6 +5,7 @@ import { Pencil, Bell, BellOff, Lock, Heart, LogOut, Sparkles } from "lucide-rea
 import { supabase } from "@/lib/supabaseClient";
 import BottomNav from "@/app/components/BottomNav";
 import ChangePasswordModal from "@/app/components/ChangePasswordModal";
+import ConhecerLisModal from "@/app/components/ConhecerLisModal";
 import { useNotifications } from "@/lib/hooks/useNotifications";
 
 export default function EuPage() {
@@ -28,6 +29,9 @@ export default function EuPage() {
   // Alterar senha
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordSavedToast, setPasswordSavedToast] = useState(false);
+
+  // Modal "Conhecer a Lis" (substitui rota /tutorial removida em 18/05)
+  const [showConhecerModal, setShowConhecerModal] = useState(false);
 
   useEffect(() => {
     async function check() {
@@ -254,13 +258,13 @@ export default function EuPage() {
               <span className="text-mapa-muted text-base">›</span>
             </button>
 
-            {/* TUTORIAL */}
+            {/* CONHECER A LIS (substitui o ex-tutorial) */}
             <button
-              onClick={() => (window.location.href = "/tutorial")}
+              onClick={() => setShowConhecerModal(true)}
               className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-mapa-border/60 bg-transparent cursor-pointer text-left text-[13px] font-medium text-mapa-text font-[family-name:var(--font-quicksand)] hover:bg-mapa-pink-light/40 transition"
             >
               <Sparkles size={18} strokeWidth={1.75} className="text-mapa-pink-deep" />
-              <span className="flex-1">Ver tutorial</span>
+              <span className="flex-1">Conhecer a Lis</span>
               <span className="text-mapa-muted text-base">›</span>
             </button>
 
@@ -298,6 +302,10 @@ export default function EuPage() {
           onClose={() => setShowPasswordModal(false)}
           onSuccess={handlePasswordSuccess}
         />
+      )}
+
+      {showConhecerModal && (
+        <ConhecerLisModal onClose={() => setShowConhecerModal(false)} />
       )}
 
       <BottomNav />

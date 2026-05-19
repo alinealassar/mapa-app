@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Map, ChevronLeft, ChevronRight } from "lucide-react";
+import Tooltip from "@/app/components/Tooltip";
 import { supabase } from "@/lib/supabaseClient";
 import BottomNav from "@/app/components/BottomNav";
 
@@ -571,7 +572,15 @@ function WeeklySummaryCard({
     : "";
   const showNav = !!(onPrevWeek || onNextWeek);
   const nav = showNav ? (
-    <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/40">
+    <div className="relative flex items-center justify-between px-4 py-2.5 border-b border-white/40">
+      {/* Tooltip cirurgico: aparece UMA vez pra ensinar que da pra navegar
+          entre semanas (interacao nao obvia em mobile sem affordance). */}
+      <Tooltip
+        storageKey="lis_tooltip_mapa_setas_v1"
+        text="Use as setas pra navegar entre suas semanas."
+        position="bottom"
+        arrowAt="center"
+      />
       <button
         type="button"
         onClick={onPrevWeek}

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Pencil, Mic, ChevronDown, Sparkles, Wind, X } from "lucide-react";
+import { Pencil, Mic, ChevronDown, Sparkles, Wind, X, Plus, Headphones, CloudRain, Waves } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { containsCrisisKeywords, maskSensitiveData } from "@/lib/safety";
 import Link from "next/link";
+import Tooltip from "@/app/components/Tooltip";
 
 const MOODS = [
   { key: "pessima", emoji: "😣", label: "Péssima", scale: 1 },
@@ -229,6 +230,9 @@ export default function MoodRegister() {
   const [screenTimeHours, setScreenTimeHours] = useState<number | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedActivities, setSelectedActivities] = useState<string[]>([]);
+  const [customTags, setCustomTags] = useState<{id: string, label: string}[]>([]);
+  const [isAddingTag, setIsAddingTag] = useState(false);
+  const [newTagLabel, setNewTagLabel] = useState("");
   const [note, setNote] = useState("");
   const [noteTab, setNoteTab] = useState<"text" | "audio">("text");
   const [showCrisisModal, setShowCrisisModal] = useState(false);
@@ -239,6 +243,12 @@ export default function MoodRegister() {
   const [placeholderText, setPlaceholderText] = useState(
     "Conte o que quiser, esse espaço é só seu..."
   );
+  
+  // Casulo Sonoro
+  const [ambientSound, setAmbientSound] = useState<"off" | "rain" | "brown">("off");
+  const [showSoundMenu, setShowSoundMenu] = useState(false);
+  const ambientAudioRef = useRef<HTMLAudioElement | null>(null);
+
   const [showSosModal, setShowSosModal] = useState(false);
   // audioState: "idle" -> "recording" -> "transcribing" -> "done" | "error"
   // Quando done, transcribedText tem o texto (editavel pela usuaria) e
@@ -307,8 +317,39 @@ export default function MoodRegister() {
       setPlaceholderText(
         getAdaptivePrompt(lastEntry, profile?.goal || null, new Date())
       );
+
+      // Buscar tags customizadas
+      const { data: customTagsData } = await supabase
+        .from("custom_tags")
+        .select("id, label")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true });
+
+      if (customTagsData) {
+        setCustomTags(customTagsData);
+      }
     })();
   }, []);
+
+  // Efeito para tocar/pausar o Casulo Sonoro
+  useEffect(() => {
+    if (!ambientAudioRef.current) {
+      ambientAudioRef.current = new Audio();
+      ambientAudioRef.current.loop = true;
+    }
+    
+    // Pausar se a usuária desligar ou se for gravar um áudio (para não vazar o ruído)
+    if (ambientSound === "off" || audioState === "recording") {
+      ambientAudioRef.current.pause();
+    } else {
+      ambientAudioRef.current.src = ambientSound === "rain" 
+        ? "https://actions.google.com/sounds/v1/weather/rain_on_roof.ogg" 
+        : "https://upload.wikimedia.org/wikipedia/commons/4/4b/Brown_noise.ogg";
+      
+      // Alguns navegadores bloqueiam autoplay sem interação, então tratamos o catch
+      ambientAudioRef.current.play().catch(e => console.log("Áudio bloqueado pelo navegador até haver interação."));
+    }
+  }, [ambientSound, audioState]);
 
   const today = new Date().toLocaleDateString("pt-BR", {
     weekday: "long",
@@ -630,6 +671,49 @@ export default function MoodRegister() {
     }
   }
 
+  async function handleAddCustomTag() {
+    const label = newTagLabel.trim();
+    if (!label) {
+      setIsAddingTag(false);
+      return;
+    }
+    
+    // Optimistic update
+    const tempId = `temp-${Date.now()}`;
+    setCustomTags(prev => [...prev, { id: tempId, label }]);
+    setSelectedTags(prev => {
+      if (!prev.includes(label)) return [...prev, label];
+      return prev;
+    });
+    setNewTagLabel("");
+    setIsAddingTag(false);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("custom_tags")
+        .insert({ user_id: user.id, label })
+        .select("id, label")
+        .single();
+      
+      if (error) throw error;
+      
+      // Update with real ID
+      setCustomTags(prev => prev.map(t => t.id === tempId ? data : t));
+    } catch (err: any) {
+      console.error("Erro ao salvar tag customizada:", err);
+      // Pega a mensagem real do erro do Supabase
+      const errorMsg = err.message || err.details || JSON.stringify(err);
+      alert(`Não foi possível salvar a tag. Erro: ${errorMsg}`);
+      
+      // Reverte a atualização otimista
+      setCustomTags(prev => prev.filter(t => t.id !== tempId));
+      setSelectedTags(prev => prev.filter(t => t !== label));
+    }
+  }
+
   function handleNewEntry() {
     setSelectedMood(null);
     setMoodScale(5);
@@ -679,8 +763,8 @@ export default function MoodRegister() {
       </div>
 
       <div className="px-5 pb-7">
-        {/* BOTÃO SOS */}
-        <div className="mb-6 flex justify-center">
+        {/* BOTÕES NO TOPO (SOS e Casulo) */}
+        <div className="mb-6 flex justify-center gap-3 relative z-10">
           <button
             onClick={() => { triggerHaptic(); setShowSosModal(true); }}
             className="flex items-center gap-2 px-4 py-2.5 bg-[#F5F2F8] text-[#6B5B95] rounded-full shadow-[0_2px_8px_rgba(184,169,212,0.2)] border border-[rgba(184,169,212,0.4)] hover:bg-[#EBE5F5] transition-all font-[family-name:var(--font-quicksand)] text-[13px] font-medium active:scale-95"
@@ -688,6 +772,38 @@ export default function MoodRegister() {
             <Wind size={16} strokeWidth={2} />
             <span>Preciso respirar</span>
           </button>
+          
+          <div className="relative">
+            <button
+              onClick={() => { triggerHaptic(); setShowSoundMenu(!showSoundMenu); }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-full shadow-[0_2px_8px_rgba(184,169,212,0.2)] border transition-all font-[family-name:var(--font-quicksand)] text-[13px] font-medium active:scale-95 ${ambientSound !== "off" && audioState !== "recording" ? "bg-[#6B5B95] text-white border-[#6B5B95]" : "bg-[#F5F2F8] text-[#6B5B95] border-[rgba(184,169,212,0.4)] hover:bg-[#EBE5F5]"}`}
+            >
+              <Headphones size={16} strokeWidth={2} />
+            </button>
+            
+            {showSoundMenu && (
+              <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 sm:translate-x-0 sm:left-auto sm:right-0 bg-white rounded-2xl shadow-lg border border-mapa-border overflow-hidden flex flex-col min-w-[150px] font-[family-name:var(--font-quicksand)] text-[13px]">
+                <button 
+                  onClick={() => { setAmbientSound("rain"); setShowSoundMenu(false); }}
+                  className={`flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-50 transition-colors ${ambientSound === "rain" ? "text-mapa-pink-deep font-semibold bg-mapa-pink-light/20" : "text-mapa-text"}`}
+                >
+                  <CloudRain size={16} /> Chuva
+                </button>
+                <button 
+                  onClick={() => { setAmbientSound("brown"); setShowSoundMenu(false); }}
+                  className={`flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-50 transition-colors ${ambientSound === "brown" ? "text-mapa-pink-deep font-semibold bg-mapa-pink-light/20" : "text-mapa-text"}`}
+                >
+                  <Waves size={16} /> Ruído marrom
+                </button>
+                <button 
+                  onClick={() => { setAmbientSound("off"); setShowSoundMenu(false); }}
+                  className={`flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-50 transition-colors ${ambientSound === "off" ? "text-mapa-pink-deep font-semibold bg-mapa-pink-light/20" : "text-mapa-muted"}`}
+                >
+                  <X size={16} /> Desligado
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* HUMOR — obrigatório, único campo que bloqueia o save se vazio */}
@@ -824,6 +940,57 @@ export default function MoodRegister() {
                 {t.emoji} {t.label}
               </button>
             ))}
+            {customTags.map((t) => (
+              <button
+                key={t.id}
+                onClick={() =>
+                  toggleItem(selectedTags, t.label, setSelectedTags)
+                }
+                className={`py-[7px] px-4 rounded-3xl text-xs font-medium border-[1.5px] cursor-pointer transition-all duration-200 font-[family-name:var(--font-quicksand)] ${selectedTags.includes(t.label) ? "bg-mapa-pink text-white border-mapa-pink shadow-[0_2px_8px_rgba(232,160,191,0.2)]" : "bg-mapa-card text-mapa-text border-mapa-border hover:border-mapa-pink"}`}
+              >
+                {t.label}
+              </button>
+            ))}
+            {customTags.length < 10 ? (
+              isAddingTag ? (
+              <div className="flex items-center gap-2 py-[5px] px-3 rounded-3xl border-[1.5px] border-mapa-pink bg-white shadow-[0_2px_8px_rgba(232,160,191,0.2)]">
+                <input
+                  type="text"
+                  maxLength={20}
+                  value={newTagLabel}
+                  onChange={(e) => setNewTagLabel(e.target.value)}
+                  placeholder="ex: 🍷 vinho"
+                  className="bg-transparent border-none outline-none text-[12px] font-[family-name:var(--font-quicksand)] text-mapa-text w-[90px]"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleAddCustomTag();
+                    if (e.key === "Escape") { setIsAddingTag(false); setNewTagLabel(""); }
+                  }}
+                  onBlur={() => {
+                    if (newTagLabel.trim() === "") setIsAddingTag(false);
+                  }}
+                />
+                <button 
+                  onClick={handleAddCustomTag} 
+                  className="text-mapa-pink-deep font-bold text-[11px] cursor-pointer hover:text-mapa-pink transition-colors bg-transparent border-none p-0"
+                >
+                  OK
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setIsAddingTag(true)}
+                className="py-[7px] px-3 rounded-3xl border-[1.5px] border-dashed border-mapa-border bg-transparent text-mapa-muted flex items-center gap-1.5 cursor-pointer hover:border-mapa-pink hover:text-mapa-pink-deep transition-all duration-200 text-xs font-medium font-[family-name:var(--font-quicksand)]"
+              >
+                <Plus size={14} />
+                criar tag
+              </button>
+              )
+            ) : (
+              <span className="py-[7px] px-3 text-[11px] text-mapa-muted italic font-[family-name:var(--font-playfair)] flex items-center">
+                limite de 10 atingido
+              </span>
+            )}
           </div>
         </Section>
 
@@ -902,7 +1069,15 @@ export default function MoodRegister() {
               com transcricao editavel + botoes) sem que o sticky button
               "Registrar momento" tampe o conteudo. Texto e audio compartilham
               o mesmo tamanho de caixa. */}
-          <div className="rounded-[18px] border-[1.5px] border-mapa-border/60 bg-[#FAFAFA] overflow-hidden min-h-[340px] flex flex-col">
+          <div className="rounded-[18px] border-[1.5px] border-mapa-border/60 bg-[#FAFAFA] overflow-hidden min-h-[340px] flex flex-col relative">
+            {/* Tooltip cirurgico: aparece UMA vez pra apresentar a feature
+                de audio (que e' o diferencial tecnico do app). */}
+            <Tooltip
+              storageKey="lis_tooltip_audio_v1"
+              text="Novo: você pode gravar áudio em vez de escrever. A Lis transcreve."
+              position="bottom"
+              arrowAt="right"
+            />
             <div className="flex border-b border-mapa-border/50">
               <button
                 onClick={() => setNoteTab("text")}

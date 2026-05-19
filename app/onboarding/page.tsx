@@ -5,9 +5,10 @@ import { supabase } from "@/lib/supabaseClient";
 import { useNotifications } from "@/lib/hooks/useNotifications";
 
 // Sprint 4 polimento: nome agora é coletado no signup (vai pro user_metadata.full_name).
-// O step "name" do onboarding foi removido — fica welcome, how, goal, ready.
-type Step = "welcome" | "how" | "goal" | "ready";
-const STEPS: Step[] = ["welcome", "how", "goal", "ready"];
+// 18/05: HowStep removido — era abstrato demais antes da Marina ver UMA tela do app.
+// Confiamos que ela vai ENTENDER quando usar. Onboarding fica em 3 telas.
+type Step = "welcome" | "goal" | "ready";
+const STEPS: Step[] = ["welcome", "goal", "ready"];
 
 const GOALS = [
   { key: "culpa", emoji: "🌷", label: "Lidar com a culpa de não dar conta" },
@@ -123,15 +124,17 @@ export default function OnboardingPage() {
     // Pede permissão de push automaticamente ao finalizar o onboarding
     // (lembretes já vêm habilitados por default via migration reminders_enabled=true).
     // Email continua mesmo se ela negar push. Erros silenciosos: o que importa é
-    // chegar no tutorial mesmo se o popup do navegador for negado.
+    // chegar no /registrar mesmo se o popup do navegador for negado.
     try {
       await enableReminders();
     } catch (e) {
       console.warn("Não foi possível ativar push no onboarding:", e);
     }
-    // Passa pelo tutorial de 3 slides antes do app real. O tutorial verifica
-    // onboarding_done=true via guard, entao precisa estar setado antes.
-    window.location.href = "/tutorial";
+    // Direto pra /registrar. Tutorial foi removido em 18/05 — era duplicado
+    // com o HowStep do onboarding e bombava 7 telas pre-uso. Em vez disso,
+    // tooltips contextuais aparecem na primeira vez que ela abrir /registrar
+    // e /mapa.
+    window.location.href = "/registrar";
   }
 
   if (!authenticated) {
@@ -166,7 +169,6 @@ export default function OnboardingPage() {
         {/* Conteudo central */}
         <div className="flex-1 flex flex-col items-center justify-center text-center w-full py-4">
           {step === "welcome" && <WelcomeStep name={name} />}
-          {step === "how" && <HowStep />}
           {step === "goal" && <GoalStep selected={goal} onSelect={setGoal} />}
           {step === "ready" && <ReadyStep name={name} goal={goal} />}
 
@@ -224,54 +226,6 @@ function WelcomeStep({ name }: { name: string }) {
         </span>
         . Esse é o seu espaço para se ouvir, sem julgamentos.
       </p>
-    </div>
-  );
-}
-
-function HowStep() {
-  const items = [
-    {
-      emoji: "✏️",
-      title: "Registre seus momentos",
-      text: "Marque humor, sentimentos e o que rolou no dia. Em texto ou áudio.",
-    },
-    {
-      emoji: "🌿",
-      title: "Receba acolhimento",
-      text: "A Lis te responde com carinho e contexto, baseada no que você compartilhou.",
-    },
-    {
-      emoji: "📖",
-      title: "Descubra seus padrões",
-      text: "Com o tempo, você vê o que te move e o que te pesa.",
-    },
-  ];
-  return (
-    <div className="text-center w-full">
-      <h2 className="font-[family-name:var(--font-quicksand)] text-[22px] font-semibold text-mapa-text mb-2">
-        Como funciona
-      </h2>
-      <p className="font-[family-name:var(--font-playfair)] italic text-sm text-mapa-pink-deep mb-6">
-        três passos, no seu ritmo
-      </p>
-      <div className="space-y-3">
-        {items.map((item) => (
-          <div
-            key={item.title}
-            className="bg-mapa-card/80 backdrop-blur rounded-[18px] border border-mapa-border/60 p-4 text-left flex gap-3 items-start"
-          >
-            <span className="text-2xl mt-0.5 shrink-0">{item.emoji}</span>
-            <div>
-              <p className="text-[14px] font-semibold text-mapa-pink-deep mb-0.5 font-[family-name:var(--font-quicksand)]">
-                {item.title}
-              </p>
-              <p className="text-[12px] text-mapa-text leading-relaxed font-[family-name:var(--font-quicksand)]">
-                {item.text}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
