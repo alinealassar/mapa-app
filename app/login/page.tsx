@@ -153,7 +153,7 @@ export default function Login() {
             💌
           </div>
 
-          <h1 className="text-[26px] font-semibold text-mapa-text mb-2 font-[family-name:var(--font-quicksand)]">
+          <h1 className="text-[24px] font-semibold text-mapa-text mb-2 font-[family-name:var(--font-quicksand)]">
             Quase lá!
           </h1>
           <p className="font-[family-name:var(--font-playfair)] italic text-sm text-mapa-pink-deep mb-5">
@@ -211,7 +211,7 @@ export default function Login() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-mapa-bg p-6">
       <div className="w-full max-w-sm">
-        <h1 className="text-[26px] font-semibold text-mapa-text text-center mb-2 font-[family-name:var(--font-quicksand)]">
+        <h1 className="text-[24px] font-semibold text-mapa-text text-center mb-2 font-[family-name:var(--font-quicksand)]">
           Lis
         </h1>
         <p className="text-sm text-mapa-pink-deep text-center mb-8 italic font-[family-name:var(--font-playfair)]">

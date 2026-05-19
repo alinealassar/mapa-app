@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Pencil, Mic, ChevronDown, Sparkles } from "lucide-react";
+import { Pencil, Mic, ChevronDown, Sparkles, Wind, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { containsCrisisKeywords, maskSensitiveData } from "@/lib/safety";
 import Link from "next/link";
@@ -239,6 +239,7 @@ export default function MoodRegister() {
   const [placeholderText, setPlaceholderText] = useState(
     "Conte o que quiser, esse espaço é só seu..."
   );
+  const [showSosModal, setShowSosModal] = useState(false);
   // audioState: "idle" -> "recording" -> "transcribing" -> "done" | "error"
   // Quando done, transcribedText tem o texto (editavel pela usuaria) e
   // audioDurationSeconds tem a duracao retornada pelo Whisper.
@@ -660,7 +661,7 @@ export default function MoodRegister() {
     <div>
       {/* HEADER */}
       <div className="px-6 pt-6">
-        <h1 className="text-center font-[family-name:var(--font-quicksand)] text-[22px] font-medium mb-3">
+        <h1 className="text-center font-[family-name:var(--font-quicksand)] text-[24px] font-semibold mb-3">
           Diário da{" "}
           <span className="text-mapa-pink-deep">{userName || "..."}</span>
         </h1>
@@ -675,6 +676,17 @@ export default function MoodRegister() {
       </div>
 
       <div className="px-5 pb-7">
+        {/* BOTÃO SOS */}
+        <div className="mb-6 flex justify-center">
+          <button
+            onClick={() => { triggerHaptic(); setShowSosModal(true); }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#F5F2F8] text-[#6B5B95] rounded-full shadow-[0_2px_8px_rgba(184,169,212,0.2)] border border-[rgba(184,169,212,0.4)] hover:bg-[#EBE5F5] transition-all font-[family-name:var(--font-quicksand)] text-[13px] font-medium active:scale-95"
+          >
+            <Wind size={16} strokeWidth={2} />
+            <span>Preciso respirar</span>
+          </button>
+        </div>
+
         {/* HUMOR — obrigatório, único campo que bloqueia o save se vazio */}
         <div id="section-humor">
         <Section
@@ -1161,6 +1173,137 @@ export default function MoodRegister() {
           </div>
         </div>
       )}
+
+      {showSosModal && (
+        <SosModal onClose={() => { triggerHaptic(); setShowSosModal(false); }} />
+      )}
+    </div>
+  );
+}
+
+// ==========================================
+// SosModal Component (Modo de Descompressão)
+// ==========================================
+function SosModal({ onClose }: { onClose: () => void }) {
+  const [phase, setPhase] = useState<"inhale" | "hold" | "exhale" | "start">("start");
+  const [showGrounding, setShowGrounding] = useState(false);
+
+  useEffect(() => {
+    let cycleTimeout: NodeJS.Timeout;
+
+    const runCycle = () => {
+      setPhase("inhale");
+      cycleTimeout = setTimeout(() => {
+        setPhase("hold");
+        cycleTimeout = setTimeout(() => {
+          setPhase("exhale");
+          cycleTimeout = setTimeout(runCycle, 8000);
+        }, 7000);
+      }, 4000);
+    };
+
+    // Espera 100ms antes de iniciar para dar tempo da animação CSS atrelar
+    const initialTimeout = setTimeout(runCycle, 100);
+    return () => {
+      clearTimeout(initialTimeout);
+      clearTimeout(cycleTimeout);
+    };
+  }, []);
+
+  const circleScale = (phase === "inhale" || phase === "hold") ? 1.4 : 1;
+  const circleDuration = phase === "inhale" ? "4000ms" : phase === "hold" ? "7000ms" : phase === "exhale" ? "8000ms" : "0ms";
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-mapa-bg flex flex-col font-[family-name:var(--font-quicksand)] overflow-y-auto">
+      {/* Top Bar */}
+      <div className="flex justify-between items-center px-6 py-6">
+        <h2 className="text-[18px] font-medium text-mapa-text font-[family-name:var(--font-playfair)] italic">
+          Estou aqui com você.
+        </h2>
+        <button
+          onClick={onClose}
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-mapa-card shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-mapa-border text-mapa-muted hover:text-mapa-text transition-colors"
+          aria-label="Voltar para o diário"
+        >
+          <X size={20} strokeWidth={1.5} />
+        </button>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col items-center justify-start px-6 pt-10 pb-20">
+        <p className="text-[14px] text-mapa-muted text-center max-w-[260px] mb-16 leading-relaxed">
+          Não precisamos registrar nada agora. Só vamos acalmar o corpo.
+        </p>
+
+        {/* Breathing Circle */}
+        <div className="relative w-[180px] h-[180px] flex items-center justify-center mb-16 mx-auto">
+          {/* Círculo base estático */}
+          <div className="absolute inset-0 rounded-full border-[1.5px] border-[#E8DDF5] opacity-50" />
+          
+          {/* Círculo animado */}
+          <div
+            className="absolute inset-0 rounded-full bg-[#E8DDF5] opacity-40"
+            style={{
+              transform: `scale(${circleScale})`,
+              transitionProperty: "transform",
+              transitionDuration: circleDuration,
+              transitionTimingFunction: "ease-in-out",
+            }}
+          />
+          
+          {/* Texto de orientação */}
+          <div className="relative z-10 text-[22px] font-medium text-[#6B5B95] transition-opacity duration-500">
+            {phase === "start" && "..."}
+            {phase === "inhale" && "Inspire..."}
+            {phase === "hold" && "Segure..."}
+            {phase === "exhale" && "Solte o ar..."}
+          </div>
+        </div>
+
+        {/* Grounding Option */}
+        <div className="w-full max-w-[300px]">
+          {!showGrounding ? (
+            <button
+              onClick={() => setShowGrounding(true)}
+              className="w-full text-center text-[13px] text-[#8B5C77] italic font-[family-name:var(--font-playfair)] underline underline-offset-4 hover:text-mapa-pink-deep transition-colors pb-8 cursor-pointer border-none bg-transparent"
+            >
+              A respiração não foi suficiente?
+            </button>
+          ) : (
+            <div className="bg-white rounded-[24px] p-6 shadow-[0_8px_30px_rgba(184,169,212,0.15)] border border-[rgba(184,169,212,0.3)] animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <h3 className="font-semibold text-[#6B5B95] mb-4 text-[15px] flex items-center gap-2">
+                <Sparkles size={16} className="text-[#8E3A6B]" />
+                Técnica 5-4-3-2-1
+              </h3>
+              <p className="text-[13px] text-mapa-text mb-5 leading-relaxed">
+                Olhe ao seu redor e encontre:
+              </p>
+              <ul className="text-[13.5px] text-mapa-text space-y-3.5 list-none p-0 m-0">
+                <li className="flex gap-3 items-center">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#F5F2F8] text-[#6B5B95] font-semibold text-[12px]">5</span> 
+                  <span>coisas que você pode <b>ver</b></span>
+                </li>
+                <li className="flex gap-3 items-center">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#F5F2F8] text-[#6B5B95] font-semibold text-[12px]">4</span> 
+                  <span>coisas que pode <b>tocar</b></span>
+                </li>
+                <li className="flex gap-3 items-center">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#F5F2F8] text-[#6B5B95] font-semibold text-[12px]">3</span> 
+                  <span>coisas que pode <b>ouvir</b></span>
+                </li>
+                <li className="flex gap-3 items-center">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#F5F2F8] text-[#6B5B95] font-semibold text-[12px]">2</span> 
+                  <span>coisas que pode <b>cheirar</b></span>
+                </li>
+                <li className="flex gap-3 items-center">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#F5F2F8] text-[#6B5B95] font-semibold text-[12px]">1</span> 
+                  <span>coisa que pode <b>sentir o gosto</b></span>
+                </li>
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

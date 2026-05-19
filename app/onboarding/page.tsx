@@ -211,7 +211,7 @@ function WelcomeStep({ name }: { name: string }) {
       <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-mapa-pink-light to-mapa-lavender-light flex items-center justify-center text-4xl border-[3px] border-white/70 shadow-[0_8px_30px_rgba(232,160,191,0.22)] mb-5">
         🌸
       </div>
-      <h1 className="font-[family-name:var(--font-quicksand)] text-[26px] font-semibold text-mapa-text mb-3">
+      <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold text-mapa-text mb-3">
         Bem-vinda à Lis{name && ` ${name}`}
       </h1>
       <p className="font-[family-name:var(--font-playfair)] italic text-base text-mapa-pink-deep mb-5">

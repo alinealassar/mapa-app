@@ -42,7 +42,7 @@ export default function RecuperarSenhaPage() {
           <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-mapa-pink-light to-mapa-lavender-light flex items-center justify-center text-5xl border-4 border-white/70 shadow-[0_10px_40px_rgba(232,160,191,0.25)] mb-5">
             💌
           </div>
-          <h1 className="text-[26px] font-semibold text-mapa-text mb-2 font-[family-name:var(--font-quicksand)]">
+          <h1 className="text-[24px] font-semibold text-mapa-text mb-2 font-[family-name:var(--font-quicksand)]">
             Olha sua caixa de entrada
           </h1>
           <p className="font-[family-name:var(--font-playfair)] italic text-sm text-mapa-pink-deep mb-5">
@@ -75,7 +75,7 @@ export default function RecuperarSenhaPage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-mapa-bg p-6">
       <div className="w-full max-w-sm">
-        <h1 className="text-3xl font-bold text-mapa-text text-center mb-2 font-[family-name:var(--font-quicksand)]">
+        <h1 className="text-[24px] font-semibold text-mapa-text text-center mb-2 font-[family-name:var(--font-quicksand)]">
           Recuperar senha
         </h1>
         <p className="text-sm text-mapa-pink-deep text-center mb-8 italic font-[family-name:var(--font-playfair)]">

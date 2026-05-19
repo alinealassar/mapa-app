@@ -246,7 +246,7 @@ export default function MoodHistory() {
   return (
     <div>
       <div className="px-6 pt-6 text-center">
-        <h1 className="font-[family-name:var(--font-quicksand)] text-[22px] font-medium inline-flex items-center gap-2 justify-center">
+        <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold inline-flex items-center gap-2 justify-center">
           Meu histórico
           <BookOpen size={22} strokeWidth={1.75} className="text-mapa-pink-deep" />
         </h1>
