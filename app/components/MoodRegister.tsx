@@ -349,11 +349,13 @@ export default function MoodRegister() {
     }
   }, [ambientSound, audioState]);
 
-  const today = new Date().toLocaleDateString("pt-BR", {
-    weekday: "short",
-    day: "2-digit",
-    month: "2-digit",
-  });
+  const today = new Date()
+    .toLocaleDateString("pt-BR", {
+      weekday: "short",
+      day: "2-digit",
+      month: "2-digit",
+    })
+    .replace(/[.,]/g, "");
   const saveLabel = SAVE_LABELS[new Date().getDate() % SAVE_LABELS.length];
 
   function handleMoodSelect(m: (typeof MOODS)[0]) {
@@ -763,7 +765,7 @@ export default function MoodRegister() {
           <div className="relative">
             <button
               onClick={() => { triggerHaptic(); setShowSoundMenu(!showSoundMenu); }}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-full shadow-[0_2px_8px_rgba(184,169,212,0.2)] border transition-all font-[family-name:var(--font-quicksand)] text-[13px] font-medium active:scale-95 ${ambientSound !== "off" && audioState !== "recording" ? "bg-[#6B5B95] text-white border-[#6B5B95]" : "bg-[#F5F2F8] text-[#6B5B95] border-[rgba(184,169,212,0.4)] hover:bg-[#EBE5F5]"}`}
+              className={`flex items-center px-3 py-2.5 rounded-full shadow-[0_2px_8px_rgba(184,169,212,0.2)] border transition-all font-[family-name:var(--font-quicksand)] text-[13px] font-medium active:scale-95 ${ambientSound !== "off" && audioState !== "recording" ? "bg-[#6B5B95] text-white border-[#6B5B95]" : "bg-[#F5F2F8] text-[#6B5B95] border-[rgba(184,169,212,0.4)] hover:bg-[#EBE5F5]"}`}
             >
               <Headphones size={16} strokeWidth={2} />
             </button>
@@ -1001,7 +1003,7 @@ export default function MoodRegister() {
 
         {/* COMO VOCÊ ESTÁ SE SENTINDO? (Tags) */}
         <Section
-          label="O que você está sentindo?"
+          label="Como você está se sentindo?"
           hint="escolha tudo que faz sentido para você neste momento"
           optional
         >
