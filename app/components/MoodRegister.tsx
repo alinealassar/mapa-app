@@ -829,7 +829,7 @@ export default function MoodRegister() {
           hint="desabafa por áudio ou texto — a Lis te escuta"
           optional
         >
-          <div className="rounded-[18px] border-[1.5px] border-mapa-pink bg-[#FAFAFA] overflow-hidden min-h-[340px] flex flex-col relative">
+          <div className={`rounded-[18px] border-[1.5px] border-mapa-pink bg-[#FAFAFA] overflow-hidden flex flex-col relative transition-[min-height] duration-300 ${audioState !== "idle" || noteTab === "text" ? "min-h-[340px]" : "min-h-[160px]"}`}>
             <Tooltip
               storageKey="lis_tooltip_audio_v1"
               text="Novo: você pode gravar áudio em vez de escrever. A Lis transcreve."
@@ -1087,8 +1087,8 @@ export default function MoodRegister() {
             className="w-full text-left mb-5 bg-white border border-mapa-border/60 rounded-[20px] px-5 py-4 shadow-[0_2px_10px_rgba(232,160,191,0.04)] flex justify-between items-center transition-all cursor-pointer hover:bg-mapa-pink-light/20"
           >
             <div>
-              <p className="text-[13px] font-semibold text-mapa-pink-deep mb-0.5 font-[family-name:var(--font-quicksand)]">＋ adicionar mais detalhes</p>
-              <p className="text-[11px] text-mapa-muted italic font-[family-name:var(--font-playfair)]">sono, energia, o que você fez hoje</p>
+              <p className="text-sm font-semibold text-mapa-pink-deep mb-0.5">＋ adicionar mais detalhes</p>
+              <p className="text-[11px] text-mapa-muted italic leading-snug">sono, energia, o que você fez hoje</p>
             </div>
             <ChevronDown size={16} className="text-mapa-muted" />
           </button>
@@ -1453,8 +1453,8 @@ function Section({
         <p className="text-sm font-semibold text-mapa-pink-deep mb-0.5">
           {label}
           {optional && (
-            <span className="font-[family-name:var(--font-playfair)] italic font-normal text-[11px] text-mapa-muted ml-1.5">
-              — opcional
+            <span className="ml-2 align-middle text-[10px] font-medium text-mapa-muted bg-[#F5F2F8] rounded-full px-2 py-0.5 font-[family-name:var(--font-quicksand)]">
+              opcional
             </span>
           )}
         </p>
