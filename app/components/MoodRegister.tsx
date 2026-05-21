@@ -350,10 +350,9 @@ export default function MoodRegister() {
   }, [ambientSound, audioState]);
 
   const today = new Date().toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
   });
   const saveLabel = SAVE_LABELS[new Date().getDate() % SAVE_LABELS.length];
 
@@ -741,18 +740,18 @@ export default function MoodRegister() {
   return (
     <div>
       {/* HEADER */}
-      <div className="px-6 pt-6">
-        <h1 className="text-center font-[family-name:var(--font-quicksand)] text-[24px] font-semibold mb-1 text-mapa-pink-deep">
-          Oi {userName || "..."} 🤍
-        </h1>
-        <p className="text-center font-[family-name:var(--font-playfair)] italic text-xs text-mapa-muted pb-3">
-          aqui é o seu espaço · {today}
-        </p>
-      </div>
+      <div className="px-6 pt-6 flex justify-between items-start gap-3">
+        <div className="text-left">
+          <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold mb-1 text-mapa-pink-deep">
+            Oi {userName || "..."} 🤍
+          </h1>
+          <p className="font-[family-name:var(--font-playfair)] italic text-xs text-mapa-muted">
+            aqui é o seu espaço · {today}
+          </p>
+        </div>
 
-      <div className="px-5 pb-40">
-        {/* BOTÕES NO TOPO (SOS e Casulo) */}
-        <div className="mb-6 flex justify-center gap-3 relative z-10">
+        {/* BOTÕES (SOS e Casulo) — canto direito, alinhado ao título */}
+        <div className="flex gap-2 shrink-0 relative z-10 pt-1">
           <button
             onClick={() => { triggerHaptic(); setShowSosModal(true); }}
             aria-label="Preciso respirar"
@@ -770,7 +769,7 @@ export default function MoodRegister() {
             </button>
             
             {showSoundMenu && (
-              <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 sm:translate-x-0 sm:left-auto sm:right-0 bg-white rounded-2xl shadow-lg border border-mapa-border overflow-hidden flex flex-col min-w-[150px] font-[family-name:var(--font-quicksand)] text-[13px]">
+              <div className="absolute top-full mt-2 right-0 bg-white rounded-2xl shadow-lg border border-mapa-border overflow-hidden flex flex-col min-w-[150px] font-[family-name:var(--font-quicksand)] text-[13px]">
                 <button 
                   onClick={() => { setAmbientSound("rain"); setShowSoundMenu(false); }}
                   className={`flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-50 transition-colors ${ambientSound === "rain" ? "text-mapa-pink-deep font-semibold bg-mapa-pink-light/20" : "text-mapa-text"}`}
@@ -793,7 +792,9 @@ export default function MoodRegister() {
             )}
           </div>
         </div>
+      </div>
 
+      <div className="px-5 pb-40 pt-5">
         {/* HUMOR — obrigatório, único campo que bloqueia o save se vazio */}
         <div id="section-humor">
         <Section
@@ -1139,17 +1140,6 @@ export default function MoodRegister() {
                   );
                 })}
               </div>
-              {sleepQuality !== null && (
-                <div className="text-center mt-2.5">
-                  <button
-                    type="button"
-                    onClick={() => setSleepQuality(null)}
-                    className="py-2 px-3 text-[11px] text-mapa-muted italic font-[family-name:var(--font-playfair)] underline underline-offset-[3px] cursor-pointer hover:text-mapa-pink-deep transition-colors bg-transparent border-none"
-                  >
-                    prefiro não responder
-                  </button>
-                </div>
-              )}
             </Section>
 
             {/* ATIVIDADES */}
