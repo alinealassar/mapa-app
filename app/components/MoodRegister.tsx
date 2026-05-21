@@ -223,13 +223,9 @@ export default function MoodRegister() {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [moodScale, setMoodScale] = useState(5);
   const [energyLevel, setEnergyLevel] = useState(0);
-  // Sprint 3.1: campos de sono (opcionais)
-  const [sleepQuality, setSleepQuality] = useState<"good" | "ok" | "bad" | null>(
-    null
-  );
-  const [sleepHours, setSleepHours] = useState<number | null>(null);
-  // Sprint 3.2: tempo de tela manual (opcional, copy anti-culpa)
-  const [screenTimeHours, setScreenTimeHours] = useState<number | null>(null);
+  const [sleepQuality, setSleepQuality] = useState<"good" | "ok" | "bad" | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
+  const [showAllTags, setShowAllTags] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedActivities, setSelectedActivities] = useState<string[]>([]);
   const [customTags, setCustomTags] = useState<{id: string, label: string}[]>([]);
@@ -603,8 +599,8 @@ export default function MoodRegister() {
           note: maskedNote || null,
           audio_url: uploadedAudioUrl,
           sleep_quality: sleepQuality,
-          sleep_hours: sleepHours,
-          screen_time_hours: screenTimeHours,
+          sleep_hours: null,
+          screen_time_hours: null,
         })
         .select("id")
         .single();
@@ -722,8 +718,6 @@ export default function MoodRegister() {
     setMoodScale(5);
     setEnergyLevel(0);
     setSleepQuality(null);
-    setSleepHours(null);
-    setScreenTimeHours(null);
     setSelectedTags([]);
     setSelectedActivities([]);
     setNote("");
@@ -762,7 +756,7 @@ export default function MoodRegister() {
           <button
             onClick={() => { triggerHaptic(); setShowSosModal(true); }}
             aria-label="Preciso respirar"
-            className="flex items-center px-4 py-2.5 bg-[#F5F2F8] text-[#6B5B95] rounded-full shadow-[0_2px_8px_rgba(184,169,212,0.2)] border border-[rgba(184,169,212,0.4)] hover:bg-[#EBE5F5] transition-all active:scale-95"
+            className="flex items-center px-3 py-2.5 bg-[#F5F2F8] text-[#6B5B95] rounded-full shadow-[0_2px_8px_rgba(184,169,212,0.2)] border border-[rgba(184,169,212,0.4)] hover:bg-[#EBE5F5] transition-all active:scale-95"
           >
             <Wind size={16} strokeWidth={2} />
           </button>
@@ -825,247 +819,14 @@ export default function MoodRegister() {
         </Section>
         </div>
 
-        {/* ENERGIA */}
-        <Section
-          label="Energia"
-          hint="como está seu corpo e sua disposição agora?"
-          optional
-        >
-          <div className="flex gap-1.5 items-end h-11 mb-1">
-            {[1, 2, 3, 4, 5, 6].map((l) => (
-              <div
-                key={l}
-                onClick={() => setEnergyLevel(l)}
-                className={`flex-1 rounded-lg cursor-pointer transition-all duration-200 ${l <= energyLevel ? "bg-mapa-lavender" : "bg-mapa-border"}`}
-                style={{ height: `${15 + l * 15}%` }}
-              />
-            ))}
-          </div>
-          <div className="flex justify-between mt-1 px-1">
-            <span className="text-[10px] text-mapa-muted">
-              esgotada
-            </span>
-            <span className="text-[10px] text-mapa-muted">
-              energizada
-            </span>
-          </div>
-        </Section>
-
-        {/* SONO (Sprint 3.1) — V1 do mockup (Section padrão) com a barrinha inline compacta */}
-        <Section
-          label="Como foi seu sono?"
-          hint="se quiser registrar como você dormiu"
-          optional
-        >
-          {/* 3 botões de qualidade — estilo V1: fundo branco + border padrão */}
-          <div className="grid grid-cols-3 gap-2 mb-2.5">
-            {SLEEP_QUALITIES.map((q) => {
-              const selected = sleepQuality === q.value;
-              return (
-                <button
-                  key={q.value}
-                  type="button"
-                  onClick={() =>
-                    setSleepQuality(selected ? null : q.value)
-                  }
-                  className={`py-2.5 px-1 rounded-2xl border-[1.5px] cursor-pointer text-center transition-all duration-200 font-[family-name:var(--font-quicksand)] ${
-                    selected
-                      ? "bg-mapa-lavender-light border-mapa-lavender text-[#5A4A8C] shadow-[0_2px_8px_rgba(184,169,212,0.25)]"
-                      : "bg-mapa-card border-mapa-border text-mapa-text hover:border-mapa-lavender"
-                  }`}
-                >
-                  <span className="text-2xl block mb-0.5 leading-none">
-                    {q.emoji}
-                  </span>
-                  <span className="text-[11px] font-medium">{q.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Slider padronizado (RangeBar) — Horas dormidas */}
-          <RangeBar
-            label="horas dormidas"
-            value={sleepHours ?? 7}
-            hasValue={sleepHours !== null}
-            displayText={sleepHours !== null ? String(sleepHours) : undefined}
-            unit="h"
-            min={4}
-            max={12}
-            step={0.5}
-            ticks={["4h", "8h", "12h"]}
-            onChange={(v) => { triggerHaptic(); setSleepHours(v); }}
-            textColor="#5A4A8C"
-            accent="#5A4A8C"
-          />
-
-          {/* "Prefiro não responder" — só aparece se algum campo está preenchido */}
-          {(sleepQuality !== null || sleepHours !== null) && (
-            <div className="text-center mt-2.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setSleepQuality(null);
-                  setSleepHours(null);
-                }}
-                className="py-2 px-3 text-[11px] text-mapa-muted italic font-[family-name:var(--font-playfair)] underline underline-offset-[3px] cursor-pointer hover:text-mapa-pink-deep transition-colors bg-transparent border-none"
-              >
-                prefiro não responder
-              </button>
-            </div>
-          )}
-        </Section>
-
-        {/* TAGS */}
-        <Section
-          label="Como você está se sentindo?"
-          hint="escolha tudo que faz sentido para você neste momento"
-          optional
-        >
-          <div className="flex flex-wrap gap-2">
-            {TAGS.map((t) => (
-              <button
-                key={t.label}
-                onClick={() =>
-                  toggleItem(selectedTags, t.label, setSelectedTags)
-                }
-                className={`py-[7px] px-4 rounded-3xl text-xs font-medium border-[1.5px] cursor-pointer transition-all duration-200 font-[family-name:var(--font-quicksand)] ${selectedTags.includes(t.label) ? "bg-mapa-pink text-white border-mapa-pink shadow-[0_2px_8px_rgba(232,160,191,0.2)]" : "bg-mapa-card text-mapa-text border-mapa-border hover:border-mapa-pink"}`}
-              >
-                {t.emoji} {t.label}
-              </button>
-            ))}
-            {customTags.map((t) => (
-              <button
-                key={t.id}
-                onClick={() =>
-                  toggleItem(selectedTags, t.label, setSelectedTags)
-                }
-                className={`py-[7px] px-4 rounded-3xl text-xs font-medium border-[1.5px] cursor-pointer transition-all duration-200 font-[family-name:var(--font-quicksand)] ${selectedTags.includes(t.label) ? "bg-mapa-pink text-white border-mapa-pink shadow-[0_2px_8px_rgba(232,160,191,0.2)]" : "bg-mapa-card text-mapa-text border-mapa-border hover:border-mapa-pink"}`}
-              >
-                {t.label}
-              </button>
-            ))}
-            {customTags.length < 10 ? (
-              isAddingTag ? (
-              <div className="flex items-center gap-2 py-[5px] px-3 rounded-3xl border-[1.5px] border-mapa-pink bg-white shadow-[0_2px_8px_rgba(232,160,191,0.2)]">
-                <input
-                  type="text"
-                  maxLength={20}
-                  value={newTagLabel}
-                  onChange={(e) => setNewTagLabel(e.target.value)}
-                  placeholder="ex: 🍷 vinho"
-                  className="bg-transparent border-none outline-none text-[12px] font-[family-name:var(--font-quicksand)] text-mapa-text w-[90px]"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleAddCustomTag();
-                    if (e.key === "Escape") { setIsAddingTag(false); setNewTagLabel(""); }
-                  }}
-                  onBlur={() => {
-                    if (newTagLabel.trim() === "") setIsAddingTag(false);
-                  }}
-                />
-                <button 
-                  onClick={handleAddCustomTag} 
-                  className="text-mapa-pink-deep font-bold text-[11px] cursor-pointer hover:text-mapa-pink transition-colors bg-transparent border-none p-0"
-                >
-                  OK
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setIsAddingTag(true)}
-                className="py-[7px] px-3 rounded-3xl border-[1.5px] border-dashed border-mapa-border bg-transparent text-mapa-muted flex items-center gap-1.5 cursor-pointer hover:border-mapa-pink hover:text-mapa-pink-deep transition-all duration-200 text-xs font-medium font-[family-name:var(--font-quicksand)]"
-              >
-                <Plus size={14} />
-                criar tag
-              </button>
-              )
-            ) : (
-              <span className="py-[7px] px-3 text-[11px] text-mapa-muted italic font-[family-name:var(--font-playfair)] flex items-center">
-                limite de 10 atingido
-              </span>
-            )}
-          </div>
-        </Section>
-
-        {/* ATIVIDADES */}
-        <Section
-          label="O que você fez hoje?"
-          hint="selecione as atividades que fizeram parte do seu dia"
-          optional
-        >
-          <div className="grid grid-cols-3 gap-2">
-            {ACTIVITIES.map((a) => (
-              <button
-                key={a.label}
-                onClick={() =>
-                  toggleItem(
-                    selectedActivities,
-                    a.label,
-                    setSelectedActivities
-                  )
-                }
-                className={`py-2.5 px-1 pb-2 rounded-2xl border-[1.5px] cursor-pointer text-center transition-all duration-200 text-[11px] font-medium font-[family-name:var(--font-quicksand)] ${selectedActivities.includes(a.label) ? "bg-mapa-lavender-light border-mapa-lavender text-[#6B5B95] shadow-[0_2px_8px_rgba(184,169,212,0.2)]" : "bg-mapa-card border-mapa-border text-mapa-text hover:border-mapa-lavender"}`}
-              >
-                <span className="text-xl block mb-0.5">{a.emoji}</span>
-                {a.label}
-              </button>
-            ))}
-          </div>
-        </Section>
-
-        {/* TEMPO DE TELA (Sprint 3.2) — opcional, anti-culpa */}
-        <Section
-          label="Tempo de tela hoje"
-          hint="se quiser registrar — sem julgamento, é só seu mapa"
-          optional
-        >
-          {/* Slider padronizado (RangeBar) — Tempo de tela */}
-          <RangeBar
-            label="horas no celular"
-            value={screenTimeHours ?? 3}
-            hasValue={screenTimeHours !== null}
-            displayText={
-              screenTimeHours !== null ? String(screenTimeHours) : undefined
-            }
-            unit="h"
-            min={0}
-            max={12}
-            step={0.5}
-            ticks={["0h", "6h", "12h"]}
-            onChange={(v) => { triggerHaptic(); setScreenTimeHours(v); }}
-            textColor="#6B6280"
-            accent="#6B6280"
-          />
-
-          {/* "Prefiro não responder" — só aparece se preencheu */}
-          {screenTimeHours !== null && (
-            <div className="text-center mt-2.5">
-              <button
-                type="button"
-                onClick={() => setScreenTimeHours(null)}
-                className="py-2 px-3 text-[11px] text-mapa-muted italic font-[family-name:var(--font-playfair)] underline underline-offset-[3px] cursor-pointer hover:text-mapa-pink-deep transition-colors bg-transparent border-none"
-              >
-                prefiro não responder
-              </button>
-            </div>
-          )}
-        </Section>
-
-        {/* NOTA PESSOAL */}
+        {/* QUER FALAR SOBRE ISSO? (escuta — posição 2) */}
         <div id="section-nota-pessoal">
         <Section
-          label="Nota pessoal"
-          hint="escreva ou grave um áudio sobre como foi seu dia"
+          label="Quer falar sobre isso?"
+          hint="desabafa por áudio ou texto — a Lis te escuta"
           optional
         >
-          {/* min-h padronizado para acomodar o maior estado (audio "done"
-              com transcricao editavel + botoes) sem que o sticky button
-              "Registrar momento" tampe o conteudo. Texto e audio compartilham
-              o mesmo tamanho de caixa. */}
           <div className="rounded-[18px] border-[1.5px] border-mapa-border/60 bg-[#FAFAFA] overflow-hidden min-h-[340px] flex flex-col relative">
-            {/* Tooltip cirurgico: aparece UMA vez pra apresentar a feature
-                de audio (que e' o diferencial tecnico do app). */}
             <Tooltip
               storageKey="lis_tooltip_audio_v1"
               text="Novo: você pode gravar áudio em vez de escrever. A Lis transcreve."
@@ -1083,10 +844,6 @@ export default function MoodRegister() {
               <button
                 onClick={() => {
                   setNoteTab("audio");
-                  // Sobe a tela bem alto pra o card de audio nao ficar embaixo
-                  // do sticky "Registrar momento" (~150px no fundo da tela).
-                  // Usa scrollTo com offset manual (mais agressivo que
-                  // scrollIntoView).
                   setTimeout(() => {
                     const el = document.getElementById("section-nota-pessoal");
                     if (el) {
@@ -1240,6 +997,192 @@ export default function MoodRegister() {
           </div>
         </Section>
         </div>
+
+        {/* COMO VOCÊ ESTÁ SE SENTINDO? (Tags) */}
+        <Section
+          label="Como você está se sentindo?"
+          hint="escolha tudo que faz sentido para você neste momento"
+          optional
+        >
+          <div className="flex flex-wrap gap-2">
+            {(showAllTags ? TAGS : TAGS.slice(0, 8)).map((t) => (
+              <button
+                key={t.label}
+                onClick={() =>
+                  toggleItem(selectedTags, t.label, setSelectedTags)
+                }
+                className={`py-[7px] px-4 rounded-3xl text-xs font-medium border-[1.5px] cursor-pointer transition-all duration-200 font-[family-name:var(--font-quicksand)] ${selectedTags.includes(t.label) ? "bg-mapa-pink text-white border-mapa-pink shadow-[0_2px_8px_rgba(232,160,191,0.2)]" : "bg-mapa-card text-mapa-text border-mapa-border hover:border-mapa-pink"}`}
+              >
+                {t.emoji} {t.label}
+              </button>
+            ))}
+            <button
+              onClick={() => setShowAllTags(!showAllTags)}
+              className="py-[7px] px-4 rounded-3xl text-xs font-medium border-[1.5px] border-mapa-border bg-mapa-card text-mapa-muted cursor-pointer hover:border-mapa-pink hover:text-mapa-pink-deep transition-all duration-200 font-[family-name:var(--font-quicksand)]"
+            >
+              {showAllTags ? "ver menos ▴" : "ver mais ▾"}
+            </button>
+            {customTags.map((t) => (
+              <button
+                key={t.id}
+                onClick={() =>
+                  toggleItem(selectedTags, t.label, setSelectedTags)
+                }
+                className={`py-[7px] px-4 rounded-3xl text-xs font-medium border-[1.5px] cursor-pointer transition-all duration-200 font-[family-name:var(--font-quicksand)] ${selectedTags.includes(t.label) ? "bg-mapa-pink text-white border-mapa-pink shadow-[0_2px_8px_rgba(232,160,191,0.2)]" : "bg-mapa-card text-mapa-text border-mapa-border hover:border-mapa-pink"}`}
+              >
+                {t.label}
+              </button>
+            ))}
+            {customTags.length < 10 ? (
+              isAddingTag ? (
+              <div className="flex items-center gap-2 py-[5px] px-3 rounded-3xl border-[1.5px] border-mapa-pink bg-white shadow-[0_2px_8px_rgba(232,160,191,0.2)]">
+                <input
+                  type="text"
+                  maxLength={20}
+                  value={newTagLabel}
+                  onChange={(e) => setNewTagLabel(e.target.value)}
+                  placeholder="ex: 🍷 vinho"
+                  className="bg-transparent border-none outline-none text-[12px] font-[family-name:var(--font-quicksand)] text-mapa-text w-[90px]"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleAddCustomTag();
+                    if (e.key === "Escape") { setIsAddingTag(false); setNewTagLabel(""); }
+                  }}
+                  onBlur={() => {
+                    if (newTagLabel.trim() === "") setIsAddingTag(false);
+                  }}
+                />
+                <button
+                  onClick={handleAddCustomTag}
+                  className="text-mapa-pink-deep font-bold text-[11px] cursor-pointer hover:text-mapa-pink transition-colors bg-transparent border-none p-0"
+                >
+                  OK
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setIsAddingTag(true)}
+                className="py-[7px] px-3 rounded-3xl border-[1.5px] border-dashed border-mapa-border bg-transparent text-mapa-muted flex items-center gap-1.5 cursor-pointer hover:border-mapa-pink hover:text-mapa-pink-deep transition-all duration-200 text-xs font-medium font-[family-name:var(--font-quicksand)]"
+              >
+                <Plus size={14} />
+                criar tag
+              </button>
+              )
+            ) : (
+              <span className="py-[7px] px-3 text-[11px] text-mapa-muted italic font-[family-name:var(--font-playfair)] flex items-center">
+                limite de 10 atingido
+              </span>
+            )}
+          </div>
+        </Section>
+
+        {/* MAIS DETALHES (Energia, Sono qualitativo, Atividades) — recolhido por padrão */}
+        {!showDetails ? (
+          <button
+            type="button"
+            onClick={() => setShowDetails(true)}
+            className="w-full text-left mb-5 bg-white border border-mapa-border/60 rounded-[20px] px-5 py-4 shadow-[0_2px_10px_rgba(232,160,191,0.04)] flex justify-between items-center transition-all cursor-pointer hover:bg-mapa-pink-light/20"
+          >
+            <div>
+              <p className="text-[13px] font-semibold text-mapa-pink-deep mb-0.5 font-[family-name:var(--font-quicksand)]">＋ adicionar mais detalhes</p>
+              <p className="text-[11px] text-mapa-muted italic font-[family-name:var(--font-playfair)]">sono, energia, o que você fez hoje</p>
+            </div>
+            <ChevronDown size={16} className="text-mapa-muted" />
+          </button>
+        ) : (
+          <>
+            {/* ENERGIA */}
+            <Section
+              label="Energia"
+              hint="como está seu corpo e sua disposição agora?"
+              optional
+            >
+              <div className="flex gap-1.5 items-end h-11 mb-1">
+                {[1, 2, 3, 4, 5, 6].map((l) => (
+                  <div
+                    key={l}
+                    onClick={() => setEnergyLevel(l)}
+                    className={`flex-1 rounded-lg cursor-pointer transition-all duration-200 ${l <= energyLevel ? "bg-mapa-lavender" : "bg-mapa-border"}`}
+                    style={{ height: `${15 + l * 15}%` }}
+                  />
+                ))}
+              </div>
+              <div className="flex justify-between mt-1 px-1">
+                <span className="text-[10px] text-mapa-muted">esgotada</span>
+                <span className="text-[10px] text-mapa-muted">energizada</span>
+              </div>
+            </Section>
+
+            {/* SONO — só qualidade, sem horas */}
+            <Section
+              label="Como foi seu sono?"
+              hint="se quiser registrar como você dormiu"
+              optional
+            >
+              <div className="grid grid-cols-3 gap-2">
+                {SLEEP_QUALITIES.map((q) => {
+                  const selected = sleepQuality === q.value;
+                  return (
+                    <button
+                      key={q.value}
+                      type="button"
+                      onClick={() => setSleepQuality(selected ? null : q.value)}
+                      className={`py-2.5 px-1 rounded-2xl border-[1.5px] cursor-pointer text-center transition-all duration-200 font-[family-name:var(--font-quicksand)] ${
+                        selected
+                          ? "bg-mapa-lavender-light border-mapa-lavender text-[#5A4A8C] shadow-[0_2px_8px_rgba(184,169,212,0.25)]"
+                          : "bg-mapa-card border-mapa-border text-mapa-text hover:border-mapa-lavender"
+                      }`}
+                    >
+                      <span className="text-2xl block mb-0.5 leading-none">{q.emoji}</span>
+                      <span className="text-[11px] font-medium">{q.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {sleepQuality !== null && (
+                <div className="text-center mt-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setSleepQuality(null)}
+                    className="py-2 px-3 text-[11px] text-mapa-muted italic font-[family-name:var(--font-playfair)] underline underline-offset-[3px] cursor-pointer hover:text-mapa-pink-deep transition-colors bg-transparent border-none"
+                  >
+                    prefiro não responder
+                  </button>
+                </div>
+              )}
+            </Section>
+
+            {/* ATIVIDADES */}
+            <Section
+              label="O que você fez hoje?"
+              hint="selecione as atividades que fizeram parte do seu dia"
+              optional
+            >
+              <div className="grid grid-cols-3 gap-2">
+                {ACTIVITIES.map((a) => (
+                  <button
+                    key={a.label}
+                    onClick={() =>
+                      toggleItem(selectedActivities, a.label, setSelectedActivities)
+                    }
+                    className={`py-2.5 px-1 pb-2 rounded-2xl border-[1.5px] cursor-pointer text-center transition-all duration-200 text-[11px] font-medium font-[family-name:var(--font-quicksand)] ${selectedActivities.includes(a.label) ? "bg-mapa-lavender-light border-mapa-lavender text-[#6B5B95] shadow-[0_2px_8px_rgba(184,169,212,0.2)]" : "bg-mapa-card border-mapa-border text-mapa-text hover:border-mapa-lavender"}`}
+                  >
+                    <span className="text-xl block mb-0.5">{a.emoji}</span>
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+            </Section>
+
+            <button
+              type="button"
+              onClick={() => setShowDetails(false)}
+              className="w-full text-center mb-5 py-3 text-[12px] text-mapa-muted italic font-[family-name:var(--font-playfair)] cursor-pointer bg-transparent border-none hover:text-mapa-pink-deep transition-colors"
+            >
+              − menos detalhes
+            </button>
+          </>
+        )}
 
       </div>
 
@@ -1475,91 +1418,6 @@ function SosModal({ onClose }: { onClose: () => void }) {
             </div>
           )}
         </div>
-      </div>
-    </div>
-  );
-}
-
-// Padrão visual das barras de slider — usado em Humor (escala), Sono (horas
-// dormidas) e Tempo de tela. Layout: label+valor em cima, slider full-width
-// no meio, 3 ticks embaixo. Cada barra tem uma paleta própria, mas a
-// estrutura é idêntica.
-function RangeBar({
-  emoji,
-  label,
-  labelSize = 13,
-  value,
-  hasValue = true,
-  displayText,
-  unit = "",
-  min,
-  max,
-  step,
-  ticks,
-  onChange,
-  textColor,
-  accent,
-}: {
-  emoji?: string;
-  label: string;
-  labelSize?: number; // tamanho da fonte do label em px (default 12)
-  value: number;
-  hasValue?: boolean; // false = mostra "—" no lugar do número
-  displayText?: string; // override do número (ex.: "8.5"). Default: String(value)
-  unit?: string;
-  min: number;
-  max: number;
-  step: number;
-  ticks: [string, string, string];
-  onChange: (v: number) => void;
-  textColor: string;
-  accent: string;
-}) {
-  return (
-    <div className="px-1 pt-1">
-      <div className="flex items-baseline justify-between mb-1.5">
-        <span
-          className="font-medium"
-          style={{ color: textColor, fontSize: `${labelSize}px` }}
-        >
-          {emoji && <span className="mr-1">{emoji}</span>}
-          {label}
-        </span>
-        {hasValue ? (
-          <span
-            className="text-[16px] font-semibold leading-none"
-            style={{ color: textColor }}
-          >
-            {displayText ?? value}
-            {unit && (
-              <span className="text-[12px] font-normal opacity-75 ml-0.5">
-                {unit}
-              </span>
-            )}
-          </span>
-        ) : (
-          <span
-            className="text-[16px] leading-none opacity-60"
-            style={{ color: textColor }}
-          >
-            —
-          </span>
-        )}
-      </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full cursor-pointer"
-        style={{ accentColor: accent }}
-      />
-      <div className="flex justify-between mt-0.5">
-        <span className="text-[11px] text-mapa-muted">{ticks[0]}</span>
-        <span className="text-[11px] text-mapa-muted">{ticks[1]}</span>
-        <span className="text-[11px] text-mapa-muted">{ticks[2]}</span>
       </div>
     </div>
   );
