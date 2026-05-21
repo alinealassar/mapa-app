@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Map, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Tooltip from "@/app/components/Tooltip";
 import { supabase } from "@/lib/supabaseClient";
 import BottomNav from "@/app/components/BottomNav";
@@ -301,11 +301,8 @@ export default function MapaPage() {
     <>
       <main className="min-h-screen bg-mapa-bg pb-24">
         <div className="px-6 pt-6 text-center">
-          <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-mapa-pink-light to-mapa-lavender-light flex items-center justify-center border-[3px] border-white/70 shadow-[0_6px_24px_rgba(232,160,191,0.22)] mb-3">
-            <Map size={26} strokeWidth={1.5} className="text-mapa-pink-deep" />
-          </div>
           <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold text-mapa-text">
-            Meu mapa
+            Seu mapa
           </h1>
         </div>
 

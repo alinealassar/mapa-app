@@ -54,9 +54,6 @@ export default function SobrePage() {
         </div>
 
         <div className="px-6 pt-2 text-center">
-          <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-mapa-pink-light to-mapa-lavender-light flex items-center justify-center border-[3px] border-white/70 shadow-[0_8px_30px_rgba(232,160,191,0.2)] mb-3">
-            <Map size={32} strokeWidth={1.5} className="text-mapa-pink-deep" />
-          </div>
           <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold text-mapa-text">
             Sobre a Lis
           </h1>
@@ -98,10 +95,7 @@ export default function SobrePage() {
 
           <div className="bg-mapa-pink-light/40 rounded-[22px] border-2 border-mapa-pink p-6 text-center shadow-[0_6px_24px_rgba(232,160,191,0.2)]">
             <p className="text-[15px] text-mapa-pink-deep italic font-[family-name:var(--font-playfair)] leading-relaxed">
-              feito com carinho para quem cansa de dar conta de tudo
-            </p>
-            <p className="text-[10px] text-mapa-muted mt-2.5">
-              versão de desenvolvimento
+              feito com carinho para quem cansa de dar conta de tudo sozinha
             </p>
           </div>
         </div>

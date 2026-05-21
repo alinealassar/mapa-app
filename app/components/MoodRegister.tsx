@@ -206,6 +206,8 @@ const FALLBACK: Record<string, string> = {
   pessima: "Está tudo bem não estar bem. Respire fundo, estou aqui. 🤍",
 };
 
+const SAVE_LABELS = ["Deixar com a Lis", "Contar pra Lis", "Guardar meu momento", "Guardar meu dia", "Pronto por hoje"];
+
 const triggerHaptic = () => {
   if (typeof navigator !== "undefined" && navigator.vibrate) {
     try {
@@ -357,6 +359,7 @@ export default function MoodRegister() {
     month: "long",
     year: "numeric",
   });
+  const saveLabel = SAVE_LABELS[new Date().getDate() % SAVE_LABELS.length];
 
   function handleMoodSelect(m: (typeof MOODS)[0]) {
     triggerHaptic();
@@ -746,20 +749,11 @@ export default function MoodRegister() {
       {/* HEADER */}
       <div className="px-6 pt-6">
         <h1 className="text-center font-[family-name:var(--font-quicksand)] text-[24px] font-semibold mb-1">
-          Diário da{" "}
-          <span className="text-mapa-pink-deep">{userName || "..."}</span>
+          Oi <span className="text-mapa-pink-deep">{userName || "..."}</span> 🤍
         </h1>
-        <p className="text-center text-[13px] text-mapa-pink-deep italic font-[family-name:var(--font-playfair)] mb-3">
-          aqui é o seu espaço
+        <p className="text-center font-[family-name:var(--font-playfair)] italic text-xs text-mapa-muted pb-3">
+          aqui é o seu espaço · {today}
         </p>
-        <div className="flex items-baseline justify-center gap-2 pb-3">
-          <span className="font-[family-name:var(--font-playfair)] italic text-xs text-mapa-muted">
-            Querido diário,
-          </span>
-          <span className="font-[family-name:var(--font-playfair)] italic text-xs text-mapa-muted">
-            {today}
-          </span>
-        </div>
       </div>
 
       <div className="px-5 pb-7">
@@ -767,10 +761,10 @@ export default function MoodRegister() {
         <div className="mb-6 flex justify-center gap-3 relative z-10">
           <button
             onClick={() => { triggerHaptic(); setShowSosModal(true); }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#F5F2F8] text-[#6B5B95] rounded-full shadow-[0_2px_8px_rgba(184,169,212,0.2)] border border-[rgba(184,169,212,0.4)] hover:bg-[#EBE5F5] transition-all font-[family-name:var(--font-quicksand)] text-[13px] font-medium active:scale-95"
+            aria-label="Preciso respirar"
+            className="flex items-center px-4 py-2.5 bg-[#F5F2F8] text-[#6B5B95] rounded-full shadow-[0_2px_8px_rgba(184,169,212,0.2)] border border-[rgba(184,169,212,0.4)] hover:bg-[#EBE5F5] transition-all active:scale-95"
           >
             <Wind size={16} strokeWidth={2} />
-            <span>Preciso respirar</span>
           </button>
           
           <div className="relative">
@@ -1260,7 +1254,7 @@ export default function MoodRegister() {
             ? "Ouvindo seu áudio..."
             : saving
             ? "Salvando seu momento..."
-            : "Registrar momento"}
+            : saveLabel}
         </button>
       </div>
 
