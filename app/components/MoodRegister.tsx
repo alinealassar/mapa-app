@@ -232,7 +232,7 @@ export default function MoodRegister() {
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [newTagLabel, setNewTagLabel] = useState("");
   const [note, setNote] = useState("");
-  const [noteTab, setNoteTab] = useState<"text" | "audio">("text");
+  const [noteTab, setNoteTab] = useState<"text" | "audio">("audio");
   const [showCrisisModal, setShowCrisisModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -742,15 +742,15 @@ export default function MoodRegister() {
     <div>
       {/* HEADER */}
       <div className="px-6 pt-6">
-        <h1 className="text-center font-[family-name:var(--font-quicksand)] text-[24px] font-semibold mb-1">
-          Oi <span className="text-mapa-pink-deep">{userName || "..."}</span> 🤍
+        <h1 className="text-center font-[family-name:var(--font-quicksand)] text-[24px] font-semibold mb-1 text-mapa-pink-deep">
+          Oi {userName || "..."} 🤍
         </h1>
         <p className="text-center font-[family-name:var(--font-playfair)] italic text-xs text-mapa-muted pb-3">
           aqui é o seu espaço · {today}
         </p>
       </div>
 
-      <div className="px-5 pb-7">
+      <div className="px-5 pb-40">
         {/* BOTÕES NO TOPO (SOS e Casulo) */}
         <div className="mb-6 flex justify-center gap-3 relative z-10">
           <button
@@ -797,7 +797,7 @@ export default function MoodRegister() {
         {/* HUMOR — obrigatório, único campo que bloqueia o save se vazio */}
         <div id="section-humor">
         <Section
-          label="Humor"
+          label={<span className="flex items-center gap-2">Como você está? <span className="text-[10px] font-medium bg-mapa-pink-light text-mapa-pink-deep rounded-full px-2 py-0.5 font-[family-name:var(--font-quicksand)]">só isso já basta</span></span>}
           hint="toque no emoji que mais combina com você agora"
         >
           <div className="flex gap-1.5 justify-between mb-3.5">
@@ -826,7 +826,7 @@ export default function MoodRegister() {
           hint="desabafa por áudio ou texto — a Lis te escuta"
           optional
         >
-          <div className="rounded-[18px] border-[1.5px] border-mapa-border/60 bg-[#FAFAFA] overflow-hidden min-h-[340px] flex flex-col relative">
+          <div className="rounded-[18px] border-[1.5px] border-mapa-pink bg-[#FAFAFA] overflow-hidden min-h-[340px] flex flex-col relative">
             <Tooltip
               storageKey="lis_tooltip_audio_v1"
               text="Novo: você pode gravar áudio em vez de escrever. A Lis transcreve."
@@ -834,13 +834,6 @@ export default function MoodRegister() {
               arrowAt="right"
             />
             <div className="flex border-b border-mapa-border/50">
-              <button
-                onClick={() => setNoteTab("text")}
-                className={`flex-1 py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer border-none font-[family-name:var(--font-quicksand)] ${noteTab === "text" ? "text-mapa-pink-deep bg-mapa-pink-light" : "text-mapa-muted bg-transparent"}`}
-              >
-                <Pencil size={14} strokeWidth={1.75} />
-                Escrever
-              </button>
               <button
                 onClick={() => {
                   setNoteTab("audio");
@@ -857,6 +850,13 @@ export default function MoodRegister() {
               >
                 <Mic size={14} strokeWidth={1.75} />
                 Gravar áudio
+              </button>
+              <button
+                onClick={() => setNoteTab("text")}
+                className={`flex-1 py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer border-none font-[family-name:var(--font-quicksand)] ${noteTab === "text" ? "text-mapa-pink-deep bg-mapa-pink-light" : "text-mapa-muted bg-transparent"}`}
+              >
+                <Pencil size={14} strokeWidth={1.75} />
+                Escrever
               </button>
             </div>
             {noteTab === "text" && (
@@ -1000,7 +1000,7 @@ export default function MoodRegister() {
 
         {/* COMO VOCÊ ESTÁ SE SENTINDO? (Tags) */}
         <Section
-          label="Como você está se sentindo?"
+          label="O que você está sentindo?"
           hint="escolha tudo que faz sentido para você neste momento"
           optional
         >
@@ -1431,7 +1431,7 @@ function Section({
   defaultExpanded = true,
   children,
 }: {
-  label: string;
+  label: React.ReactNode;
   hint: string;
   optional?: boolean;
   collapsible?: boolean;
