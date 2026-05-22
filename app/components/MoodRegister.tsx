@@ -740,7 +740,7 @@ export default function MoodRegister() {
   }
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+    <div className="flex flex-col h-[calc(100dvh-72px)] overflow-hidden">
       <div className="flex-1 overflow-y-auto">
       {/* HEADER */}
       <div className="px-6 pt-6 flex justify-between items-start gap-3">
