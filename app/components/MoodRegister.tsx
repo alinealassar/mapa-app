@@ -740,7 +740,8 @@ export default function MoodRegister() {
   }
 
   return (
-    <div>
+    <div className="flex flex-col h-[100dvh] overflow-hidden">
+      <div className="flex-1 overflow-y-auto">
       {/* HEADER */}
       <div className="px-6 pt-6 flex justify-between items-start gap-3">
         <div className="text-left">
@@ -796,7 +797,7 @@ export default function MoodRegister() {
         </div>
       </div>
 
-      <div className="px-5 pt-5 pb-[88px]">
+      <div className="px-5 pt-5 pb-4">
         {/* HUMOR — obrigatório, único campo que bloqueia o save se vazio */}
         <div id="section-humor">
         <Section
@@ -1176,11 +1177,15 @@ export default function MoodRegister() {
           </>
         )}
 
-        {/* SAVE BUTTON — fluxo normal, logo após o último card */}
+      </div>
+      </div>
+
+      {/* SAVE — rodapé fixo, sempre visível acima do BottomNav */}
+      <div className="shrink-0 px-5 pt-3 pb-[84px] bg-mapa-bg border-t border-mapa-border/40">
         <button
           onClick={handleSave}
           disabled={saving || aiLoading || audioState === "transcribing"}
-          className="mt-6 w-full py-[15px] rounded-3xl border-none bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white text-[15px] font-semibold cursor-pointer tracking-wide shadow-[0_6px_20px_rgba(232,160,191,0.35)] active:scale-[0.95] active:brightness-95 transition-all duration-150 disabled:opacity-70 font-[family-name:var(--font-quicksand)]"
+          className="w-full py-[15px] rounded-3xl border-none bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white text-[15px] font-semibold cursor-pointer tracking-wide shadow-[0_6px_20px_rgba(232,160,191,0.35)] active:scale-[0.95] active:brightness-95 transition-all duration-150 disabled:opacity-70 font-[family-name:var(--font-quicksand)]"
         >
           {audioState === "transcribing"
             ? "Ouvindo seu áudio..."
