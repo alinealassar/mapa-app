@@ -6,7 +6,7 @@ import {
   MessageCircle,
   BarChart3,
   ShieldCheck,
-  Map,
+  Sparkles,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import BottomNav from "@/app/components/BottomNav";
@@ -53,11 +53,11 @@ export default function SobrePage() {
           </p>
         </div>
 
-        <div className="px-6 pt-2 text-center">
-          <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold text-mapa-text">
+        <div className="px-6 pt-2">
+          <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold text-mapa-pink-deep">
             Sobre a Lis
           </h1>
-          <p className="text-[13px] text-mapa-pink-deep mt-1 font-[family-name:var(--font-playfair)] italic">
+          <p className="text-[13px] text-mapa-muted mt-1 font-[family-name:var(--font-playfair)] italic">
             o que tem por trás do seu diário
           </p>
         </div>
@@ -88,7 +88,7 @@ export default function SobrePage() {
           />
 
           <Section
-            icon={<Map size={18} strokeWidth={1.75} className="text-mapa-pink-deep" />}
+            icon={<Sparkles size={18} strokeWidth={1.75} className="text-mapa-pink-deep" />}
             title="Por que se chama Lis"
             content="Lis é nome curto, de gente. Não era pra ser uma marca — era pra ser uma amiga atenta. Quando você abre o app, é a Lis que te escuta. Quando ela responde, é a Lis que está aqui. O nome do app é o nome de quem fala com você. A aba Mapa, com seus caminhos e ciclos, fica como metáfora — porque a ideia não é te dizer para onde ir, mas te ajudar a desenhar o seu próprio mapa emocional."
           />

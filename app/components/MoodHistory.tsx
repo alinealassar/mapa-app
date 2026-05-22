@@ -245,10 +245,13 @@ export default function MoodHistory() {
 
   return (
     <div>
-      <div className="px-6 pt-6 text-center">
-        <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold text-mapa-text">
-          Seus momentos
+      <div className="px-6 pt-6">
+        <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold text-mapa-pink-deep">
+          Momentos
         </h1>
+        <p className="text-[13px] text-mapa-muted mt-1 font-[family-name:var(--font-playfair)] italic">
+          seus registros, suas palavras
+        </p>
       </div>
 
       {/* FILTROS */}

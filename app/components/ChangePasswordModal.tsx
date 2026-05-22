@@ -5,7 +5,6 @@ import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 interface Props {
-  email: string;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -26,11 +25,9 @@ function validatePassword(password: string): string | null {
   return null;
 }
 
-export default function ChangePasswordModal({ email, onClose, onSuccess }: Props) {
-  const [currentPassword, setCurrentPassword] = useState("");
+export default function ChangePasswordModal({ onClose, onSuccess }: Props) {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -48,26 +45,9 @@ export default function ChangePasswordModal({ email, onClose, onSuccess }: Props
       setError("As duas senhas ficaram diferentes — repete a mesma nos dois campos?");
       return;
     }
-    if (newPassword === currentPassword) {
-      setError("A senha nova precisa ser diferente da atual.");
-      return;
-    }
 
     setLoading(true);
 
-    // 1. Reautenticar com senha atual (Supabase não tem endpoint próprio para isso)
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password: currentPassword,
-    });
-
-    if (signInError) {
-      setLoading(false);
-      setError("Essa senha não tá batendo — confere se digitou certinho?");
-      return;
-    }
-
-    // 2. Atualizar para a senha nova
     const { error: upError } = await supabase.auth.updateUser({
       password: newPassword,
     });
@@ -89,29 +69,10 @@ export default function ChangePasswordModal({ email, onClose, onSuccess }: Props
           Trocar senha
         </h2>
         <p className="text-xs text-mapa-pink-deep italic text-center mb-5 font-[family-name:var(--font-playfair)]">
-          escolhe uma que você lembre depois 🌸
+          escolhe uma que você lembre depois
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="relative">
-            <input
-              type={showCurrent ? "text" : "password"}
-              placeholder="Senha atual"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              required
-              className="w-full pl-4 pr-11 py-2.5 rounded-2xl border border-mapa-border bg-mapa-card text-mapa-text text-sm placeholder-mapa-muted focus:outline-none focus:ring-2 focus:ring-mapa-pink"
-            />
-            <button
-              type="button"
-              onClick={() => setShowCurrent((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-mapa-muted bg-transparent border-none cursor-pointer"
-              aria-label={showCurrent ? "Ocultar senha" : "Mostrar senha"}
-            >
-              {showCurrent ? <EyeOff size={16} strokeWidth={1.75} /> : <Eye size={16} strokeWidth={1.75} />}
-            </button>
-          </div>
-
           <div className="relative">
             <input
               type={showNew ? "text" : "password"}

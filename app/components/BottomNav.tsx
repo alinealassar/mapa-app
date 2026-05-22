@@ -7,10 +7,10 @@ import { PenLine, Map, BookOpen, User, type LucideIcon } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 const TABS: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/registrar", label: "Registrar", icon: PenLine },
+  { href: "/registrar", label: "Diário", icon: PenLine },
   { href: "/mapa", label: "Mapa", icon: Map },
-  { href: "/historico", label: "Histórico", icon: BookOpen },
-  { href: "/eu", label: "Eu", icon: User },
+  { href: "/historico", label: "Momentos", icon: BookOpen },
+  { href: "/eu", label: "Perfil", icon: User },
 ];
 
 // Chave localStorage onde guardamos o week_start do ultimo resumo semanal

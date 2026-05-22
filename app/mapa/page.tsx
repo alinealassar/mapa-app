@@ -300,10 +300,13 @@ export default function MapaPage() {
   return (
     <>
       <main className="min-h-screen bg-mapa-bg pb-24">
-        <div className="px-6 pt-6 text-center">
-          <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold text-mapa-text">
-            Seu mapa
+        <div className="px-6 pt-6">
+          <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold text-mapa-pink-deep">
+            Mapa
           </h1>
+          <p className="text-[13px] text-mapa-muted mt-1 font-[family-name:var(--font-playfair)] italic">
+            seus padrões e ciclos
+          </p>
         </div>
 
         {/* CARD: RESUMO SEMANAL (Sprint 2.3) — semana ANTERIOR (segunda a domingo) */}

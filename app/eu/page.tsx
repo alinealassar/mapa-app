@@ -133,24 +133,12 @@ export default function EuPage() {
   return (
     <>
       <main className="min-h-screen bg-mapa-bg pb-24">
-        <div className="px-6 pt-6 text-center">
-          <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold text-mapa-text">
-            Sua conta
+        <div className="px-6 pt-6 pb-4">
+          <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold text-mapa-pink-deep">
+            Perfil
           </h1>
-          <p className="text-[13px] text-mapa-pink-deep mt-1 font-[family-name:var(--font-playfair)] italic">
-            um espaço só seu 🌸
-          </p>
-        </div>
-
-        <div className="px-6 pt-6 text-center">
-          <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-mapa-pink-light to-mapa-lavender-light flex items-center justify-center text-4xl border-[3px] border-mapa-pink-light mb-3">
-            🌸
-          </div>
-          <p className="font-[family-name:var(--font-quicksand)] text-[20px] font-semibold text-mapa-text">
-            {name || "..."}
-          </p>
-          <p className="text-xs text-mapa-muted mb-6 break-all font-[family-name:var(--font-quicksand)]">
-            {email}
+          <p className="text-[13px] text-mapa-muted mt-1 font-[family-name:var(--font-playfair)] italic">
+            aqui você cuida de você
           </p>
         </div>
 
@@ -277,14 +265,13 @@ export default function EuPage() {
 
         {passwordSavedToast && (
           <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-mapa-mint text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-lg z-50 font-[family-name:var(--font-quicksand)]">
-            Senha atualizada 🌸
+            Senha atualizada
           </div>
         )}
       </main>
 
       {showPasswordModal && (
         <ChangePasswordModal
-          email={email}
           onClose={() => setShowPasswordModal(false)}
           onSuccess={handlePasswordSuccess}
         />
