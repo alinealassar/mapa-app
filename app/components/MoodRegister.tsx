@@ -796,7 +796,7 @@ export default function MoodRegister() {
         </div>
       </div>
 
-      <div className="px-5 pt-5 pb-4">
+      <div className="px-5 pt-5 pb-44">
         {/* HUMOR — obrigatório, único campo que bloqueia o save se vazio */}
         <div id="section-humor">
         <Section
@@ -1176,8 +1176,11 @@ export default function MoodRegister() {
           </>
         )}
 
-        {/* SAVE BUTTON — sticky: flui no fim do conteúdo (sem vão) e gruda embaixo ao rolar */}
-        <div className="sticky bottom-[65px] -mx-5 px-5 pt-8 pb-1 mt-2 bg-gradient-to-t from-mapa-bg via-mapa-bg/90 to-transparent z-40 pointer-events-none">
+        {/* SAVE BUTTON — fixed: sempre visível acima do BottomNav, independente de scroll/viewport */}
+        <div
+          className="fixed left-1/2 -translate-x-1/2 w-full max-w-[420px] px-5 pt-10 bg-gradient-to-t from-mapa-bg via-mapa-bg/90 to-transparent z-40 pointer-events-none"
+          style={{ bottom: 0, paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}
+        >
         <button
           onClick={handleSave}
           disabled={saving || aiLoading || audioState === "transcribing"}
