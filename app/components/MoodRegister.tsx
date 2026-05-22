@@ -796,7 +796,7 @@ export default function MoodRegister() {
         </div>
       </div>
 
-      <div className="px-5 pt-5 pb-44">
+      <div className="px-5 pt-5 pb-[88px]">
         {/* HUMOR — obrigatório, único campo que bloqueia o save se vazio */}
         <div id="section-humor">
         <Section
@@ -1176,15 +1176,11 @@ export default function MoodRegister() {
           </>
         )}
 
-        {/* SAVE BUTTON — fixed: sempre visível acima do BottomNav, independente de scroll/viewport */}
-        <div
-          className="fixed left-1/2 -translate-x-1/2 w-full max-w-[420px] px-5 pt-10 bg-gradient-to-t from-mapa-bg via-mapa-bg/90 to-transparent z-40 pointer-events-none"
-          style={{ bottom: 0, paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}
-        >
+        {/* SAVE BUTTON — fluxo normal, logo após o último card */}
         <button
           onClick={handleSave}
           disabled={saving || aiLoading || audioState === "transcribing"}
-          className="w-full py-[15px] rounded-3xl border-none bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white text-[15px] font-semibold cursor-pointer tracking-wide shadow-[0_6px_20px_rgba(232,160,191,0.35)] active:scale-[0.95] active:brightness-95 transition-all duration-150 disabled:opacity-70 font-[family-name:var(--font-quicksand)] pointer-events-auto"
+          className="mt-6 w-full py-[15px] rounded-3xl border-none bg-gradient-to-br from-mapa-pink to-mapa-lavender text-white text-[15px] font-semibold cursor-pointer tracking-wide shadow-[0_6px_20px_rgba(232,160,191,0.35)] active:scale-[0.95] active:brightness-95 transition-all duration-150 disabled:opacity-70 font-[family-name:var(--font-quicksand)]"
         >
           {audioState === "transcribing"
             ? "Ouvindo seu áudio..."
@@ -1192,7 +1188,6 @@ export default function MoodRegister() {
             ? "Salvando seu momento..."
             : saveLabel}
         </button>
-        </div>
       </div>
 
       {/* MODAL DA LIS */}
