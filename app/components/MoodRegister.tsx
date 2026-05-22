@@ -740,7 +740,7 @@ export default function MoodRegister() {
   }
 
   return (
-    <div className="flex flex-col h-[100dvh] overflow-hidden">
+    <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
       <div className="flex-1 overflow-y-auto">
       {/* HEADER */}
       <div className="px-6 pt-6 flex justify-between items-start gap-3">
@@ -1181,7 +1181,7 @@ export default function MoodRegister() {
       </div>
 
       {/* SAVE — rodapé fixo, sempre visível acima do BottomNav */}
-      <div className="shrink-0 px-5 pt-3 pb-[84px] bg-mapa-bg border-t border-mapa-border/40">
+      <div className="shrink-0 px-5 pt-3 pb-4 bg-mapa-bg border-t border-mapa-border/40">
         <button
           onClick={handleSave}
           disabled={saving || aiLoading || audioState === "transcribing"}

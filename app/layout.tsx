@@ -32,7 +32,7 @@ export default function RootLayout({
       className={`${quicksand.variable} ${playfair.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-mapa-bg font-[family-name:var(--font-quicksand)] text-mapa-text">
-        <div className="max-w-[420px] mx-auto w-full min-h-[100dvh] relative pb-[72px]">
+        <div className="max-w-[420px] mx-auto w-full min-h-[100dvh] relative pb-[72px] flex flex-col">
           {children}
         </div>
       </body>
