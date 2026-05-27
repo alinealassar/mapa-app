@@ -16,7 +16,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Lis — Diário de Bem-Estar Emocional com IA",
+  title: "Amiga de Bolso — Diário de Bem-Estar Emocional com IA",
   description:
     "Registre seus sentimentos, ouça sua IA companheira e descubra padrões no seu bem-estar emocional.",
 };

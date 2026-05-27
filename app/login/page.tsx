@@ -217,7 +217,7 @@ export default function Login() {
             🌸
           </div>
           <h1 className="text-[26px] font-semibold text-mapa-text font-[family-name:var(--font-quicksand)] mb-1">
-            {isSignUp ? "Bem-vinda. Aqui é a Lis." : "Lis"}
+            Amiga de Bolso
           </h1>
           <p className="text-sm text-mapa-pink-deep italic font-[family-name:var(--font-playfair)]">
             {isSignUp ? "Criação demora 30 segundos." : "Antes de qualquer coisa, respira."}

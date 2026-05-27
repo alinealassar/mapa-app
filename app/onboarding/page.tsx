@@ -214,7 +214,7 @@ function WelcomeStep({ name }: { name: string }) {
         🌸
       </div>
       <h1 className="font-[family-name:var(--font-quicksand)] text-[24px] font-semibold text-mapa-text mb-1">
-        Bem-vinda. Aqui é a Lis{name && `, ${name}`}.
+        Bem-vinda ao Amiga de Bolso{name && `, ${name}`}.
       </h1>
       <p className="font-[family-name:var(--font-playfair)] italic text-base text-mapa-pink-deep mb-5">
         Antes de qualquer coisa, respira.
