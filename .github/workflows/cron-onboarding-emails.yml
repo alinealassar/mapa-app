@@ -1,0 +1,53 @@
+name: Cron Onboarding Emails (D0-D3)
+
+on:
+  schedule:
+    # 10:00 UTC = 07:00 Brasília — recebe logo cedo, não concorre com o lembrete das 20h
+    - cron: '0 10 * * *'
+  workflow_dispatch:
+    inputs:
+      day:
+        description: 'Dia específico (0, 1, 2 ou 3). Deixe vazio para enviar todos.'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Só conta usuárias, não envia email (true/false)'
+        required: false
+        default: 'false'
+
+jobs:
+  enviar-emails-onboarding:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: "D0 — Bem-vinda (cadastrou hoje)"
+        if: ${{ github.event.inputs.day == '' || github.event.inputs.day == '0' }}
+        run: |
+          curl -s -X POST "https://hsgotkeydyvrollnzbbf.supabase.co/functions/v1/onboarding-emails" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"day":0,"dry_run":${{ github.event.inputs.dry_run || 'false' }}}'
+
+      - name: "D1 — Uma coisa. pode ser um emoji."
+        if: ${{ github.event.inputs.day == '' || github.event.inputs.day == '1' }}
+        run: |
+          curl -s -X POST "https://hsgotkeydyvrollnzbbf.supabase.co/functions/v1/onboarding-emails" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"day":1,"dry_run":${{ github.event.inputs.dry_run || 'false' }}}'
+
+      - name: "D2 — A Lis guarda o que você vive"
+        if: ${{ github.event.inputs.day == '' || github.event.inputs.day == '2' }}
+        run: |
+          curl -s -X POST "https://hsgotkeydyvrollnzbbf.supabase.co/functions/v1/onboarding-emails" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"day":2,"dry_run":${{ github.event.inputs.dry_run || 'false' }}}'
+
+      - name: "D3 — Dia 3. Como você está?"
+        if: ${{ github.event.inputs.day == '' || github.event.inputs.day == '3' }}
+        run: |
+          curl -s -X POST "https://hsgotkeydyvrollnzbbf.supabase.co/functions/v1/onboarding-emails" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"day":3,"dry_run":${{ github.event.inputs.dry_run || 'false' }}}'
