@@ -5,9 +5,3 @@
 [build.environment]
   NODE_VERSION = "18"
   NEXT_TELEMETRY_DISABLED = "1"
-
-# /cadastro → landing page sem extensão .html
-[[redirects]]
-  from = "/cadastro"
-  to = "/mini-landing.html"
-  status = 200
