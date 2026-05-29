@@ -1,18 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  async headers() {
-    return [
-      {
-        // HTML/dados — sempre revalidar com o servidor, pra um deploy novo
-        // aparecer no refresh normal. NÃO afeta /_next/static (hash + cache longo).
-        source: "/((?!_next/static|_next/image|favicon.ico).*)",
-        headers: [
-          { key: "Cache-Control", value: "no-cache, must-revalidate" },
-        ],
-      },
-    ];
-  },
+  // Static export: gera pasta out/ com HTML/CSS/JS estáticos.
+  // Compatível porque todas as páginas são "use client" + useEffect.
+  // Headers de cache movidos para netlify.toml (headers() é ignorado em static export).
+  output: "export",
 };
 
 export default nextConfig;

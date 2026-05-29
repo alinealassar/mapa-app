@@ -1,7 +1,24 @@
 [build]
   command = "npm run build"
-  publish = ".next"
+  publish = "out"
 
 [build.environment]
   NODE_VERSION = "18"
   NEXT_TELEMETRY_DISABLED = "1"
+
+# Cache: estáticos do Next.js ficam para sempre (hash no nome), resto no-cache
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "no-cache, must-revalidate"
+
+# Landing sem .html na URL
+[[redirects]]
+  from = "/cadastro"
+  to = "/mini-landing.html"
+  status = 200
