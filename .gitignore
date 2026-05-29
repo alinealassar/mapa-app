@@ -42,3 +42,6 @@ next-env.d.ts
 
 # supabase
 supabase/.temp/
+
+# claude code local config (não deve ir pro repositório)
+.claude/
