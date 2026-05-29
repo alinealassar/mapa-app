@@ -4,10 +4,13 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const APP_URL = Deno.env.get("APP_URL") || "https://meuapp1-app.netlify.app";
+// Após comprar amigadebolso.com.br: adicione APP_URL no Supabase Secrets
+//   APP_URL = https://amigadebolso.com.br
+const APP_URL = Deno.env.get("APP_URL") || "https://mapa-app-q3rh.onrender.com";
 
-// Trocar quando o domínio próprio estiver verificado no Resend.
-const EMAIL_FROM = "Lis <onboarding@resend.dev>";
+// Após verificar amigadebolso.com.br no Resend, adicione o secret EMAIL_FROM:
+//   EMAIL_FROM = Lis <oi@amigadebolso.com.br>
+const EMAIL_FROM = Deno.env.get("EMAIL_FROM") || "Lis <onboarding@resend.dev>";
 
 // ─── TEMPLATES ──────────────────────────────────────────────────────────────
 

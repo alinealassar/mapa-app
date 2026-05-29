@@ -89,8 +89,8 @@ export default function SobrePage() {
 
           <Section
             icon={<Sparkles size={18} strokeWidth={1.75} className="text-mapa-pink-deep" />}
-            title="Por que se chama Lis"
-            content="Lis é nome curto, de gente. Não era pra ser uma marca — era pra ser uma amiga atenta. Quando você abre o app, é a Lis que te escuta. Quando ela responde, é a Lis que está aqui. O nome do app é o nome de quem fala com você. A aba Mapa, com seus caminhos e ciclos, fica como metáfora — porque a ideia não é te dizer para onde ir, mas te ajudar a desenhar o seu próprio mapa emocional."
+            title="Por que a IA se chama Lis"
+            content="Lis é o nome da inteligência artificial que te escuta aqui dentro. Nome curto, de gente — não era pra ser uma marca, era pra ser uma amiga atenta. Quando você registra um momento, é a Lis que te ouve. Quando ela responde, é a Lis que está aqui. A aba Mapa, com seus caminhos e ciclos, fica como metáfora — porque a ideia não é te dizer para onde ir, mas te ajudar a desenhar o seu próprio mapa emocional."
           />
 
           <div className="bg-mapa-pink-light/40 rounded-[22px] border-2 border-mapa-pink p-6 text-center shadow-[0_6px_24px_rgba(232,160,191,0.2)]">

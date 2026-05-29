@@ -7,10 +7,12 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FIREBASE_SERVICE_ACCOUNT = JSON.parse(Deno.env.get("FIREBASE_SERVICE_ACCOUNT") || "{}");
 
-// Quick fix enquanto o dominio proprio nao esta verificado no Resend.
-// Quando comprar (provavel colodalis.com.br), trocar o from para
-// "Lis <oi@colodalis.com.br>" (ou similar).
-const EMAIL_FROM = "Lis <onboarding@resend.dev>";
+// Enquanto o domínio amigadebolso.com.br não estiver verificado no Resend,
+// os emails saem de onboarding@resend.dev (só entrega para alinealassar@gmail.com).
+// Após verificar o domínio: adicione o secret EMAIL_FROM no Supabase
+// (Project Settings → Edge Functions → Secrets):
+//   EMAIL_FROM = Lis <oi@amigadebolso.com.br>
+const EMAIL_FROM = Deno.env.get("EMAIL_FROM") || "Lis <onboarding@resend.dev>";
 
 const EMAIL_TEMPLATE = `
 <!DOCTYPE html>
