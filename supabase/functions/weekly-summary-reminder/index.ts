@@ -23,6 +23,8 @@ const FIREBASE_SERVICE_ACCOUNT = JSON.parse(Deno.env.get("FIREBASE_SERVICE_ACCOU
 // no Supabase (Project Settings → Edge Functions → Secrets):
 //   EMAIL_FROM = Lis <oi@amigadebolso.com.br>
 const EMAIL_FROM = Deno.env.get("EMAIL_FROM") || "Lis <onboarding@resend.dev>";
+// Após migração para domínio próprio: APP_URL = https://amigadebolso.com.br
+const APP_URL = Deno.env.get("APP_URL") || "https://meuapp1-app.netlify.app";
 
 const EMAIL_TEMPLATE = `
 <!DOCTYPE html>
@@ -51,7 +53,7 @@ const EMAIL_TEMPLATE = `
             <p>Acabei de te esperar pra abrir seu mapa juntas. Tem um resumo dos últimos 7 dias me esperando aqui dentro — os dias que pesaram, os que foram leves, e os caminhos que se desenharam sem você perceber.</p>
             <p>Vem dar uma passada quando quiser. Sem pressa.</p>
             <div class="button-wrap">
-                <a href="https://mapa-app-q3rh.onrender.com/mapa" class="button">Ver meu mapa da semana</a>
+                <a href="${APP_URL}/mapa" class="button">Ver meu mapa da semana</a>
             </div>
             <p class="closing">com carinho,<br/><em>Lis</em></p>
         </div>
@@ -232,7 +234,7 @@ Deno.serve(async (req) => {
                     message: {
                       token,
                       notification: { title: PUSH_TITLE, body: pushBody(user.name) },
-                      webpush: { fcm_options: { link: "https://mapa-app-q3rh.onrender.com/mapa" } },
+                      webpush: { fcm_options: { link: "${APP_URL}/mapa" } },
                     },
                   }),
                 }

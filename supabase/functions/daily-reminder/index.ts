@@ -13,6 +13,8 @@ const FIREBASE_SERVICE_ACCOUNT = JSON.parse(Deno.env.get("FIREBASE_SERVICE_ACCOU
 // (Project Settings → Edge Functions → Secrets):
 //   EMAIL_FROM = Lis <oi@amigadebolso.com.br>
 const EMAIL_FROM = Deno.env.get("EMAIL_FROM") || "Lis <onboarding@resend.dev>";
+// Após migração para domínio próprio: APP_URL = https://amigadebolso.com.br
+const APP_URL = Deno.env.get("APP_URL") || "https://meuapp1-app.netlify.app";
 
 const EMAIL_TEMPLATE = `
 <!DOCTYPE html>
@@ -38,7 +40,7 @@ const EMAIL_TEMPLATE = `
             <p>Oi {{name}}, aqui é a Lis. Passei só para te dar um oi e perguntar como está o seu dia.</p>
             <p>Se quiser, vem dar uma passada aqui — em palavras, emojis ou áudio. Sem cobrança, no seu ritmo.</p>
             <p style="font-style: italic; color: #8E3A6B;">"Aqui você não precisa dar conta de nada."</p>
-            <a href="https://mapa-app-q3rh.onrender.com/registrar" class="button">Vem dar uma passada</a>
+            <a href="${APP_URL}/registrar" class="button">Vem dar uma passada</a>
             <p style="margin-top: 40px; font-style: italic; color: #8E3A6B;">com carinho, Lis.</p>
         </div>
     </div>
@@ -191,7 +193,7 @@ Deno.serve(async (req) => {
                     message: {
                       token,
                       notification: { title: PUSH_TITLE, body: pushBody(user.name) },
-                      webpush: { fcm_options: { link: "https://mapa-app-q3rh.onrender.com/registrar" } },
+                      webpush: { fcm_options: { link: "${APP_URL}/registrar" } },
                     },
                   }),
                 }
