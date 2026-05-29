@@ -5,6 +5,9 @@
 [build.environment]
   NODE_VERSION = "18"
   NEXT_TELEMETRY_DISABLED = "1"
+  # Desativa o Next.js Runtime do Netlify (serverless SSR).
+  # Nosso app usa output: 'export' — arquivo estático, sem servidor.
+  NETLIFY_NEXT_PLUGIN_SKIP = "true"
 
 # Cache: estáticos do Next.js ficam para sempre (hash no nome), resto no-cache
 [[headers]]
