@@ -1,8 +1,12 @@
-// generate-mood-feedback v13 — sensível ao áudio (nota falada vs digitada)
-// v13 (16/05/2026): recebe `note_source` ("audio" | "text") e
-// `audio_duration_seconds`. Quando vier de áudio, instrui a Lis a reconhecer
-// a coragem de gravar voz, ouvir hesitações como sinais emocionais, e adaptar
-// tom pra desabafos longos (>60s).
+// generate-mood-feedback v39 — A+B+D: sugestoes expandidas, few-shot, validacoes variadas
+// v39 (05/06/2026): (A) exemplos especificos por categoria de sugestao expandidos;
+// (B) 4 pares few-shot bom/ruim no prompt para calibrar estilo;
+// (D) 15 frases de validacao variadas na persona com instrucao de nao repetir.
+// v38 (05/06/2026): remove lista fixa "cha/plantas/banho" da persona, instrui rotacao
+//   de categorias, passa ultimas 3 respostas da Lis para evitar repeticao explicita.
+// v37 (05/06/2026): atualiza MODELS_TO_TRY, abort em 401, log detalhado de erro.
+// v36: modelos anteriores (alguns deprecados).
+// v13 (16/05/2026): note_source + audio_duration_seconds para adaptar tom ao audio.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -11,8 +15,9 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const MODELS_TO_TRY = [
+  "claude-opus-4-5-20250929",
   "claude-sonnet-4-5-20250929",
-  "claude-sonnet-4-5",
+  "claude-opus-4-20250514",
   "claude-sonnet-4-20250514",
   "claude-3-7-sonnet-20250219",
   "claude-3-5-sonnet-20241022",
@@ -24,27 +29,86 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// === PERSONA OFICIAL DA LIS ===
-const LIS_PERSONA = `Você é a Lis — um diário emocional com IA para mulheres jovens brasileiras. O app inteiro tem o seu nome.
+const LIS_PERSONA = `Você é a Lis — um diário emocional com IA para mulheres jovens brasileiras.
 
 QUEM VOCÊ É:
-- Mulher, em torno de 30 anos, em português brasileiro coloquial mas cuidadoso
+- Mulher, em torno de 30 anos, português brasileiro coloquial mas cuidadoso
 - Pensa antes de falar; não fala muito
-- Você não é terapeuta nem coach — é mais como uma amiga atenta que ouviu muito
-- Você gosta de coisas pequenas e concretas: chá, plantas, banho quente, livros
-- Você NÃO usa: 'tudo vai dar certo', 'você consegue', 'pensamento positivo', 'positividade', 'foco no que importa', 'energia boa', 'vibrações', 'querida', 'linda', exclamações excessivas, máximas motivacionais
-- Você NÃO minimiza com: 'vai passar', 'poderia ser pior', 'é só isso', 'todo mundo se sente assim'
-- Você USA: validações curtas ('faz sentido', 'entendo', 'isso pesa mesmo'), observações específicas (cita o que ela registrou com número), micro-sugestões físicas e pequenas
-- Você NUNCA diagnostica, nunca prescreve, nunca substitui terapia
-- Você reconhece que a culpa por 'não dar conta' é a dor central da maioria das pessoas que falam com você — nunca reforça essa culpa, sempre tira o peso
+- Não é terapeuta nem coach — é como uma amiga atenta que ouviu muito
+- NÃO usa: 'tudo vai dar certo', 'você consegue', 'pensamento positivo', 'energia boa', 'vibrações', 'querida', 'linda', exclamações excessivas, máximas motivacionais
+- NÃO minimiza: 'vai passar', 'poderia ser pior', 'é só isso', 'todo mundo se sente assim'
+- NUNCA diagnostica, prescreve ou substitui terapia
+- Reconhece que a culpa por 'não dar conta' é a dor central — nunca reforça essa culpa
 
-COMO VOCÊ FALA:
+COMO FALA:
 - Frases curtas
 - Raramente exclamação
-- Usa o nome dela com economia (no máximo 1 vez por resposta)
-- Máximo 1 emoji por resposta inteira (e quase sempre prefere não usar)
+- Nome dela no máximo 1 vez por resposta
+- Máximo 1 emoji por resposta (quase sempre prefere não usar)
 - Nunca começa com 'Oi' ou 'Olá'
-- Tom presente, sem distrair com generalidades
+- Tom presente, sem generalidades
+
+VALIDAÇÕES DE ABERTURA — varie a cada resposta, nunca repita a mesma duas vezes seguidas:
+'isso tem peso mesmo' / 'faz todo sentido' / 'que dia cheio foi esse' / 'carregar isso junto cansa de verdade' /
+'isso é real — o corpo guarda' / 'não é pouca coisa o que você descreveu' / 'isso bate diferente' /
+'tem um custo aí que não aparece na lista' / 'você não está exagerando' / 'sentir isso tudo junto é muito' /
+'faz sentido estar assim' / 'isso acontece, e pesa' / 'o dia pediu demais de você' /
+'é muita coisa pra processar' / 'não tem jeito fácil de carregar isso'
+
+SUGESTÕES FINAIS — REGRAS:
+- Sempre gratuitas, factíveis em 5 minutos, sem sair de casa
+- NUNCA repita a mesma sugestão ou categoria das respostas anteriores (veja 'Respostas recentes' no contexto)
+- A sugestão deve ser ESPECÍFICA para o que ela registrou — conectada ao humor, sentimentos ou nota
+- Alterne entre estas categorias (os exemplos são ponto de partida — crie variações concretas):
+
+  MOVIMENTO SUAVE
+  ex: rolar o pescoço devagar para cada lado / esticar os braços acima da cabeça e soltar o ar /
+  sentar no chão encostada na parede por 5 minutos / rolar os ombros para trás 5 vezes /
+  pôr os pés descalços no chão e sentir o contato / se levantar e ficar parada um instante
+
+  SENSORIAL
+  ex: lavar o rosto com água fria / colocar algo frio nas mãos (copo, pedra, o que tiver) /
+  abrir a janela e respirar o ar de fora por 1 minuto / tocar algo de textura diferente (tecido, madeira, papel) /
+  temperatura: tirar o casaco, enrolar num cobertor, sentir o que o corpo quer agora
+
+  PAUSA ATIVA
+  ex: olhar pela janela por 1 minuto sem fazer nada / deitar no chão 5 minutos sem celular /
+  focar em algo verde — planta, árvore, qualquer coisa — por 1 minuto / desligar a tela por 10 minutos
+
+  EXPRESSÃO MÍNIMA
+  ex: escrever uma frase só sobre como está agora / cantarolar ou assoviar qualquer coisa baixinho /
+  falar em voz alta uma coisa que pesou hoje / rabiscar formas num papel sem pensar
+
+  PEQUENO PRAZER
+  ex: ouvir uma música que ama do início ao fim, sem fazer outra coisa /
+  comer algo pequeno com atenção — sentindo o sabor / se deitar de verdade 5 minutos, olhos fechados /
+  acender uma vela ou incenso se tiver
+
+  CUIDADO BÁSICO
+  ex: encher um copo grande e beber de propósito, sentada / comer algo pequeno se estiver com fome há tempo /
+  trocar de roupa ou tirar o tênis — um sinal de que o dia tem etapas
+`;
+
+// === FEW-SHOT EXAMPLES ===
+// 4 pares bom/ruim para calibrar estilo: especifico, sem genericidade, sugestao variada.
+const FEW_SHOT_EXAMPLES = `
+EXEMPLOS DE RESPOSTA (aprenda o estilo — não copie o conteúdo):
+
+CONTEXTO: humor mal (3/10) + sobrecarregada + cansada + nota "mais um dia que não terminei nada"
+ERRADO: "Isso é difícil. Você está sobrecarregada. Toma um chá e descansa."
+CERTO: "Terminar tudo não era o que o dia precisava de você — ele já pediu demais. Essa lista que não fecha tem peso real, não é fraqueza. Antes de continuar, enche um copo de água e bebe devagar, sentada."
+
+CONTEXTO: humor neutra (5/10) + trabalhei + cansada (sem nota)
+ERRADO: "Dia neutro tem seu valor. Descanse bem e cuide-se."
+CERTO: "Passar por um dia inteiro de trabalho já é alguma coisa, mesmo quando não parece. Quando fechar a tela, rola os ombros devagar — de um lado pro outro — antes de qualquer outra coisa."
+
+CONTEXTO: humor bem (8/10) + tranquila + nota "consegui sair pra caminhar hoje"
+ERRADO: "Que ótimo que você foi caminhar! Continue sempre se cuidando!"
+CERTO: "Sair pra caminhar quando dava pra escolher não fazer nada — isso tem peso. Guarda esse estado de corpo um pouco mais: tira o tênis devagar, sente os pés no chão antes de começar outra coisa."
+
+CONTEXTO: humor mal (3/10) + ansiosa + nota "to com aquela sensação ruim no peito desde cedo"
+ERRADO: "Ansiedade é difícil. Respira fundo e toma um chá. Vai passar."
+CERTO: "Essa sensação no peito desde cedo é real — o corpo avisa antes da cabeça processar. Coloca os pés descalços no chão agora, sente o contato, e faz três respirações longas pelo nariz."
 `;
 
 interface MoodEntry {
@@ -64,6 +128,7 @@ interface RecentEntry {
   mood_emoji: string;
   mood_scale: number;
   tags: string[];
+  ai_feedback: string | null;
   created_at: string;
 }
 
@@ -72,53 +137,35 @@ function maskSensitiveData(text: string | null | undefined): string {
   let masked = text;
   masked = masked.replace(/(?:\d{3}[.\s]?\d{3}[.\s]?\d{3}[-\s]?\d{2})|(?:\d{11})/g, "[CPF PROTEGIDO]");
   masked = masked.replace(/(?:(?:\+|00)?(55)\s?)?(?:\(?([1-9][0-9])\)?\s?)?(?:((?:9\d|[2-9])\d{3})-?(\d{4}))/g, (m) => {
-    const numbersOnly = m.replace(/\D/g, "");
-    if (numbersOnly.length >= 8 && numbersOnly.length <= 13) return "[TELEFONE PROTEGIDO]";
-    return m;
+    const n = m.replace(/\D/g, "");
+    return (n.length >= 8 && n.length <= 13) ? "[TELEFONE PROTEGIDO]" : m;
   });
   return masked;
 }
 
-const HEAVY_TAGS = new Set([
-  "fracassada", "desanimada", "sobrecarregada", "carente", "perdida", "solitária",
-  "ansiosa", "estressada", "irritada", "frustrada", "cansada",
-]);
+const HEAVY_TAGS = new Set(["fracassada","desanimada","sobrecarregada","carente","perdida","solitária","ansiosa","estressada","irritada","frustrada","cansada"]);
+const MOOD_LABELS: Record<string,string> = { pessima:"péssima", mal:"mal", neutra:"neutra", bem:"bem", otima:"ótima" };
 
-const MOOD_LABELS: Record<string, string> = { pessima: "péssima", mal: "mal", neutra: "neutra", bem: "bem", otima: "ótima" };
-
-// === MEMORIA SEMÂNTICA (gte-small + pgvector) ===
-// Inicia uma sessão do modelo gte-small (384 dims) no Edge Runtime do Supabase.
-// Roda local na função, sem custo externo.
 // deno-lint-ignore no-explicit-any
 const aiSession = new (Supabase as any).ai.Session("gte-small");
-
 async function generateEmbedding(text: string): Promise<number[]> {
-  const embedding = await aiSession.run(text, { mean_pool: true, normalize: true });
-  return embedding as number[];
+  return await aiSession.run(text, { mean_pool: true, normalize: true }) as number[];
 }
 
-// Constrói a string que vai ser salva como memória (formato legível pra IA)
 function buildMemoryContent(entry: MoodEntry, userName: string): string {
-  const date = new Date().toLocaleDateString("pt-BR", {
-    day: "2-digit", month: "2-digit", weekday: "short",
-  });
-  const moodLabel = MOOD_LABELS[entry.mood_emoji] || entry.mood_emoji;
-  let content = `[${date}] ${userName} sentiu humor ${moodLabel} (${entry.mood_scale}/10)`;
-  if (entry.tags && entry.tags.length > 0) content += `, sentimentos: ${entry.tags.join(", ")}`;
-  if (entry.activities && entry.activities.length > 0) content += `, atividades: ${entry.activities.join(", ")}`;
-  if (entry.note) {
-    const masked = maskSensitiveData(entry.note);
-    content += `. Nota: "${masked.slice(0, 250)}"`;
-  }
-  return content;
+  const date = new Date().toLocaleDateString("pt-BR", { day:"2-digit", month:"2-digit", weekday:"short" });
+  const mood = MOOD_LABELS[entry.mood_emoji] || entry.mood_emoji;
+  let c = `[${date}] ${userName} sentiu humor ${mood} (${entry.mood_scale}/10)`;
+  if (entry.tags?.length) c += `, sentimentos: ${entry.tags.join(", ")}`;
+  if (entry.activities?.length) c += `, atividades: ${entry.activities.join(", ")}`;
+  if (entry.note) c += `. Nota: "${maskSensitiveData(entry.note).slice(0,250)}"`;
+  return c;
 }
 
-// Constrói a query usada pra buscar memórias relevantes (foco no contexto emocional)
 function buildMemoryQuery(entry: MoodEntry): string {
-  const moodLabel = MOOD_LABELS[entry.mood_emoji] || entry.mood_emoji;
-  const parts: string[] = [`humor ${moodLabel}`];
-  if (entry.tags && entry.tags.length > 0) parts.push(...entry.tags);
-  if (entry.note) parts.push(maskSensitiveData(entry.note).slice(0, 100));
+  const parts = [`humor ${MOOD_LABELS[entry.mood_emoji] || entry.mood_emoji}`];
+  if (entry.tags?.length) parts.push(...entry.tags);
+  if (entry.note) parts.push(maskSensitiveData(entry.note).slice(0,100));
   return parts.join(" ");
 }
 
@@ -126,213 +173,164 @@ function buildPrompt(
   entry: MoodEntry, userName: string, goal: string | null,
   recentEntries: RecentEntry[], relevantMemories: string[]
 ): { systemPrompt: string; userPrompt: string } {
-  const energyLabels = ["", "muito baixa", "baixa", "moderada", "boa", "alta", "muito alta"];
-  const goalLabels: Record<string, string> = {
+  const energyLabels = ["","muito baixa","baixa","moderada","boa","alta","muito alta"];
+  const goalLabels: Record<string,string> = {
     culpa: "lidar com a culpa de não dar conta",
     ansiedade: "diminuir a ansiedade",
     autocuidado: "criar hábito de autocuidado",
     energia: "ter mais energia no dia a dia",
     solidao: "se sentir menos sozinha",
   };
+
   const moodScale = entry.mood_scale;
+  const userTags = (entry.tags || []).map(t => t.toLowerCase());
   const isLowMood = moodScale <= 4;
-  const userTags = (entry.tags || []).map((t) => t.toLowerCase());
-  const hasHeavyTags = userTags.some((t) => HEAVY_TAGS.has(t));
+  const hasHeavyTags = userTags.some(t => HEAVY_TAGS.has(t));
   const isCulpaCase = userTags.includes("fracassada") || userTags.includes("sobrecarregada") || goal === "culpa";
   const isSolitudeCase = userTags.includes("solitária") || userTags.includes("carente");
   const isAnxietyCase = userTags.includes("ansiosa") || userTags.includes("estressada") || goal === "ansiedade";
 
-  let systemPrompt = `${LIS_PERSONA}
+  let systemPrompt = `${LIS_PERSONA}${FEW_SHOT_EXAMPLES}\nTAREFA: dar feedback após ${userName} registrar um momento.\n\nFORMATO:\n- Máximo 3 frases curtas\n- Cite algo ESPECÍFICO do que ela registrou (nunca generalidades)\n- Valide com uma das frases da lista (varie — nunca repita a mesma da resposta anterior)\n- Termine com UMA sugestão concreta de categoria diferente das respostas recentes\n`;
 
-TAREFA AGORA: dar feedback após ${userName} acabar de registrar um momento.
-
-FORMATO DA RESPOSTA:
-- Máximo 3 frases curtas
-- Cite ALGO específico do que ela registrou (nunca generalidades)
-- Termine com uma sugestão pequena, gentil e CONCRETA, factível em 5 minutos sem custo, sem sair de casa
-`;
   if (relevantMemories.length > 0) {
-    systemPrompt += `
-VOCÊ TEM MEMÓRIA. Você já conhece ${userName} de outros momentos. Use as MEMÓRIAS RELEVANTES no userPrompt pra:
-- Notar padrão (ex.: "você costuma ficar assim no domingo")
-- Citar algo específico que ela mencionou (ex.: "aquele projeto que você estava fazendo")
-- Mostrar continuidade afetiva, sem invadir nem ser invasiva
-- NÃO cite as memórias literalmente; use como contexto pra responder mais sintonizada
-`;
+    systemPrompt += `\nVOCÊ TEM MEMÓRIA de ${userName}. Use para notar padrões, citar algo específico anterior, mostrar continuidade. NÃO cite literalmente.\n`;
   }
-  if (isLowMood && hasHeavyTags) {
-    systemPrompt += `
-CONTEXTO ATUAL: ela está num momento difícil (humor baixo + emoções pesadas).
-- VALIDE primeiro: reconheça que o que ela sente é legítimo
-- NÃO celebre, não seja animada, não use exclamações
-- A sugestão final deve ser mínima (respirar, beber água, sentar)
-`;
-  }
-  if (isCulpaCase) {
-    systemPrompt += `
-CONTEXTO DE CULPA: ela tende a se sentir culpada por não dar conta.
-- NÃO reforçe a culpa
-- NÃO sugira mais produtividade nem organização
-- Diga explicitamente algo que tire o peso
-`;
-  }
-  if (isSolitudeCase) {
-    systemPrompt += `
-CONTEXTO DE SOLIDÃO: ela registrou se sentir sozinha ou carente.
-- NÃO sugira "fala com alguém"
-- ACOLHA o sentimento como legítimo
-- Ofereça presença ("estou aqui", "você não está sozinha aqui")
-`;
-  }
-  if (isAnxietyCase) {
-    systemPrompt += `
-CONTEXTO DE ANSIEDADE: ela está ansiosa ou estressada.
-- Tom calmo, frases curtas, sem exclamações
-- Sugira algo físico simples (3 respirações, pés no chão, água)
-`;
-  }
-
-  // Camada de áudio: a nota veio de uma fala gravada, não de texto digitado.
-  // Whisper preserva hesitações ("ah", "tipo"), gírias e o ritmo da fala.
-  // Use isso como dado emocional — não comente erros de transcrição.
+  if (isLowMood && hasHeavyTags) systemPrompt += `\nCONTEXTO DIFÍCIL: valide primeiro, sem animação. Sugestão mínima (respirar, água, sentar).\n`;
+  if (isCulpaCase) systemPrompt += `\nCULPA: não reforce. Não sugira produtividade. Tire o peso.\n`;
+  if (isSolitudeCase) systemPrompt += `\nSOLIDÃO: acolha, não sugira 'fala com alguém'. Ofereça presença.\n`;
+  if (isAnxietyCase) systemPrompt += `\nANSIEDADE: tom calmo, frases curtas. Sugestão física simples.\n`;
   if (entry.note_source === "audio") {
     const dur = entry.audio_duration_seconds || 0;
-    const isDesabafo = dur >= 60;
-    const isQuickVoice = dur > 0 && dur < 15;
-    systemPrompt += `
-NOTA VEIO DE ÁUDIO (não foi digitada): ela gravou a voz.
-- O texto da nota é a transcrição automática da fala dela. Hesitações, repetições e pausas (registradas como vírgulas/reticências) são parte do estado emocional — não corrija nem comente erros de transcrição.
-- Reconheça implicitamente o ato de gravar voz quando fizer sentido (gravar é mais íntimo que digitar; muitas vezes acontece quando o sentimento é maior do que dá para escrever).
-`;
-    if (isDesabafo) {
-      systemPrompt += `- Áudio LONGO (${dur}s): é um desabafo. Dê espaço, não corra para a sugestão. Valide o tamanho do que ela sentiu necessidade de tirar para fora antes de qualquer micro-sugestão.\n`;
-    } else if (isQuickVoice) {
-      systemPrompt += `- Áudio CURTO (${dur}s): registro rápido. Resposta também curta, sem encher.\n`;
-    }
+    systemPrompt += `\nÁUDIO: nota gravada em voz. Hesitações são dados emocionais. Reconheça implicitamente o ato de gravar.\n`;
+    if (dur >= 60) systemPrompt += `Áudio longo (${dur}s): desabafo. Valide o tamanho antes da sugestão.\n`;
+    else if (dur > 0 && dur < 15) systemPrompt += `Áudio curto (${dur}s): resposta curta também.\n`;
   }
 
-  let userPrompt = `${userName} acabou de registrar como está se sentindo:\n`;
+  let userPrompt = `${userName} registrou:\n`;
   userPrompt += `- Humor: ${MOOD_LABELS[entry.mood_emoji] || entry.mood_emoji} (${moodScale}/10)\n`;
   if (entry.energy_level) userPrompt += `- Energia: ${energyLabels[entry.energy_level] || "não informada"}\n`;
-  if (entry.tags && entry.tags.length > 0) userPrompt += `- Sentimentos marcados: ${entry.tags.join(", ")}\n`;
-  if (entry.activities && entry.activities.length > 0) userPrompt += `- Atividades do dia: ${entry.activities.join(", ")}\n`;
+  if (entry.tags?.length) userPrompt += `- Sentimentos: ${entry.tags.join(", ")}\n`;
+  if (entry.activities?.length) userPrompt += `- Atividades: ${entry.activities.join(", ")}\n`;
   if (entry.note) {
-    const noteLabel = entry.note_source === "audio" ? "Nota dela (gravada em áudio)" : "Nota pessoal dela";
-    userPrompt += `- ${noteLabel}: "${maskSensitiveData(entry.note)}"\n`;
+    const label = entry.note_source === "audio" ? "Nota (áudio)" : "Nota";
+    userPrompt += `- ${label}: "${maskSensitiveData(entry.note)}"\n`;
   }
-  if (goal && goalLabels[goal]) userPrompt += `\nObjetivo dela no Mapa: ${goalLabels[goal]}\n`;
+  if (goal && goalLabels[goal]) userPrompt += `\nObjetivo: ${goalLabels[goal]}\n`;
+
   if (recentEntries.length > 0) {
-    userPrompt += `\nRegistros recentes dela (mais recente primeiro):\n`;
+    userPrompt += `\nRegistros recentes:\n`;
     recentEntries.forEach((e, i) => {
-      const date = new Date(e.created_at).toLocaleDateString("pt-BR", { weekday: "short", day: "numeric", month: "short" });
-      userPrompt += `  ${i + 1}. ${date}: ${MOOD_LABELS[e.mood_emoji] || e.mood_emoji} (${e.mood_scale}/10)`;
-      if (e.tags && e.tags.length > 0) userPrompt += ` — ${e.tags.join(", ")}`;
+      const date = new Date(e.created_at).toLocaleDateString("pt-BR", { weekday:"short", day:"numeric", month:"short" });
+      userPrompt += `  ${i+1}. ${date}: ${MOOD_LABELS[e.mood_emoji] || e.mood_emoji} (${e.mood_scale}/10)`;
+      if (e.tags?.length) userPrompt += ` — ${e.tags.join(", ")}`;
       userPrompt += `\n`;
     });
   }
-  if (relevantMemories.length > 0) {
-    userPrompt += `\nMEMÓRIAS RELEVANTES (momentos passados de ${userName} com contexto parecido, ordenados do mais relevante):\n`;
-    relevantMemories.forEach((m, i) => {
-      userPrompt += `  ${i + 1}. ${m}\n`;
-    });
+
+  // Últimas 3 respostas da Lis para evitar repetição de categoria de sugestão
+  const recentFeedbacks = recentEntries.filter(e => !!e.ai_feedback).slice(0,3).map(e => e.ai_feedback as string);
+  if (recentFeedbacks.length > 0) {
+    userPrompt += `\nSuas respostas recentes para ${userName} (VARIE validação e categoria de sugestão):\n`;
+    recentFeedbacks.forEach((f, i) => { userPrompt += `  ${i+1}. "${f.slice(0,200)}"\n`; });
   }
-  userPrompt += `\nResponda como Lis. Use o nome "${userName}" naturalmente.`;
+
+  if (relevantMemories.length > 0) {
+    userPrompt += `\nMemórias relevantes (contexto, não cite):\n`;
+    relevantMemories.forEach((m, i) => { userPrompt += `  ${i+1}. ${m}\n`; });
+  }
+
+  userPrompt += `\nResponda como Lis. Use "${userName}" no máximo uma vez.`;
   return { systemPrompt, userPrompt };
 }
 
-async function callClaude(model: string, systemPrompt: string, userPrompt: string, apiKey: string): Promise<{ ok: boolean; status: number; body: string; data?: unknown }> {
+async function callClaude(model: string, sys: string, usr: string, key: string) {
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model, max_tokens: 300, system: systemPrompt, messages: [{ role: "user", content: userPrompt }] }),
+    headers: { "Content-Type":"application/json", "x-api-key":key, "anthropic-version":"2023-06-01" },
+    body: JSON.stringify({ model, max_tokens:350, system:sys, messages:[{role:"user",content:usr}] }),
   });
   const text = await r.text();
-  if (!r.ok) return { ok: false, status: r.status, body: text };
-  try { return { ok: true, status: 200, body: text, data: JSON.parse(text) }; } catch { return { ok: false, status: r.status, body: text }; }
+  if (!r.ok) return { ok:false, status:r.status, body:text };
+  try { return { ok:true, status:200, body:text, data:JSON.parse(text) }; }
+  catch { return { ok:false, status:r.status, body:text }; }
 }
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return new Response(JSON.stringify({ error: "Token de autenticação ausente" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    if (!ANTHROPIC_API_KEY) return new Response(JSON.stringify({ error: "Configuração da IA ausente" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!authHeader) return new Response(JSON.stringify({error:"Token ausente"}), {status:401,headers:{...corsHeaders,"Content-Type":"application/json"}});
+    if (!ANTHROPIC_API_KEY) return new Response(JSON.stringify({error:"Config ausente"}), {status:500,headers:{...corsHeaders,"Content-Type":"application/json"}});
+
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
-    if (authError || !user) return new Response(JSON.stringify({ error: "Usuária não autenticada" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { data:{user}, error:authErr } = await supabase.auth.getUser(authHeader.replace("Bearer ",""));
+    if (authErr || !user) return new Response(JSON.stringify({error:"Não autenticada"}), {status:401,headers:{...corsHeaders,"Content-Type":"application/json"}});
+
     const body = await req.json();
     const entry: MoodEntry = body.entry;
-    if (!entry || !entry.mood_emoji) return new Response(JSON.stringify({ error: "Dados do registro incompletos" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    const { data: profile } = await supabase.from("profiles").select("name, goal").eq("id", user.id).single();
+    if (!entry?.mood_emoji) return new Response(JSON.stringify({error:"Dados incompletos"}), {status:400,headers:{...corsHeaders,"Content-Type":"application/json"}});
+
+    const { data:profile } = await supabase.from("profiles").select("name, goal").eq("id",user.id).single();
     const userName = profile?.name || "querida";
     const goal = profile?.goal || null;
-    const { data: recentEntries } = await supabase.from("mood_entries").select("mood_emoji, mood_scale, tags, created_at").eq("user_id", user.id).neq("id", entry.id).order("created_at", { ascending: false }).limit(5);
 
-    // === BUSCAR MEMORIAS RELEVANTES ===
+    // Inclui ai_feedback para variar sugestões
+    const { data:recentEntries } = await supabase
+      .from("mood_entries")
+      .select("mood_emoji, mood_scale, tags, ai_feedback, created_at")
+      .eq("user_id",user.id)
+      .neq("id",entry.id)
+      .order("created_at",{ascending:false})
+      .limit(5);
+
     let relevantMemories: string[] = [];
     try {
-      const queryText = buildMemoryQuery(entry);
-      const queryEmbedding = await generateEmbedding(queryText);
-      const { data: memories, error: memErr } = await supabase.rpc("match_memories", {
-        query_embedding: queryEmbedding,
-        match_threshold: 0.65,
-        match_count: 3,
-        p_user_id: user.id,
+      const qEmb = await generateEmbedding(buildMemoryQuery(entry));
+      const { data:mems, error:memErr } = await supabase.rpc("match_memories",{
+        query_embedding:qEmb, match_threshold:0.65, match_count:3, p_user_id:user.id
       });
-      if (memErr) {
-        console.error("Erro match_memories:", memErr.message);
-      } else if (memories && memories.length > 0) {
-        relevantMemories = (memories as Array<{ content: string }>).map((m) => m.content);
-      }
-    } catch (e) {
-      console.error("Falha ao buscar memórias:", e instanceof Error ? e.message : e);
-      // Falha silenciosa: a Lis ainda funciona sem memórias
-    }
+      if (memErr) console.error("match_memories:",memErr.message);
+      else if (mems?.length) relevantMemories = (mems as Array<{content:string}>).map(m=>m.content);
+    } catch(e) { console.error("mem:",e instanceof Error?e.message:e); }
 
-    const { systemPrompt, userPrompt } = buildPrompt(entry, userName, goal, recentEntries || [], relevantMemories);
-    const attempts: Array<{ model: string; status: number; body: string }> = [];
-    let feedbackText = "";
-    let modelUsed = "";
+    const { systemPrompt, userPrompt } = buildPrompt(entry, userName, goal, recentEntries||[], relevantMemories);
+
+    let feedbackText = "", modelUsed = "";
+    const attempts: Array<{model:string;status:number;body:string}> = [];
     for (const model of MODELS_TO_TRY) {
-      const result = await callClaude(model, systemPrompt, userPrompt, ANTHROPIC_API_KEY);
-      if (result.ok && result.data) {
-        const claudeData = result.data as { content: Array<{ type: string; text: string }> };
-        feedbackText = claudeData.content.filter((b) => b.type === "text").map((b) => b.text).join("\n");
+      const res = await callClaude(model, systemPrompt, userPrompt, ANTHROPIC_API_KEY);
+      if (res.ok && res.data) {
+        const d = res.data as {content:Array<{type:string;text:string}>};
+        feedbackText = d.content.filter(b=>b.type==="text").map(b=>b.text).join("\n");
         modelUsed = model;
         break;
       }
-      attempts.push({ model, status: result.status, body: result.body });
-      console.error(`Modelo ${model} falhou ${result.status}: ${result.body}`);
+      const snip = res.body.slice(0,300);
+      attempts.push({model,status:res.status,body:snip});
+      console.error(`${model} status=${res.status}: ${snip}`);
+      if (res.status===401) { console.error("API key inválida. Abortando."); break; }
     }
 
     if (!feedbackText) {
-      return new Response(JSON.stringify({ error: "Nenhum modelo aceitou a requisição", attempts }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({error:"Nenhum modelo aceitou",attempts}), {status:500,headers:{...corsHeaders,"Content-Type":"application/json"}});
     }
 
-    await supabase.from("mood_entries").update({ ai_feedback: feedbackText }).eq("id", entry.id);
-    await supabase.from("ai_analyses").insert({ user_id: user.id, entry_id: entry.id, analysis_text: feedbackText, suggestion: null });
+    await supabase.from("mood_entries").update({ai_feedback:feedbackText}).eq("id",entry.id);
+    await supabase.from("ai_analyses").insert({user_id:user.id,entry_id:entry.id,analysis_text:feedbackText,suggestion:null});
 
-    // === SALVAR MEMORIA DA INTERAÇÃO ===
     try {
-      const memoryContent = buildMemoryContent(entry, userName);
-      const memoryEmbedding = await generateEmbedding(memoryContent);
-      const { error: insErr } = await supabase.from("user_memories").insert({
-        user_id: user.id,
-        content: memoryContent,
-        embedding: memoryEmbedding,
-      });
-      if (insErr) console.error("Erro ao salvar user_memory:", insErr.message);
-    } catch (e) {
-      console.error("Falha ao salvar memória:", e instanceof Error ? e.message : e);
-      // Falha silenciosa: feedback já foi entregue
-    }
+      const memC = buildMemoryContent(entry, userName);
+      const memE = await generateEmbedding(memC);
+      const {error:ie} = await supabase.from("user_memories").insert({user_id:user.id,content:memC,embedding:memE});
+      if (ie) console.error("salvar mem:",ie.message);
+    } catch(e) { console.error("mem save:",e instanceof Error?e.message:e); }
 
     return new Response(
-      JSON.stringify({ feedback: feedbackText, entry_id: entry.id, model_used: modelUsed, memories_used: relevantMemories.length }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({feedback:feedbackText,entry_id:entry.id,model_used:modelUsed,memories_used:relevantMemories.length}),
+      {headers:{...corsHeaders,"Content-Type":"application/json"}}
     );
-  } catch (error) {
-    console.error("Erro:", error);
-    return new Response(JSON.stringify({ error: "Erro interno", details: error instanceof Error ? error.message : "desconhecido" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  } catch(err) {
+    console.error("Erro:",err);
+    return new Response(JSON.stringify({error:"Erro interno",details:err instanceof Error?err.message:"desconhecido"}), {status:500,headers:{...corsHeaders,"Content-Type":"application/json"}});
   }
 });
