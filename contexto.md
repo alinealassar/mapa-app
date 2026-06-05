@@ -101,12 +101,16 @@ Usuária grava → MediaRecorder (webm) → blob
 ## Variáveis de ambiente necessárias
 
 ### Supabase Secrets (Edge Functions)
-| Variável | Uso |
-|---|---|
-| `ANTHROPIC_API_KEY` | Claude — generate-mood-feedback, mapa-insights, weekly-summary |
-| `GROQ_API_KEY` | Whisper — transcribe-audio |
-| `SUPABASE_URL` | Auto-injetado pelo Supabase |
-| `SUPABASE_SERVICE_ROLE_KEY` | Auto-injetado pelo Supabase |
+| Variável | Valor esperado | Uso |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | chave da conta Anthropic | Claude — generate-mood-feedback, mapa-insights, weekly-summary |
+| `GROQ_API_KEY` | chave da conta Groq | Whisper — transcribe-audio |
+| `EMAIL_FROM` | `Lis <oi@amigadebolso.com.br>` | Remetente de todos os e-mails (daily-reminder + onboarding-emails) |
+| `APP_URL` | `https://amigadebolso.com.br` | Links dentro dos e-mails |
+| `SUPABASE_URL` | Auto-injetado pelo Supabase | — |
+| `SUPABASE_SERVICE_ROLE_KEY` | Auto-injetado pelo Supabase | — |
+
+> ⚠️ `EMAIL_FROM` e `APP_URL` configurados em 05/06/2026. Domínio `amigadebolso.com.br` verificado no Resend na mesma data.
 
 ### Next.js (.env.local)
 | Variável | Uso |
