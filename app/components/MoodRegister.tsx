@@ -245,6 +245,7 @@ export default function MoodRegister() {
   // Casulo Sonoro
   const [ambientSound, setAmbientSound] = useState<"off" | "rain" | "brown">("off");
   const [showSoundMenu, setShowSoundMenu] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const ambientAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const [showSosModal, setShowSosModal] = useState(false);
@@ -341,8 +342,8 @@ export default function MoodRegister() {
       ambientAudioRef.current.pause();
     } else {
       ambientAudioRef.current.src = ambientSound === "rain" 
-        ? "https://actions.google.com/sounds/v1/weather/rain_on_roof.ogg" 
-        : "https://actions.google.com/sounds/v1/water/waves_crashing_on_rock_beach.ogg";
+        ? "/rain_on_roof.ogg" 
+        : "/waves_crashing_on_rock_beach.ogg";
       
       // Alguns navegadores bloqueiam autoplay sem interação, então tratamos o catch
       ambientAudioRef.current.play().catch(e => console.log("Áudio bloqueado pelo navegador até haver interação."));
@@ -733,15 +734,13 @@ export default function MoodRegister() {
     setAiFeedback(null);
     setAiLoading(false);
     setNoteTab("text");
-    // Volta a tela pro topo (Sprint 4 polimento)
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    // Volta ao topo do container de scroll (não do window — o scroll é no div interno)
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   return (
     <div className="flex flex-col h-[calc(100dvh-72px)] overflow-hidden">
-      <div className="flex-1 overflow-y-auto">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
       {/* HEADER */}
       <div className="px-6 pt-6 flex justify-between items-start gap-3">
         <div className="text-left">
