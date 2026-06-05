@@ -1,6 +1,6 @@
 # Contexto do Projeto — Amiga de Bolso
 
-> Última atualização: 05/06/2026
+> Última atualização: 05/06/2026 (sessão 2)
 
 ## Visão geral
 
@@ -139,6 +139,10 @@ Usuária grava → MediaRecorder (webm) → blob
 ### ❌ Respostas de validação repetitivas ("faz sentido", "entendo")
 **Causa:** Persona não especificava variedade nas frases de abertura.  
 **Solução (v39):** 15 frases de validação listadas na persona com instrução de nunca repetir a mesma duas vezes seguidas.
+
+### ❌ "Novo registro" não voltava ao topo da tela
+**Causa:** `handleNewEntry` chamava `window.scrollTo({ top: 0 })`, mas o scroll container real é o `<div className="flex-1 overflow-y-auto">` interno — o `window` nunca tinha scroll.  
+**Solução:** Adicionado `scrollContainerRef = useRef<HTMLDivElement>()` apontando para esse div; `handleNewEntry` agora chama `scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" })`.
 
 ---
 
