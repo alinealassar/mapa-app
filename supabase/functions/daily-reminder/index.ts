@@ -13,8 +13,7 @@ const FIREBASE_SERVICE_ACCOUNT = JSON.parse(Deno.env.get("FIREBASE_SERVICE_ACCOU
 // (Project Settings → Edge Functions → Secrets):
 //   EMAIL_FROM = Lis <oi@amigadebolso.com.br>
 const EMAIL_FROM = Deno.env.get("EMAIL_FROM") || "Lis <onboarding@resend.dev>";
-// Após migração para domínio próprio: APP_URL = https://amigadebolso.com.br
-const APP_URL = Deno.env.get("APP_URL") || "https://meuapp1-app.netlify.app";
+const APP_URL = Deno.env.get("APP_URL") || "https://amigadebolso.com.br";
 
 const EMAIL_TEMPLATE = `
 <!DOCTYPE html>
