@@ -143,6 +143,15 @@ export default function EuPage() {
         </div>
 
         <div className="px-5">
+          {/* IDENTIFICAÇÃO */}
+          <div className="text-center mb-5">
+            <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-pink-200 to-rose-300 flex items-center justify-center text-2xl mb-3">
+              🌸
+            </div>
+            <p className="font-medium text-mapa-pink-deep font-[family-name:var(--font-quicksand)]">{name}</p>
+            <p className="text-xs text-mapa-muted mt-0.5">{email}</p>
+          </div>
+
           <div className="bg-mapa-card border border-mapa-border/40 rounded-[18px] overflow-hidden mb-3.5 shadow-[0_4px_16px_rgba(196,122,155,0.10),0_1px_3px_rgba(60,30,50,0.05)]">
             {/* EDITAR NOME */}
             {editingName ? (
