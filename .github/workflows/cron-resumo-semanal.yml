@@ -11,7 +11,7 @@ jobs:
   disparar-resumo-semanal:
     runs-on: ubuntu-latest
     steps:
-      - name: Acordando a Edge Function de Resumo Semanal
+      - name: Disparando resumo semanal (Amiga de Bolso)
         run: |
           curl -i -X POST "https://hsgotkeydyvrollnzbbf.supabase.co/functions/v1/weekly-summary-reminder" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
