@@ -192,7 +192,7 @@ Deno.serve(async (req) => {
                     message: {
                       token,
                       notification: { title: PUSH_TITLE, body: pushBody(user.name) },
-                      webpush: { fcm_options: { link: "${APP_URL}/registrar" } },
+                      webpush: { fcm_options: { link: `${APP_URL}/registrar` } },
                     },
                   }),
                 }
