@@ -1,4 +1,4 @@
-# Contexto do Projeto — Amiga de Bolso
+﻿# Contexto do Projeto — Amiga de Bolso
 
 > Última atualização: 16/06/2026 (sessão 3)
 
@@ -195,3 +195,115 @@ supabase/
     transcribe-audio/index.ts        — v8
     ...
 ```
+
+---
+
+### Sessão 19/06/2026 — Varredura de bugs + correção das Edge Functions + prompts para braços
+
+**Fluxo:** cérebro lendo CONTEXTO.md + PLANEJAMENTO.md, fazendo varredura via MCP e Grep no repositório, corrigindo Edge Functions diretamente via Supabase MCP, gerando prompts self-contained para os braços executarem as correções de frontend.
+
+**O que aconteceu:**
+
+1. **PLANO.md atualizado** — documento estava desatualizado desde 08/05/2026 (5+ semanas). Reescrito por completo para refletir o estado atual em 15/06/2026: 10 sprints completos, histórico de renomeações (Mapa → Lis → Amiga de Bolso), infraestrutura de domínio (amigadebolso.com.br), landing, Instagram (@colodalis), modelo de preço (R$24,90/mês ou R$249/ano). Arquivo em `D:\ALINE\Projetos\Diario com IA\mapa-app\PLANO.md`.
+
+2. **Varredura geral do codebase** — revisão de todos os arquivos conhecidos (Edge Functions via Supabase MCP, código frontend via histórico + CONTEXTO.md). Resultado:
+
+   **Bugs críticos novos encontrados:**
+   - `daily-reminder/index.ts`: `webpush.fcm_options.link` usava string literal `"${APP_URL}/registrar"` em vez de template literal — `${APP_URL}` não era interpolado, push levava usuária à string literal, não ao site real.
+   - `weekly-summary-reminder/index.ts`: mesmo bug, `"${APP_URL}/mapa"`.
+
+   **Bugs conhecidos confirmados (ainda abertos):**
+   - `/recuperar-senha` não mostra estado de sucesso "Quase lá! 💌" após submit (documentado em 02/06)
+   - Casulo Sonoro: "Ruído marrom" toca arquivo errado (documentado em 19/05)
+   - Casulo Sonoro: sons carregados de URLs externas frágeis (Google/googleapis)
+   - `/eu`: email da usuária não exibido (braço removeu acidentalmente em 22/05)
+   - Reset Password email template nunca aplicado no Supabase Dashboard (item manual)
+
+3. **Bug de push corrigido diretamente via MCP** (sem braço):
+   - `daily-reminder` → v27: `"${APP_URL}/registrar"` → `` `${APP_URL}/registrar` ``
+   - `weekly-summary-reminder` → v18: `"${APP_URL}/mapa"` → `` `${APP_URL}/mapa` ``
+   - Ambas deployadas em 19/06/2026 e ATIVAS.
+
+4. **PROMPTS_BRACOS.md criado** em `D:\ALINE\Projetos\Diario com IA\mapa-app\PROMPTS_BRACOS.md` — 3 prompts self-contained para os braços, cada um com contexto do projeto, arquivo exato, o que mudar, o que NÃO mudar, e como verificar:
+   - **Prompt A:** `/recuperar-senha` sem estado de sucesso
+   - **Prompt B:** `/eu` sem email da usuária
+   - **Prompt C:** Casulo Sonoro (arquivo errado + URLs externas frágeis)
+   - Plus: lembrete de ação manual da Aline (Reset Password template no Supabase Dashboard)
+
+**🐛 Status dos bugs após esta sessão:**
+
+| Bug | Status |
+|-----|--------|
+| Push link diário quebrado (`daily-reminder`) | ✅ Corrigido (v27, 19/06) |
+| Push link semanal quebrado (`weekly-summary-reminder`) | ✅ Corrigido (v18, 19/06) |
+| `/recuperar-senha` sem estado de sucesso | ⏳ Pendente — Prompt A em PROMPTS_BRACOS.md |
+| `/eu` sem email da usuária | ⏳ Pendente — Prompt B em PROMPTS_BRACOS.md |
+| Casulo Sonoro: arquivo errado + URLs frágeis | ⏳ Pendente — Prompt C em PROMPTS_BRACOS.md |
+| Reset Password template no Supabase Dashboard | ⏳ Pendente — ação manual da Aline |
+
+**📋 Arquivos criados/atualizados nesta sessão:**
+- `PLANO.md` — reescrito (15/06/2026)
+- `PROMPTS_BRACOS.md` — novo, prompts self-contained para braços
+- `daily-reminder` v27 — deployado (fix push link)
+- `weekly-summary-reminder` v18 — deployado (fix push link)
+
+**Próximos passos:**
+1. Braços executam Prompts A, B, C
+2. Aline aplica Reset Password template no Supabase Dashboard manualmente
+3. Continuar Sprint 4 (Paywall + Mercado Pago)
+
+---
+
+### Sessão 19/06/2026 — Varredura de bugs + correção das Edge Functions + prompts para braços
+
+**Fluxo:** cérebro lendo CONTEXTO.md + PLANEJAMENTO.md, fazendo varredura via MCP e Grep no repositório, corrigindo Edge Functions diretamente via Supabase MCP, gerando prompts self-contained para os braços executarem as correções de frontend.
+
+**O que aconteceu:**
+
+1. **PLANO.md atualizado** — documento estava desatualizado desde 08/05/2026 (5+ semanas). Reescrito por completo para refletir o estado atual em 15/06/2026: 10 sprints completos, histórico de renomeações (Mapa → Lis → Amiga de Bolso), infraestrutura de domínio (amigadebolso.com.br), landing, Instagram (@colodalis), modelo de preço (R$24,90/mês ou R$249/ano). Arquivo em `D:\ALINE\Projetos\Diario com IA\mapa-app\PLANO.md`.
+
+2. **Varredura geral do codebase** — revisão de todos os arquivos conhecidos (Edge Functions via Supabase MCP, código frontend via histórico + CONTEXTO.md). Resultado:
+
+   **Bugs críticos novos encontrados:**
+   - `daily-reminder/index.ts`: `webpush.fcm_options.link` usava string literal `"${APP_URL}/registrar"` em vez de template literal — `${APP_URL}` não era interpolado, push levava usuária à string literal, não ao site real.
+   - `weekly-summary-reminder/index.ts`: mesmo bug, `"${APP_URL}/mapa"`.
+
+   **Bugs conhecidos confirmados (ainda abertos):**
+   - `/recuperar-senha` não mostra estado de sucesso "Quase lá! 💌" após submit (documentado em 02/06)
+   - Casulo Sonoro: "Ruído marrom" toca arquivo errado (documentado em 19/05)
+   - Casulo Sonoro: sons carregados de URLs externas frágeis (Google/googleapis)
+   - `/eu`: email da usuária não exibido (braço removeu acidentalmente em 22/05)
+   - Reset Password email template nunca aplicado no Supabase Dashboard (item manual)
+
+3. **Bug de push corrigido diretamente via MCP** (sem braço):
+   - `daily-reminder` → v27: `"${APP_URL}/registrar"` → `` `${APP_URL}/registrar` ``
+   - `weekly-summary-reminder` → v18: `"${APP_URL}/mapa"` → `` `${APP_URL}/mapa` ``
+   - Ambas deployadas em 19/06/2026 e ATIVAS.
+
+4. **PROMPTS_BRACOS.md criado** em `D:\ALINE\Projetos\Diario com IA\mapa-app\PROMPTS_BRACOS.md` — 3 prompts self-contained para os braços, cada um com contexto do projeto, arquivo exato, o que mudar, o que NÃO mudar, e como verificar:
+   - **Prompt A:** `/recuperar-senha` sem estado de sucesso
+   - **Prompt B:** `/eu` sem email da usuária
+   - **Prompt C:** Casulo Sonoro (arquivo errado + URLs externas frágeis)
+   - Plus: lembrete de ação manual da Aline (Reset Password template no Supabase Dashboard)
+
+**🐛 Status dos bugs após esta sessão:**
+
+| Bug | Status |
+|-----|--------|
+| Push link diário quebrado (`daily-reminder`) | ✅ Corrigido (v27, 19/06) |
+| Push link semanal quebrado (`weekly-summary-reminder`) | ✅ Corrigido (v18, 19/06) |
+| `/recuperar-senha` sem estado de sucesso | ⏳ Pendente — Prompt A em PROMPTS_BRACOS.md |
+| `/eu` sem email da usuária | ⏳ Pendente — Prompt B em PROMPTS_BRACOS.md |
+| Casulo Sonoro: arquivo errado + URLs frágeis | ⏳ Pendente — Prompt C em PROMPTS_BRACOS.md |
+| Reset Password template no Supabase Dashboard | ⏳ Pendente — ação manual da Aline |
+
+**📋 Arquivos criados/atualizados nesta sessão:**
+- `PLANO.md` — reescrito (15/06/2026)
+- `PROMPTS_BRACOS.md` — novo, prompts self-contained para braços
+- `daily-reminder` v27 — deployado (fix push link)
+- `weekly-summary-reminder` v18 — deployado (fix push link)
+
+**Próximos passos:**
+1. Braços executam Prompts A, B, C
+2. Aline aplica Reset Password template no Supabase Dashboard manualmente
+3. Continuar Sprint 4 (Paywall + Mercado Pago)
