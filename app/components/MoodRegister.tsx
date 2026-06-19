@@ -243,8 +243,9 @@ export default function MoodRegister() {
   );
   
   // Casulo Sonoro
-  const [ambientSound, setAmbientSound] = useState<"off" | "rain" | "brown">("off");
+  const [ambientSound, setAmbientSound] = useState<"off" | "rain" | "waves">("off");
   const [showSoundMenu, setShowSoundMenu] = useState(false);
+  const [soundError, setSoundError] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const ambientAudioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -336,17 +337,22 @@ export default function MoodRegister() {
       ambientAudioRef.current = new Audio();
       ambientAudioRef.current.loop = true;
     }
-    
+
+    const audio = ambientAudioRef.current;
+    audio.onerror = () => setSoundError(true);
+
     // Pausar se a usuária desligar ou se for gravar um áudio (para não vazar o ruído)
     if (ambientSound === "off" || audioState === "recording") {
-      ambientAudioRef.current.pause();
+      audio.pause();
+      setSoundError(false);
     } else {
-      ambientAudioRef.current.src = ambientSound === "rain" 
-        ? "/rain_on_roof.ogg" 
+      setSoundError(false);
+      audio.src = ambientSound === "rain"
+        ? "/rain_on_roof.ogg"
         : "/waves_crashing_on_rock_beach.ogg";
-      
+
       // Alguns navegadores bloqueiam autoplay sem interação, então tratamos o catch
-      ambientAudioRef.current.play().catch(e => console.log("Áudio bloqueado pelo navegador até haver interação."));
+      audio.play().catch(() => console.log("Áudio bloqueado pelo navegador até haver interação."));
     }
   }, [ambientSound, audioState]);
 
@@ -770,6 +776,12 @@ export default function MoodRegister() {
               <Headphones size={16} strokeWidth={2} />
             </button>
             
+            {soundError && ambientSound !== "off" && (
+              <p className="absolute top-full mt-1 right-0 text-xs text-rose-400 text-right whitespace-nowrap">
+                Esse som não carregou. Tente outro. 💛
+              </p>
+            )}
+
             {showSoundMenu && (
               <div className="absolute top-full mt-2 right-0 bg-white rounded-2xl shadow-lg border border-mapa-border overflow-hidden flex flex-col min-w-[150px] font-[family-name:var(--font-quicksand)] text-[13px]">
                 <button 
@@ -778,11 +790,11 @@ export default function MoodRegister() {
                 >
                   <CloudRain size={16} /> Chuva
                 </button>
-                <button 
-                  onClick={() => { setAmbientSound("brown"); setShowSoundMenu(false); }}
-                  className={`flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-50 transition-colors ${ambientSound === "brown" ? "text-mapa-pink-deep font-semibold bg-mapa-pink-light/20" : "text-mapa-text"}`}
+                <button
+                  onClick={() => { setAmbientSound("waves"); setShowSoundMenu(false); }}
+                  className={`flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-50 transition-colors ${ambientSound === "waves" ? "text-mapa-pink-deep font-semibold bg-mapa-pink-light/20" : "text-mapa-text"}`}
                 >
-                  <Waves size={16} /> Ruído marrom
+                  <Waves size={16} /> Ondas do mar
                 </button>
                 <button 
                   onClick={() => { setAmbientSound("off"); setShowSoundMenu(false); }}
