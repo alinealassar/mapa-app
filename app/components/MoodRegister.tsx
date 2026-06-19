@@ -808,7 +808,7 @@ export default function MoodRegister() {
               <button
                 key={m.key}
                 onClick={() => handleMoodSelect(m)}
-                className={`flex-1 py-2.5 px-0.5 pb-2 rounded-[20px] border-[1.5px] flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 font-[family-name:var(--font-quicksand)] ${selectedMood === m.key ? "border-mapa-pink bg-mapa-pink-light shadow-[0_4px_16px_rgba(232,160,191,0.25)] scale-105" : "border-mapa-border bg-mapa-card"}`}
+                className={`flex-1 py-2.5 px-0.5 pb-2 rounded-[20px] border-[1.5px] flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 font-[family-name:var(--font-quicksand)] ${selectedMood === m.key ? "border-mapa-pink bg-mapa-pink-light shadow-[0_4px_16px_rgba(232,160,191,0.25)] scale-105" : "border-mapa-border/60 bg-mapa-card shadow-[0_2px_8px_rgba(196,122,155,0.08)]"}`}
               >
                 <span className="text-[26px] leading-none">{m.emoji}</span>
                 <span
@@ -1014,7 +1014,7 @@ export default function MoodRegister() {
                 onClick={() =>
                   toggleItem(selectedTags, t.label, setSelectedTags)
                 }
-                className={`py-[7px] px-4 rounded-3xl text-xs font-medium border-[1.5px] cursor-pointer transition-all duration-200 font-[family-name:var(--font-quicksand)] ${selectedTags.includes(t.label) ? "bg-mapa-pink text-white border-mapa-pink shadow-[0_2px_8px_rgba(232,160,191,0.2)]" : "bg-mapa-card text-mapa-text border-mapa-border hover:border-mapa-pink"}`}
+                className={`py-[7px] px-4 rounded-3xl text-xs font-medium border-[1.5px] cursor-pointer transition-all duration-200 font-[family-name:var(--font-quicksand)] ${selectedTags.includes(t.label) ? "bg-mapa-pink text-white border-mapa-pink shadow-[0_2px_8px_rgba(232,160,191,0.2)]" : "bg-mapa-card text-mapa-text border-mapa-border/60 hover:border-mapa-pink shadow-[0_1px_4px_rgba(196,122,155,0.09)]"}`}
               >
                 {t.emoji} {t.label}
               </button>
@@ -1031,7 +1031,7 @@ export default function MoodRegister() {
                 onClick={() =>
                   toggleItem(selectedTags, t.label, setSelectedTags)
                 }
-                className={`py-[7px] px-4 rounded-3xl text-xs font-medium border-[1.5px] cursor-pointer transition-all duration-200 font-[family-name:var(--font-quicksand)] ${selectedTags.includes(t.label) ? "bg-mapa-pink text-white border-mapa-pink shadow-[0_2px_8px_rgba(232,160,191,0.2)]" : "bg-mapa-card text-mapa-text border-mapa-border hover:border-mapa-pink"}`}
+                className={`py-[7px] px-4 rounded-3xl text-xs font-medium border-[1.5px] cursor-pointer transition-all duration-200 font-[family-name:var(--font-quicksand)] ${selectedTags.includes(t.label) ? "bg-mapa-pink text-white border-mapa-pink shadow-[0_2px_8px_rgba(232,160,191,0.2)]" : "bg-mapa-card text-mapa-text border-mapa-border/60 hover:border-mapa-pink shadow-[0_1px_4px_rgba(196,122,155,0.09)]"}`}
               >
                 {t.label}
               </button>
@@ -1084,7 +1084,7 @@ export default function MoodRegister() {
           <button
             type="button"
             onClick={() => setShowDetails(true)}
-            className="w-full text-left mb-5 bg-white border border-mapa-border/60 rounded-[20px] px-5 py-4 shadow-[0_2px_10px_rgba(232,160,191,0.04)] flex justify-between items-center transition-all cursor-pointer hover:bg-mapa-pink-light/20"
+            className="w-full text-left mb-5 bg-white border border-mapa-border/40 rounded-[20px] px-5 py-4 shadow-[0_4px_16px_rgba(196,122,155,0.12),0_1px_3px_rgba(60,30,50,0.05)] flex justify-between items-center transition-all cursor-pointer hover:bg-mapa-pink-light/20"
           >
             <div>
               <p className="text-sm font-semibold text-mapa-pink-deep mb-0.5">＋ adicionar mais detalhes</p>
@@ -1133,7 +1133,7 @@ export default function MoodRegister() {
                       className={`py-2.5 px-1 rounded-2xl border-[1.5px] cursor-pointer text-center transition-all duration-200 font-[family-name:var(--font-quicksand)] ${
                         selected
                           ? "bg-mapa-lavender-light border-mapa-lavender text-[#5A4A8C] shadow-[0_2px_8px_rgba(184,169,212,0.25)]"
-                          : "bg-mapa-card border-mapa-border text-mapa-text hover:border-mapa-lavender"
+                          : "bg-mapa-card border-mapa-border/60 text-mapa-text hover:border-mapa-lavender shadow-[0_2px_8px_rgba(184,169,212,0.10)]"
                       }`}
                     >
                       <span className="text-2xl block mb-0.5 leading-none">{q.emoji}</span>
@@ -1157,7 +1157,7 @@ export default function MoodRegister() {
                     onClick={() =>
                       toggleItem(selectedActivities, a.label, setSelectedActivities)
                     }
-                    className={`py-2.5 px-1 pb-2 rounded-2xl border-[1.5px] cursor-pointer text-center transition-all duration-200 text-[11px] font-medium font-[family-name:var(--font-quicksand)] ${selectedActivities.includes(a.label) ? "bg-mapa-lavender-light border-mapa-lavender text-[#6B5B95] shadow-[0_2px_8px_rgba(184,169,212,0.2)]" : "bg-mapa-card border-mapa-border text-mapa-text hover:border-mapa-lavender"}`}
+                    className={`py-2.5 px-1 pb-2 rounded-2xl border-[1.5px] cursor-pointer text-center transition-all duration-200 text-[11px] font-medium font-[family-name:var(--font-quicksand)] ${selectedActivities.includes(a.label) ? "bg-mapa-lavender-light border-mapa-lavender text-[#6B5B95] shadow-[0_2px_8px_rgba(184,169,212,0.2)]" : "bg-mapa-card border-mapa-border/60 text-mapa-text hover:border-mapa-lavender shadow-[0_2px_8px_rgba(184,169,212,0.10)]"}`}
                   >
                     <span className="text-xl block mb-0.5">{a.emoji}</span>
                     {a.label}

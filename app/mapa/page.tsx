@@ -344,7 +344,7 @@ export default function MapaPage() {
         {!loading && entries.length > 0 && (
           <div className="px-5 pt-6 space-y-4">
             {/* Card Resumo (3 stats coloridos: momentos / humor medio / energia media) */}
-            <div className="bg-mapa-card rounded-[20px] border border-mapa-border p-4">
+            <div className="bg-mapa-card rounded-[20px] border border-mapa-border/40 p-4 shadow-[0_4px_16px_rgba(196,122,155,0.10),0_1px_3px_rgba(60,30,50,0.05)]">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[13px] font-semibold text-mapa-pink-deep font-[family-name:var(--font-quicksand)]">
                   Resumo
@@ -368,7 +368,7 @@ export default function MapaPage() {
 
             {/* CARD: HUMOR POR DIA (gráfico de barras) */}
             {dailyMood.length > 0 && (
-              <div className="bg-mapa-card rounded-[20px] border border-mapa-border p-4">
+              <div className="bg-mapa-card rounded-[20px] border border-mapa-border/40 p-4 shadow-[0_4px_16px_rgba(196,122,155,0.10),0_1px_3px_rgba(60,30,50,0.05)]">
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-[13px] font-semibold text-mapa-pink-deep font-[family-name:var(--font-quicksand)]">
                     Humor ao longo dos dias
@@ -387,7 +387,7 @@ export default function MapaPage() {
 
             {/* CARD: TOP SENTIMENTOS */}
             {topTags.length > 0 && (
-              <div className="bg-mapa-card rounded-[20px] border border-mapa-border p-4">
+              <div className="bg-mapa-card rounded-[20px] border border-mapa-border/40 p-4 shadow-[0_4px_16px_rgba(196,122,155,0.10),0_1px_3px_rgba(60,30,50,0.05)]">
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-[13px] font-semibold text-mapa-pink-deep font-[family-name:var(--font-quicksand)]">
                     Sentimentos mais presentes
@@ -426,7 +426,7 @@ export default function MapaPage() {
 
             {/* CARD: TOP ATIVIDADES — paleta lavanda (titulo + chips do mesmo tom) */}
             {topActivities.length > 0 && (
-              <div className="bg-mapa-card rounded-[20px] border border-mapa-border p-4">
+              <div className="bg-mapa-card rounded-[20px] border border-mapa-border/40 p-4 shadow-[0_4px_16px_rgba(196,122,155,0.10),0_1px_3px_rgba(60,30,50,0.05)]">
                 <div className="flex items-center justify-between mb-1">
                   <p
                     className="text-[13px] font-semibold font-[family-name:var(--font-quicksand)]"
@@ -467,7 +467,7 @@ export default function MapaPage() {
             )}
 
             {/* CARD: INSIGHTS EM TEXTO (IA com fallback estatístico) */}
-            <div className="bg-mapa-mint-light rounded-[20px] border border-mapa-mint p-4">
+            <div className="bg-mapa-mint-light rounded-[20px] border border-mapa-mint/50 p-4 shadow-[0_4px_16px_rgba(123,200,164,0.12),0_1px_3px_rgba(60,30,50,0.04)]">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-[#5BA67D]">
                   🌿 O que percebi
@@ -849,7 +849,7 @@ function InfoButton({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-mapa-card rounded-[22px] border border-mapa-border p-5 max-w-sm w-full shadow-2xl"
+            className="bg-mapa-card rounded-[22px] border border-mapa-border/40 p-5 max-w-sm w-full shadow-[0_12px_36px_rgba(196,122,155,0.18),0_4px_10px_rgba(60,30,50,0.09)]"
           >
             <p className="font-semibold text-mapa-pink-deep text-[15px] mb-2 font-[family-name:var(--font-quicksand)]">
               {title}

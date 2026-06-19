@@ -66,7 +66,7 @@ export default function SobrePage() {
           <Section
             icon={<Heart size={18} strokeWidth={1.75} className="text-mapa-pink-deep" />}
             title="A filosofia anti-culpa"
-            content="A Lis nasceu para ser um espaço diferente. Aqui você não precisa dar conta de nada. Sem streak, sem cobrança, sem 'você esqueceu hoje'. Cada momento que você registra é seu, no seu ritmo. Quando bate aquela culpa de não ter feito o suficiente, esse aplicativo te lembra: estar aqui já é o suficiente."
+            content="O Amiga de Bolso nasceu para ser um espaço diferente. Aqui você não precisa dar conta de nada. Sem streak, sem cobrança, sem 'você esqueceu hoje'. Cada momento que você registra é seu, no seu ritmo. Quando bate aquela culpa de não ter feito o suficiente, esse aplicativo te lembra: estar aqui já é o suficiente."
           />
 
           <Section
@@ -115,7 +115,7 @@ function Section({
   content: string;
 }) {
   return (
-    <div className="bg-mapa-card rounded-[18px] border border-mapa-border p-5">
+    <div className="bg-mapa-card rounded-[18px] border border-mapa-border/40 p-5 shadow-[0_4px_16px_rgba(196,122,155,0.10),0_1px_3px_rgba(60,30,50,0.05)]">
       <div className="flex items-center gap-2 mb-2">
         {icon}
         <p className="text-[14px] font-semibold text-mapa-pink-deep font-[family-name:var(--font-quicksand)]">

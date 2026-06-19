@@ -40,9 +40,9 @@
    - rounded-[24px] (24px) — cards destacados, modais grandes
 */
 :root {
-  --shadow-soft: 0 4px 16px rgba(60, 30, 50, 0.06);
-  --shadow-medium: 0 8px 30px rgba(60, 30, 50, 0.10);
-  --shadow-large: 0 12px 36px rgba(60, 30, 50, 0.14);
+  --shadow-soft:   0 4px 16px rgba(196, 122, 155, 0.10), 0 1px 3px rgba(60, 30, 50, 0.05);
+  --shadow-medium: 0 8px 24px rgba(196, 122, 155, 0.13), 0 2px 6px rgba(60, 30, 50, 0.07);
+  --shadow-large:  0 12px 36px rgba(196, 122, 155, 0.18), 0 4px 10px rgba(60, 30, 50, 0.09);
 }
 
 :root {
@@ -115,4 +115,20 @@ input[type="range"]::-moz-range-thumb {
 }
 .lis-pressable:active {
   transform: scale(0.97) translateY(1px);
+}
+
+/* === ELEVATION B — soft rose shadow === */
+.lis-card {
+  box-shadow: var(--shadow-soft);
+  border-color: rgba(240, 228, 220, 0.5) !important;
+}
+
+.lis-card-high {
+  box-shadow: var(--shadow-medium);
+  border-color: rgba(240, 228, 220, 0.4) !important;
+}
+
+.lis-pill-float {
+  box-shadow: 0 2px 8px rgba(196, 122, 155, 0.14), 0 0 0 0.5px rgba(232, 160, 191, 0.25);
+  border-color: transparent !important;
 }

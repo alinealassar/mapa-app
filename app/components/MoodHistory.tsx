@@ -269,7 +269,7 @@ export default function MoodHistory() {
 
       {/* STATS */}
       {stats && (
-        <div className="mx-5 mb-5 bg-mapa-card rounded-[20px] border border-mapa-border/50 p-4 pb-3">
+        <div className="mx-5 mb-5 bg-mapa-card rounded-[20px] border border-mapa-border/40 p-4 pb-3 shadow-[0_4px_16px_rgba(196,122,155,0.10),0_1px_3px_rgba(60,30,50,0.05)]">
           <div className="grid grid-cols-4 gap-2 mb-2.5">
             <div className="text-center">
               <p className="text-xl font-semibold text-mapa-pink-deep">
@@ -351,7 +351,7 @@ export default function MoodHistory() {
                 <div
                   key={entry.id}
                   onClick={() => setExpandedId(isExp ? null : entry.id)}
-                  className="bg-mapa-card rounded-[18px] border border-mapa-border/50 border-l-4 border-l-mapa-pink p-3.5 px-4 mb-2.5 cursor-pointer transition-all"
+                  className="bg-mapa-card rounded-[18px] border border-mapa-border/30 border-l-4 border-l-mapa-pink p-3.5 px-4 mb-2.5 cursor-pointer transition-all shadow-[0_3px_12px_rgba(196,122,155,0.09),0_1px_3px_rgba(60,30,50,0.04)]"
                 >
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2.5">

@@ -71,7 +71,7 @@ export default function BottomNav() {
   if (pathname === "/login") return null;
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[420px] bg-mapa-card border-t border-mapa-border/50 flex justify-around py-2.5 pb-5 z-50">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[420px] bg-mapa-card border-t border-mapa-border/30 shadow-[0_-4px_20px_rgba(196,122,155,0.10),0_-1px_0_rgba(240,228,220,0.8)] flex justify-around py-2.5 pb-5 z-50">
       {TABS.map((tab) => {
         const isActive =
           pathname === tab.href ||
