@@ -252,16 +252,6 @@ supabase/
 2. Aline aplica Reset Password template no Supabase Dashboard manualmente
 3. Continuar Sprint 4 (Paywall + Mercado Pago)
 
----
-
-### Sessão 19/06/2026 — Varredura de bugs + correção das Edge Functions + prompts para braços
-
-**Fluxo:** cérebro lendo CONTEXTO.md + PLANEJAMENTO.md, fazendo varredura via MCP e Grep no repositório, corrigindo Edge Functions diretamente via Supabase MCP, gerando prompts self-contained para os braços executarem as correções de frontend.
-
-**O que aconteceu:**
-
-1. **PLANO.md atualizado** — documento estava desatualizado desde 08/05/2026 (5+ semanas). Reescrito por completo para refletir o estado atual em 15/06/2026: 10 sprints completos, histórico de renomeações (Mapa → Lis → Amiga de Bolso), infraestrutura de domínio (amigadebolso.com.br), landing, Instagram (@colodalis), modelo de preço (R$24,90/mês ou R$249/ano). Arquivo em `D:\ALINE\Projetos\Diario com IA\mapa-app\PLANO.md`.
-
 2. **Varredura geral do codebase** — revisão de todos os arquivos conhecidos (Edge Functions via Supabase MCP, código frontend via histórico + CONTEXTO.md). Resultado:
 
    **Bugs críticos novos encontrados:**
