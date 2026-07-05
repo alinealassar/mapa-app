@@ -243,9 +243,11 @@ export default function MapaPage() {
     const ws = weeklySummaryMeta?.week_start;
     const we = weeklySummaryMeta?.week_end;
     if (!ws || !we) { setLoading(false); return; }
-    // Tudo na /mapa filtra pela semana atualmente selecionada (dom-sab UTC).
-    const startISO = `${ws}T00:00:00.000Z`;
-    const endISO = `${we}T23:59:59.999Z`;
+    // semana BRT: domingo 00:00 BRT = domingo 03:00 UTC
+    //             sábado 23:59 BRT = domingo_seguinte 02:59 UTC
+    const startISO = `${ws}T03:00:00.000Z`;
+    const [wy, wm, wd] = we.split("-").map(Number);
+    const endISO = new Date(Date.UTC(wy, wm - 1, wd + 1, 2, 59, 59, 999)).toISOString();
     const { data } = await supabase
       .from("mood_entries")
       .select("id, mood_emoji, mood_scale, energy_level, tags, activities, created_at")

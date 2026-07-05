@@ -89,23 +89,28 @@ const GOAL_LABELS: Record<string, string> = {
 };
 const WEEKDAY_NAMES = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
 
-// Retorna a ultima semana FECHADA (domingo a sabado, UTC).
-// Se hoje for domingo, retorna a semana que terminou ontem (sabado).
+const BRT_OFFSET_MS = 3 * 60 * 60 * 1000; // UTC-3 (horário de Brasília)
+
+// Retorna a ultima semana FECHADA em horário de Brasília (dom-sab BRT).
+// weekStart = domingo 00:00 BRT = domingo 03:00 UTC
+// weekEnd   = sábado 23:59:59.999 BRT = domingo seguinte 02:59:59.999 UTC
 function computeLastWeek(now: Date): { weekStart: Date; weekEnd: Date } {
-  const today = new Date(now);
-  const day = today.getUTCDay(); // 0=dom, 1=seg, ..., 6=sab
-  // Quantos dias atras esta o domingo desta semana
-  const daysToCurrentSunday = day;
-  const currentSunday = new Date(today);
-  currentSunday.setUTCDate(today.getUTCDate() - daysToCurrentSunday);
-  currentSunday.setUTCHours(0, 0, 0, 0);
-  // Semana anterior comeca 7 dias antes do domingo atual
-  const weekStart = new Date(currentSunday);
-  weekStart.setUTCDate(currentSunday.getUTCDate() - 7);
-  const weekEnd = new Date(weekStart);
-  weekEnd.setUTCDate(weekStart.getUTCDate() + 6);
-  weekEnd.setUTCHours(23, 59, 59, 999);
+  const brtNow = new Date(now.getTime() - BRT_OFFSET_MS);
+  const brtDay = brtNow.getUTCDay();
+  const brtCurrentSunday = new Date(brtNow);
+  brtCurrentSunday.setUTCDate(brtNow.getUTCDate() - brtDay);
+  brtCurrentSunday.setUTCHours(0, 0, 0, 0);
+  const brtLastSunday = new Date(brtCurrentSunday);
+  brtLastSunday.setUTCDate(brtCurrentSunday.getUTCDate() - 7);
+  const weekStart = new Date(brtLastSunday.getTime() + BRT_OFFSET_MS);
+  const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000 - 1);
   return { weekStart, weekEnd };
+}
+
+// String "YYYY-MM-DD" do sábado (último dia da semana) em BRT.
+function weekEndLabel(weekStart: Date): string {
+  const [y, m, d] = weekStart.toISOString().slice(0, 10).split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + 6)).toISOString().slice(0, 10);
 }
 
 function formatDateBR(d: Date): string { return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }); }
@@ -226,32 +231,32 @@ Deno.serve(async (req: Request) => {
     let weekStart: Date;
     let weekEnd: Date;
     if (customWeekStart) {
-      const customDate = new Date(`${customWeekStart}T00:00:00.000Z`);
-      if (isNaN(customDate.getTime())) {
+      // customWeekStart = "YYYY-MM-DD" de um domingo em BRT.
+      // domingo 00:00 BRT = domingo 03:00 UTC.
+      weekStart = new Date(`${customWeekStart}T03:00:00.000Z`);
+      if (isNaN(weekStart.getTime())) {
         return new Response(JSON.stringify({ error: "week_start invalido" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      if (customDate.getUTCDay() !== 0) {
+      const brtDay = new Date(weekStart.getTime() - BRT_OFFSET_MS).getUTCDay();
+      if (brtDay !== 0) {
         return new Response(JSON.stringify({ error: "week_start precisa ser um domingo (formato YYYY-MM-DD)" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      const customEnd = new Date(customDate);
-      customEnd.setUTCDate(customDate.getUTCDate() + 6);
-      customEnd.setUTCHours(23, 59, 59, 999);
-      if (customEnd >= new Date()) {
+      weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000 - 1);
+      if (weekEnd >= new Date()) {
         return new Response(JSON.stringify({ error: "Essa semana ainda nao fechou" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      weekStart = customDate;
-      weekEnd = customEnd;
     } else {
       ({ weekStart, weekEnd } = computeLastWeek(new Date()));
     }
     const weekStartStr = weekStart.toISOString().slice(0, 10);
+    const weekEndStr = weekEndLabel(weekStart); // sábado BRT ("YYYY-MM-DD")
     const { data: existing } = await supabase.from("weekly_summaries").select("id, week_start, summary_text, patterns, created_at").eq("user_id", user.id).eq("week_start", weekStartStr).maybeSingle();
     if (existing) {
-      return new Response(JSON.stringify({ summary: existing, source: "cache", week_start: weekStartStr, week_end: weekEnd.toISOString().slice(0, 10) }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ summary: existing, source: "cache", week_start: weekStartStr, week_end: weekEndStr }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     const { data: entries } = await supabase.from("mood_entries").select("mood_emoji, mood_scale, energy_level, tags, activities, note, created_at, sleep_quality, sleep_hours, screen_time_hours").eq("user_id", user.id).gte("created_at", weekStart.toISOString()).lte("created_at", weekEnd.toISOString()).order("created_at", { ascending: true });
     if (!entries || entries.length < 3) {
-      return new Response(JSON.stringify({ summary: null, source: "too_few_entries", count: entries?.length || 0, week_start: weekStartStr, week_end: weekEnd.toISOString().slice(0, 10) }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ summary: null, source: "too_few_entries", count: entries?.length || 0, week_start: weekStartStr, week_end: weekEndStr }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     const { data: profile } = await supabase.from("profiles").select("name, goal").eq("id", user.id).single();
     const userName = profile?.name || "você";
@@ -302,9 +307,9 @@ Deno.serve(async (req: Request) => {
         }).select().single();
         if (insertError) {
           console.error("Erro ao salvar weekly_summary:", insertError);
-          return new Response(JSON.stringify({ summary: { week_start: weekStartStr, summary_text: parsed.summary, patterns: parsed, created_at: new Date().toISOString() }, source: "ai_unsaved", save_error: insertError.message, week_end: weekEnd.toISOString().slice(0, 10) }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          return new Response(JSON.stringify({ summary: { week_start: weekStartStr, summary_text: parsed.summary, patterns: parsed, created_at: new Date().toISOString() }, source: "ai_unsaved", save_error: insertError.message, week_end: weekEndStr }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
-        return new Response(JSON.stringify({ summary: saved, source: "ai", week_end: weekEnd.toISOString().slice(0, 10) }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ summary: saved, source: "ai", week_end: weekEndStr }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       attempts.push({ model, status: result.status, body: result.body });
       console.error(`Modelo ${model} falhou ${result.status}: ${result.body}`);

@@ -197,10 +197,15 @@ Deno.serve(async (req: Request) => {
     let query = supabase.from("mood_entries").select("mood_emoji, mood_scale, energy_level, tags, activities, note, created_at, sleep_quality, sleep_hours, screen_time_hours").eq("user_id", user.id).order("created_at", { ascending: false });
     let periodLabel: string;
     if (weekStartStr) {
-      const start = new Date(`${weekStartStr}T00:00:00.000Z`);
-      const end = weekEndStr
-        ? new Date(`${weekEndStr}T23:59:59.999Z`)
-        : (() => { const e = new Date(start); e.setUTCDate(start.getUTCDate() + 6); e.setUTCHours(23, 59, 59, 999); return e; })();
+      // domingo 00:00 BRT = domingo 03:00 UTC; sábado 23:59 BRT = domingo_seguinte 02:59 UTC
+      const start = new Date(`${weekStartStr}T03:00:00.000Z`);
+      let end: Date;
+      if (weekEndStr) {
+        const [ey, em, ed] = weekEndStr.split("-").map(Number);
+        end = new Date(Date.UTC(ey, em - 1, ed + 1, 2, 59, 59, 999));
+      } else {
+        end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000 - 1);
+      }
       query = query.gte("created_at", start.toISOString()).lte("created_at", end.toISOString());
       const startBR = start.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
       const endBR = end.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
