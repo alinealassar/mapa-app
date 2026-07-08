@@ -1,8 +1,7 @@
-// generate-weekly-summary v7 — semana dom-sab + navegacao por semana especifica
-// v7 (17/05/2026): aceita body { week_start: "YYYY-MM-DD" } opcional pra
-// gerar resumo de qualquer semana fechada do passado (frontend usa pra
-// permitir navegacao no card "Carta de diario"). Sem param, retorna a
-// ultima semana fechada (comportamento anterior).
+// generate-weekly-summary v39 — fix fuso BRT nos registros, sincroniza persona
+// v39 (08/07/2026): fix weekday em BRT nos registros (era UTC); timeZone BRT em
+//   formatDateBR; remove linha "cha/plantas/banho" da persona; sincroniza LIS_PERSONA.
+// v7 (17/05/2026): aceita week_start pra resumo de semana passada.
 // v6 (17/05/2026): semana mudou de seg-dom para dom-sab.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -32,7 +31,6 @@ QUEM VOCÊ É:
 - Mulher, em torno de 30 anos, em português brasileiro coloquial mas cuidadoso
 - Pensa antes de falar; não fala muito
 - Você não é terapeuta nem coach — é mais como uma amiga atenta que ouviu muito
-- Você gosta de coisas pequenas e concretas: chá, plantas, banho quente, livros
 - Você NÃO usa: 'tudo vai dar certo', 'você consegue', 'pensamento positivo', 'positividade', 'foco no que importa', 'energia boa', 'vibrações', 'querida', 'linda', exclamações excessivas, máximas motivacionais
 - Você NÃO minimiza com: 'vai passar', 'poderia ser pior', 'é só isso', 'todo mundo se sente assim'
 - Você USA: validações curtas ('faz sentido', 'entendo', 'isso pesa mesmo'), observações específicas (cita o que ela registrou com número), micro-sugestões físicas e pequenas
@@ -113,7 +111,7 @@ function weekEndLabel(weekStart: Date): string {
   return new Date(Date.UTC(y, m - 1, d + 6)).toISOString().slice(0, 10);
 }
 
-function formatDateBR(d: Date): string { return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }); }
+function formatDateBR(d: Date): string { return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" }); }
 
 function buildPrompts(entries: MoodEntry[], userName: string, goal: string | null, weekStart: Date, weekEnd: Date, relevantMemories: string[]): { systemPrompt: string; userPrompt: string } {
   const entriesWithSleep = entries.filter((e) => e.sleep_quality !== null || e.sleep_hours !== null);
@@ -159,7 +157,8 @@ VOCÊ TEM MEMÓRIA. Abaixo há 'MEMÓRIAS RELEVANTES' do passado de ${userName}.
   let userPrompt = `Resumo da semana de ${userName}, de domingo ${formatDateBR(weekStart)} a sábado ${formatDateBR(weekEnd)}.\n\n${entries.length} registros nessa semana:\n\n`;
   entries.forEach((e, i) => {
     const date = new Date(e.created_at);
-    const weekday = WEEKDAY_NAMES[date.getUTCDay()];
+    const brt = new Date(date.getTime() - 3 * 60 * 60 * 1000);
+    const weekday = WEEKDAY_NAMES[brt.getUTCDay()];
     const dateStr = formatDateBR(date);
     userPrompt += `${i + 1}. ${weekday} ${dateStr}: humor ${MOOD_LABELS[e.mood_emoji] || e.mood_emoji} (${e.mood_scale}/10)`;
     if (e.energy_level) userPrompt += `, energia ${e.energy_level}/6`;

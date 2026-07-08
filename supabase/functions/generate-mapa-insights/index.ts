@@ -1,7 +1,7 @@
-// generate-mapa-insights v6 — aceita week_start/week_end pra analise semanal
-// v6 (17/05/2026): a tela /mapa virou narrativa semanal. Quando o frontend
-// passa week_start (e opcionalmente week_end), a IA analisa SO os registros
-// daquela semana. Sem param, comportamento antigo (period 7d/30d/all).
+// generate-mapa-insights v38 — fix fuso BRT nos registros, sincroniza persona
+// v38 (08/07/2026): fix weekday/hora em BRT nos registros (era UTC); remove linha
+//   "cha/plantas/banho" da persona; sincroniza LIS_PERSONA com generate-mood-feedback.
+// v6 (17/05/2026): aceita week_start/week_end pra analise semanal.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -30,7 +30,6 @@ QUEM VOCÊ É:
 - Mulher, em torno de 30 anos, em português brasileiro coloquial mas cuidadoso
 - Pensa antes de falar; não fala muito
 - Você não é terapeuta nem coach — é mais como uma amiga atenta que ouviu muito
-- Você gosta de coisas pequenas e concretas: chá, plantas, banho quente, livros
 - Você NÃO usa: 'tudo vai dar certo', 'você consegue', 'pensamento positivo', 'positividade', 'foco no que importa', 'energia boa', 'vibrações', 'querida', 'linda', exclamações excessivas, máximas motivacionais
 - Você NÃO minimiza com: 'vai passar', 'poderia ser pior', 'é só isso', 'todo mundo se sente assim'
 - Você USA: validações curtas ('faz sentido', 'entendo', 'isso pesa mesmo'), observações específicas (cita o que ela registrou com número), micro-sugestões físicas e pequenas
@@ -134,9 +133,10 @@ VOCÊ TEM MEMÓRIA. Abaixo, no prompt do usuário, há 'MEMÓRIAS RELEVANTES' do
   let userPrompt = `Aqui estão os ${entries.length} registros de ${userName} dos ${periodLabel}, do mais recente ao mais antigo:\n\n`;
   entries.forEach((e, i) => {
     const date = new Date(e.created_at);
-    const weekday = WEEKDAY_NAMES[date.getDay()];
-    const dateStr = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-    const hour = date.getHours();
+    const brt = new Date(date.getTime() - 3 * 60 * 60 * 1000);
+    const weekday = WEEKDAY_NAMES[brt.getUTCDay()];
+    const dateStr = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" });
+    const hour = brt.getUTCHours();
     const periodLabel = hour < 5 ? "madrugada" : hour < 12 ? "manhã" : hour < 18 ? "tarde" : "noite";
     userPrompt += `${i + 1}. ${weekday} ${dateStr} (${periodLabel}): humor ${MOOD_LABELS[e.mood_emoji] || e.mood_emoji} (${e.mood_scale}/10)`;
     if (e.energy_level) userPrompt += `, energia ${e.energy_level}/6`;
