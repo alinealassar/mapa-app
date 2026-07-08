@@ -1,4 +1,7 @@
-// generate-mood-feedback v40 — modos de resposta variados, fallback de memória, fix fuso BRT
+// generate-mood-feedback v41 — fatos duraveis + loop de continuidade
+// v41 (08/07/2026): (A) user_facts: busca e injeta fatos duraveis no prompt;
+//   (B) extracao fire-and-forget de fatos novos apos cada feedback (haiku);
+//   (C) loop de continuidade: detecta pergunta final, salva pending_question em profiles.
 // v40 (08/07/2026): (A) persona: sugestao nao obrigatoria, 5 modos (espelhar/nomear/perguntar/
 //   sugerir/presenca); (B) few-shot com variedade de estruturas; (C) FORMATO sem formula fixa;
 //   (D) fallback match_memories threshold 0.0 quando primaria retorna vazio;
@@ -21,6 +24,11 @@ const MODELS_TO_TRY = [
   "claude-sonnet-4-20250514",
   "claude-3-7-sonnet-20250219",
   "claude-3-5-sonnet-20241022",
+];
+
+const HAIKU_MODELS = [
+  "claude-haiku-4-5-20251001",
+  "claude-3-5-haiku-20241022",
 ];
 
 const corsHeaders = {
@@ -127,6 +135,11 @@ interface RecentEntry {
   created_at: string;
 }
 
+interface UserFact {
+  fact: string;
+  category: string | null;
+}
+
 function maskSensitiveData(text: string | null | undefined): string {
   if (!text) return "";
   let masked = text;
@@ -164,9 +177,20 @@ function buildMemoryQuery(entry: MoodEntry): string {
   return parts.join(" ");
 }
 
+function extractJson(text: string): Record<string, unknown> | null {
+  try { return JSON.parse(text); } catch {
+    const first = text.indexOf("{"); const last = text.lastIndexOf("}");
+    if (first !== -1 && last !== -1 && last > first) {
+      try { return JSON.parse(text.slice(first, last + 1)); } catch { return null; }
+    }
+    return null;
+  }
+}
+
 function buildPrompt(
   entry: MoodEntry, userName: string, goal: string | null,
-  recentEntries: RecentEntry[], relevantMemories: string[]
+  recentEntries: RecentEntry[], relevantMemories: string[],
+  facts: UserFact[] | null, pendingQuestion: string | null
 ): { systemPrompt: string; userPrompt: string } {
   const energyLabels = ["","muito baixa","baixa","moderada","boa","alta","muito alta"];
   const goalLabels: Record<string,string> = {
@@ -186,6 +210,14 @@ function buildPrompt(
   const isAnxietyCase = userTags.includes("ansiosa") || userTags.includes("estressada") || goal === "ansiedade";
 
   let systemPrompt = `${LIS_PERSONA}${FEW_SHOT_EXAMPLES}\nTAREFA: dar feedback após ${userName} registrar um momento.\n\nFORMATO:\n- Máximo 3 frases curtas (pode ser 1, se o momento pedir)\n- Cite algo ESPECÍFICO do que ela registrou (nunca generalidades)\n- Escolha UM modo de resposta (espelhar/nomear/perguntar/sugerir/presença)\n  diferente do modo da resposta anterior\n`;
+
+  if (facts && facts.length > 0) {
+    systemPrompt += `\nVOCÊ CONHECE A VIDA DELA. Abaixo, no contexto, há uma lista de fatos que você aprendeu em registros passados. Use com naturalidade quando fizer sentido — cite a pessoa ou situação pelo nome que ela usa. NUNCA liste os fatos nem mostre que tem uma "ficha" dela. Se um fato parecer ter mudado, confie na nota de hoje, não na lista.\n`;
+  }
+
+  if (pendingQuestion) {
+    systemPrompt += `\nNA SUA ÚLTIMA RESPOSTA você perguntou a ela: "${pendingQuestion}". Se a nota de hoje parecer responder essa pergunta, reconheça — mostre que você lembra do que perguntou. Não repita a pergunta.\n`;
+  }
 
   if (relevantMemories.length > 0) {
     systemPrompt += `\nVOCÊ TEM MEMÓRIA de ${userName}. Use para notar padrões, citar algo específico anterior, mostrar continuidade. NÃO cite literalmente.\n`;
@@ -211,6 +243,11 @@ function buildPrompt(
     userPrompt += `- ${label}: "${maskSensitiveData(entry.note)}"\n`;
   }
   if (goal && goalLabels[goal]) userPrompt += `\nObjetivo: ${goalLabels[goal]}\n`;
+
+  if (facts && facts.length > 0) {
+    userPrompt += `\nO que você sabe da vida de ${userName} (de registros passados):\n`;
+    facts.forEach(f => { userPrompt += `  - ${f.fact}\n`; });
+  }
 
   if (recentEntries.length > 0) {
     userPrompt += `\nRegistros recentes:\n`;
@@ -238,11 +275,11 @@ function buildPrompt(
   return { systemPrompt, userPrompt };
 }
 
-async function callClaude(model: string, sys: string, usr: string, key: string) {
+async function callClaude(model: string, sys: string, usr: string, key: string, maxTokens = 350) {
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "Content-Type":"application/json", "x-api-key":key, "anthropic-version":"2023-06-01" },
-    body: JSON.stringify({ model, max_tokens:350, system:sys, messages:[{role:"user",content:usr}] }),
+    body: JSON.stringify({ model, max_tokens:maxTokens, system:sys, messages:[{role:"user",content:usr}] }),
   });
   const text = await r.text();
   if (!r.ok) return { ok:false, status:r.status, body:text };
@@ -265,9 +302,11 @@ Deno.serve(async (req: Request) => {
     const entry: MoodEntry = body.entry;
     if (!entry?.mood_emoji) return new Response(JSON.stringify({error:"Dados incompletos"}), {status:400,headers:{...corsHeaders,"Content-Type":"application/json"}});
 
-    const { data:profile } = await supabase.from("profiles").select("name, goal").eq("id",user.id).single();
+    // B4: include pending_question in profile fetch
+    const { data:profile } = await supabase.from("profiles").select("name, goal, pending_question, pending_question_at").eq("id",user.id).single();
     const userName = profile?.name || "querida";
     const goal = profile?.goal || null;
+    const pendingQuestion = (profile?.pending_question as string | null) || null;
 
     // Inclui ai_feedback para variar sugestões
     const { data:recentEntries } = await supabase
@@ -277,6 +316,15 @@ Deno.serve(async (req: Request) => {
       .neq("id",entry.id)
       .order("created_at",{ascending:false})
       .limit(5);
+
+    // B1: fetch durable facts
+    const { data:factsData } = await supabase
+      .from("user_facts")
+      .select("fact, category")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(15);
+    const facts = (factsData as UserFact[] | null) || null;
 
     let relevantMemories: string[] = [];
     try {
@@ -294,7 +342,7 @@ Deno.serve(async (req: Request) => {
       }
     } catch(e) { console.error("mem:",e instanceof Error?e.message:e); }
 
-    const { systemPrompt, userPrompt } = buildPrompt(entry, userName, goal, recentEntries||[], relevantMemories);
+    const { systemPrompt, userPrompt } = buildPrompt(entry, userName, goal, recentEntries||[], relevantMemories, facts, pendingQuestion);
 
     let feedbackText = "", modelUsed = "";
     const attempts: Array<{model:string;status:number;body:string}> = [];
@@ -325,6 +373,86 @@ Deno.serve(async (req: Request) => {
       const {error:ie} = await supabase.from("user_memories").insert({user_id:user.id,content:memC,embedding:memE});
       if (ie) console.error("salvar mem:",ie.message);
     } catch(e) { console.error("mem save:",e instanceof Error?e.message:e); }
+
+    // B3: loop de continuidade — detecta última pergunta, salva/limpa pending_question
+    try {
+      const sentences = feedbackText.split(/(?<=[.!?])\s+|\n+/).map((s: string) => s.trim()).filter(Boolean);
+      const lastQuestion = sentences.filter((s: string) => s.endsWith("?") && s.length <= 160).pop() || null;
+      await supabase.from("profiles").update(
+        lastQuestion
+          ? { pending_question: lastQuestion, pending_question_at: new Date().toISOString() }
+          : { pending_question: null, pending_question_at: null }
+      ).eq("id", user.id);
+    } catch(e) { console.error("pending_question:", e instanceof Error ? e.message : e); }
+
+    // B2: fire-and-forget fact extraction (haiku, nao bloqueia o retorno)
+    const maskedNoteForFacts = maskSensitiveData(entry.note);
+    if (maskedNoteForFacts.length > 40) {
+      const factsList = facts && facts.length > 0 ? facts.map(f => f.fact).join("\n") : "nenhum ainda";
+      const factUsr = `Você extrai fatos duráveis sobre a vida de uma usuária a partir de uma nota de diário pessoal.
+
+FATO DURÁVEL = algo que continua verdadeiro por semanas ou meses: pessoas da vida dela (filho, marido, mãe, chefe, amiga — com nome se ela citou), trabalho ou estudo, rotina fixa, terapia, condição de saúde contínua, projeto ou situação em andamento.
+NÃO é fato durável: humor do dia, evento pontual sem continuação, clima, o que comeu, tarefas soltas.
+
+FATOS JÁ CONHECIDOS (não repita nem crie variações destes):
+${factsList}
+
+NOTA DE HOJE:
+"${maskedNoteForFacts}"
+
+Responda APENAS com JSON válido, sem markdown:
+{"facts": [{"fact": "...", "category": "pessoas|trabalho|saude|rotina|situacao"}]}
+
+Máximo 2 fatos. Cada fato é uma frase curta em terceira pessoa (ex: "tem um filho pequeno chamado Theo", "faz terapia às quintas", "conflito recorrente com a chefe"). Se não houver fato durável NOVO, responda {"facts": []}.`;
+
+      (async () => {
+        try {
+          let extractedFacts: Array<{fact: string; category: string}> | null = null;
+          for (const model of HAIKU_MODELS) {
+            const res = await callClaude(model, "", factUsr, ANTHROPIC_API_KEY, 300);
+            if (res.ok && res.data) {
+              const d = res.data as {content: Array<{type: string; text: string}>};
+              const rawText = d.content.filter(b => b.type === "text").map(b => b.text).join("");
+              const parsed = extractJson(rawText);
+              if (parsed && Array.isArray(parsed.facts)) {
+                extractedFacts = parsed.facts as Array<{fact: string; category: string}>;
+              }
+              break;
+            }
+            if (res.status === 401) break;
+          }
+          if (!extractedFacts || extractedFacts.length === 0) return;
+
+          // Limit to 40 total facts per user — trim oldest if needed
+          const { count } = await supabase
+            .from("user_facts")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", user.id);
+          const currentCount = count || 0;
+          const excess = currentCount + extractedFacts.length - 40;
+          if (excess > 0) {
+            const { data: oldest } = await supabase
+              .from("user_facts")
+              .select("id")
+              .eq("user_id", user.id)
+              .order("created_at", { ascending: true })
+              .limit(excess);
+            if (oldest && oldest.length > 0) {
+              await supabase.from("user_facts").delete().in("id", (oldest as Array<{id: string}>).map(r => r.id));
+            }
+          }
+
+          await supabase.from("user_facts").insert(
+            extractedFacts.map(f => ({
+              user_id: user.id,
+              fact: f.fact,
+              category: f.category || null,
+              source_entry_id: entry.id,
+            }))
+          );
+        } catch(e) { console.error("fact extraction:", e instanceof Error ? e.message : e); }
+      })();
+    }
 
     return new Response(
       JSON.stringify({feedback:feedbackText,entry_id:entry.id,model_used:modelUsed,memories_used:relevantMemories.length}),

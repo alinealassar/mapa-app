@@ -108,11 +108,22 @@ interface LastEntry {
 function getAdaptivePrompt(
   lastEntry: LastEntry | null,
   goal: string | null,
-  now: Date
+  now: Date,
+  pendingQuestion: string | null,
+  pendingQuestionAt: string | null
 ): string {
   // Pequeno seed para variar entre opções (rotaciona ao longo do mês)
   const seed = now.getDate();
   const pick = (arr: string[]) => arr[seed % arr.length];
+
+  // 0. Prioridade máxima: pergunta pendente da Lis (< 5 dias)
+  if (pendingQuestion && pendingQuestionAt) {
+    const daysSince = (now.getTime() - new Date(pendingQuestionAt).getTime()) / (1000 * 60 * 60 * 24);
+    if (daysSince < 5) {
+      const q = pendingQuestion.length > 120 ? pendingQuestion.slice(0, 120) + "…" : pendingQuestion;
+      return `a Lis perguntou: "${q}"`;
+    }
+  }
 
   // 1. Faz mais de 3 dias sem registrar?
   if (lastEntry) {
@@ -290,10 +301,10 @@ export default function MoodRegister() {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Buscar profile (name + goal)
+      // Buscar profile (name + goal + pending_question da Lis)
       const { data: profile } = await supabase
         .from("profiles")
-        .select("name, goal")
+        .select("name, goal, pending_question, pending_question_at")
         .eq("id", user.id)
         .single();
 
@@ -315,7 +326,13 @@ export default function MoodRegister() {
 
       const lastEntry = (lastEntries?.[0] as LastEntry | undefined) || null;
       setPlaceholderText(
-        getAdaptivePrompt(lastEntry, profile?.goal || null, new Date())
+        getAdaptivePrompt(
+          lastEntry,
+          profile?.goal || null,
+          new Date(),
+          (profile?.pending_question as string | null) || null,
+          (profile?.pending_question_at as string | null) || null
+        )
       );
 
       // Buscar tags customizadas
