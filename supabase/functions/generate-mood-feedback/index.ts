@@ -1,4 +1,5 @@
-// generate-mood-feedback v41 — fatos duraveis + loop de continuidade
+// generate-mood-feedback v42 — IDOR fix: ownership check em mood_entries
+// v42 (08/07/2026): FURO 4 — ownership check + .eq("user_id") no update (defesa em profundidade).
 // v41 (08/07/2026): (A) user_facts: busca e injeta fatos duraveis no prompt;
 //   (B) extracao fire-and-forget de fatos novos apos cada feedback (haiku);
 //   (C) loop de continuidade: detecta pergunta final, salva pending_question em profiles.
@@ -302,6 +303,10 @@ Deno.serve(async (req: Request) => {
     const entry: MoodEntry = body.entry;
     if (!entry?.mood_emoji) return new Response(JSON.stringify({error:"Dados incompletos"}), {status:400,headers:{...corsHeaders,"Content-Type":"application/json"}});
 
+    // FURO 4 — verificar que o entry pertence à usuária logada
+    const { data: owned } = await supabase.from("mood_entries").select("id").eq("id", entry.id).eq("user_id", user.id).maybeSingle();
+    if (!owned) return new Response(JSON.stringify({ error: "Registro não encontrado" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
     // B4: include pending_question in profile fetch
     const { data:profile } = await supabase.from("profiles").select("name, goal, pending_question, pending_question_at").eq("id",user.id).single();
     const userName = profile?.name || "querida";
@@ -364,7 +369,7 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({error:"Nenhum modelo aceitou",attempts}), {status:500,headers:{...corsHeaders,"Content-Type":"application/json"}});
     }
 
-    await supabase.from("mood_entries").update({ai_feedback:feedbackText}).eq("id",entry.id);
+    await supabase.from("mood_entries").update({ai_feedback:feedbackText}).eq("id",entry.id).eq("user_id",user.id);
     await supabase.from("ai_analyses").insert({user_id:user.id,entry_id:entry.id,analysis_text:feedbackText,suggestion:null});
 
     try {

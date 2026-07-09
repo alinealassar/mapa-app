@@ -606,10 +606,7 @@ export default function MoodRegister() {
           .from("mood-audios")
           .upload(fn, audioBlob, { contentType: "audio/webm" });
         if (!error) {
-          const { data } = supabase.storage
-            .from("mood-audios")
-            .getPublicUrl(fn);
-          uploadedAudioUrl = data.publicUrl;
+          uploadedAudioUrl = fn;
         }
       }
       const { data: entry, error: ie } = await supabase

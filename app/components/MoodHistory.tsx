@@ -158,7 +158,7 @@ export default function MoodHistory() {
     }
   }
 
-  function toggleAudio(id: string, url: string) {
+  async function toggleAudio(id: string, url: string) {
     // Mesmo entry tocando: pausa
     if (playingAudioId === id) {
       audioRef.current?.pause();
@@ -171,7 +171,18 @@ export default function MoodHistory() {
     stopTicker();
     setAudioPosition(0);
     setAudioDuration(0);
-    const audio = new Audio(url);
+    // Extrai path (suporta URL pública antiga e path relativo novo)
+    const marker = "/mood-audios/";
+    const idx = url.indexOf(marker);
+    const path = idx !== -1 ? url.slice(idx + marker.length) : url;
+    let playUrl = url;
+    try {
+      const { data: signed } = await supabase.storage
+        .from("mood-audios")
+        .createSignedUrl(path, 3600);
+      if (signed?.signedUrl) playUrl = signed.signedUrl;
+    } catch { /* fallback para url original */ }
+    const audio = new Audio(playUrl);
     audioRef.current = audio;
     audio.onloadedmetadata = () => {
       setAudioDuration(isFinite(audio.duration) ? audio.duration : 0);
@@ -181,7 +192,7 @@ export default function MoodHistory() {
       stopTicker();
       setAudioPosition(0);
     };
-    audio.play();
+    audio.play().catch(() => {});
     setPlayingAudioId(id);
     // Atualiza a barra de progresso a cada 200ms (suave o suficiente sem
     // gastar CPU)

@@ -25,6 +25,7 @@ jobs:
         run: |
           curl -s -X POST "https://hsgotkeydyvrollnzbbf.supabase.co/functions/v1/onboarding-emails" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -d '{"day":0,"dry_run":${{ github.event.inputs.dry_run || 'false' }}}'
 
@@ -33,6 +34,7 @@ jobs:
         run: |
           curl -s -X POST "https://hsgotkeydyvrollnzbbf.supabase.co/functions/v1/onboarding-emails" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -d '{"day":1,"dry_run":${{ github.event.inputs.dry_run || 'false' }}}'
 
@@ -41,6 +43,7 @@ jobs:
         run: |
           curl -s -X POST "https://hsgotkeydyvrollnzbbf.supabase.co/functions/v1/onboarding-emails" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -d '{"day":2,"dry_run":${{ github.event.inputs.dry_run || 'false' }}}'
 
@@ -49,5 +52,6 @@ jobs:
         run: |
           curl -s -X POST "https://hsgotkeydyvrollnzbbf.supabase.co/functions/v1/onboarding-emails" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -d '{"day":3,"dry_run":${{ github.event.inputs.dry_run || 'false' }}}'

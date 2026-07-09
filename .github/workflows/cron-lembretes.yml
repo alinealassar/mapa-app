@@ -15,4 +15,5 @@ jobs:
         run: |
           curl -i -X POST "https://hsgotkeydyvrollnzbbf.supabase.co/functions/v1/daily-reminder" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json"

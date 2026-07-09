@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 // v2 (16/05/2026): removida a chamada redundante do Claude Haiku que gerava
 // uma "lisResponse" nunca usada pelo MoodRegister. Agora a funcao so transcreve
@@ -7,6 +8,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // RAG da memoria semantica e personalizacao por humor/tags/goal.
 
 const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY")!;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -20,6 +23,16 @@ Deno.serve(async (req) => {
   }
   if (req.method !== "POST") {
     return new Response("Method Not Allowed", { status: 405, headers: CORS_HEADERS });
+  }
+
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return new Response(JSON.stringify({ error: "Token ausente" }), { status: 401, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } });
+  }
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  const { data: { user }, error: authErr } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+  if (authErr || !user) {
+    return new Response(JSON.stringify({ error: "Não autenticada" }), { status: 401, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } });
   }
 
   try {

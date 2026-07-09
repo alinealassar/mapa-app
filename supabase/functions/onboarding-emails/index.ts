@@ -249,6 +249,12 @@ const TEMPLATES: Record<number, { subject: string; html: (name: string, appUrl: 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
 
+  const CRON_SECRET = Deno.env.get("CRON_SECRET");
+  const provided = req.headers.get("x-cron-secret");
+  if (!CRON_SECRET || provided !== CRON_SECRET) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401 });
+  }
+
   let body: { day?: number; only_user_id?: string; dry_run?: boolean } = {};
   try {
     const text = await req.text();

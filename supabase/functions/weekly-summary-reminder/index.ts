@@ -135,6 +135,12 @@ function str2ab(str: string) {
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
 
+  const CRON_SECRET = Deno.env.get("CRON_SECRET");
+  const provided = req.headers.get("x-cron-secret");
+  if (!CRON_SECRET || provided !== CRON_SECRET) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401 });
+  }
+
   let body: { only_user_id?: string; skip_email?: boolean; skip_push?: boolean } = {};
   try {
     const text = await req.text();
